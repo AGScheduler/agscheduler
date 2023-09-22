@@ -20,6 +20,7 @@ func main() {
 	job1 := agscheduler.Job{
 		Name:     "Job1",
 		Type:     "interval",
+		Timezone: "Asia/Shanghai",
 		Func:     printMsg,
 		Args:     []any{"arg1", "arg2", "arg3"},
 		Interval: 2 * time.Second,
@@ -42,10 +43,12 @@ func main() {
 	scheduler.Start()
 	log.Print("Scheduler Start.\n\n")
 
-	startAt, _ := time.Parse("2006-01-02 15:04:05", "2023-09-22 07:30:08")
+	timezone, _ := time.LoadLocation("America/New_York")
+	startAt, _ := time.ParseInLocation("2006-01-02 15:04:05", "2023-09-22 07:30:08", timezone)
 	job3 := agscheduler.Job{
 		Name:    "Job3",
 		Type:    "datetime",
+		Timezone: timezone.String(),
 		Func:    printMsg,
 		Args:    []any{"arg8", "arg9"},
 		StartAt: startAt,

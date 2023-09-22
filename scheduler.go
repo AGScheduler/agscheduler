@@ -19,17 +19,18 @@ func (s *Scheduler) SetStore(sto Store) {
 }
 
 func CalcNextRunTime(j Job) time.Time {
+	timezone, _ := time.LoadLocation(j.Timezone)
 	if j.Status == "paused" {
-		nextRunTime, _ := time.Parse("2006-01-02 15:04:05", "9999-09-09 09:09:09")
+		nextRunTime, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
 		return nextRunTime
 	}
 	switch j.Type {
 	case "datetime":
-		return j.StartAt
+		return j.StartAt.In(timezone)
 	case "interval":
-		return time.Now().Add(j.Interval)
+		return time.Now().In(timezone).Add(j.Interval)
 	case "cron":
-		return cronexpr.MustParse(j.CronExpr).Next(time.Now())
+		return cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
 		panic(fmt.Sprintf("Unknown job type %s", j.Type))
 	}
@@ -38,6 +39,10 @@ func CalcNextRunTime(j Job) time.Time {
 func (s *Scheduler) AddJob(j Job) (id string) {
 	j.SetId()
 	j.Status = "running"
+
+	if j.Timezone == "" {
+		j.Timezone = "UTC"
+	}
 
 	if j.NextRunTime.IsZero() {
 		j.NextRunTime = CalcNextRunTime(j)
@@ -107,6 +112,9 @@ func (s *Scheduler) run() {
 					continue
 				}
 
+				timezone, _ := time.LoadLocation(j.Timezone)
+				now := now.In(timezone)
+
 				if j.NextRunTime.Before(now) {
 					j.NextRunTime = CalcNextRunTime(j)
 
@@ -127,7 +135,7 @@ func (s *Scheduler) run() {
 			}
 
 			minNextRunTime := s.store.GetNextRunTime()
-			now = time.Now()
+			now = time.Now().In(minNextRunTime.Location())
 			nextWakeupInterval := minNextRunTime.Sub(now)
 			if nextWakeupInterval < 0 {
 				nextWakeupInterval = time.Second

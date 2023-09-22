@@ -16,6 +16,7 @@ type Job struct {
 	EndAt       time.Time
 	Interval    time.Duration
 	CronExpr    string
+	Timezone    string
 	Func        func(Job)
 	Args        []any
 	LastRunTime time.Time
