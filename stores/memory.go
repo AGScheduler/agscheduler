@@ -10,8 +10,8 @@ type MemoryStore struct {
 	Jobs []*agscheduler.Job
 }
 
-func (s *MemoryStore) AddJob(job *agscheduler.Job) {
-	s.Jobs = append(s.Jobs, job)
+func (s *MemoryStore) AddJob(j *agscheduler.Job) {
+	s.Jobs = append(s.Jobs, j)
 }
 
 func (s *MemoryStore) GetJob(id string) (*agscheduler.Job, error) {
@@ -27,16 +27,16 @@ func (s *MemoryStore) GetAllJobs() []*agscheduler.Job {
 	return s.Jobs
 }
 
-func (s *MemoryStore) UpdateJob(job *agscheduler.Job) error {
-	for i, j := range s.Jobs {
-		if j.Id() == job.Id() {
-			s.Jobs[i] = job
-			s.Jobs[i].NextRunTime = agscheduler.CalcNextRunTime(job)
+func (s *MemoryStore) UpdateJob(j *agscheduler.Job) error {
+	for i, sj := range s.Jobs {
+		if sj.Id() == j.Id() {
+			s.Jobs[i] = j
+			s.Jobs[i].NextRunTime = agscheduler.CalcNextRunTime(j)
 			return nil
 		}
 	}
 
-	return agscheduler.JobNotFound(job.Id())
+	return agscheduler.JobNotFound(j.Id())
 }
 
 func (s *MemoryStore) DeleteJob(id string) error {

@@ -17,42 +17,42 @@ func (s *Scheduler) SetStore(sto Store) {
 	s.store = sto
 }
 
-func CalcNextRunTime(job *Job) time.Time {
-	if job.Status == "paused" {
+func CalcNextRunTime(j *Job) time.Time {
+	if j.Status == "paused" {
 		nextRunTime, _ := time.Parse("2006-01-02 15:04:05", "9999-09-09 09:09:09")
 		return nextRunTime
 	}
-	switch job.Type {
+	switch j.Type {
 	case "datetime":
-		return job.StartAt
+		return j.StartAt
 	case "interval":
-		return time.Now().Add(job.Interval)
+		return time.Now().Add(j.Interval)
 	case "cron":
-		return cronexpr.MustParse(job.CronExpr).Next(time.Now())
+		return cronexpr.MustParse(j.CronExpr).Next(time.Now())
 	default:
-		panic(fmt.Sprintf("Unknown job type %s", job.Type))
+		panic(fmt.Sprintf("Unknown job type %s", j.Type))
 	}
 }
 
-func (s *Scheduler) AddJob(job *Job) (id string) {
-	job.SetId()
-	job.Status = "running"
+func (s *Scheduler) AddJob(j *Job) (id string) {
+	j.SetId()
+	j.Status = "running"
 
-	if job.NextRunTime.IsZero() {
-		job.NextRunTime = CalcNextRunTime(job)
+	if j.NextRunTime.IsZero() {
+		j.NextRunTime = CalcNextRunTime(j)
 	}
 
-	s.store.AddJob(job)
+	s.store.AddJob(j)
 
-	return job.id
+	return j.id
 }
 
 func (s *Scheduler) GetJob(id string) (*Job, error) {
 	return s.store.GetJob(id)
 }
 
-func (s *Scheduler) UpdateJob(job *Job) error {
-	err := s.store.UpdateJob(job)
+func (s *Scheduler) UpdateJob(j *Job) error {
+	err := s.store.UpdateJob(j)
 	s.wakeup()
 	return err
 }
@@ -62,12 +62,14 @@ func (s *Scheduler) DeleteJob(id string) error {
 }
 
 func (s *Scheduler) PauseJob(id string) error {
-	job, err := s.GetJob(id)
+	j, err := s.GetJob(id)
 	if err != nil {
 		return err
 	}
-	job.Status = "paused"
-	err = s.UpdateJob(job)
+
+	j.Status = "paused"
+
+	err = s.UpdateJob(j)
 	if err != nil {
 		return err
 	}
@@ -76,12 +78,14 @@ func (s *Scheduler) PauseJob(id string) error {
 }
 
 func (s *Scheduler) ResumeJob(id string) error {
-	job, err := s.GetJob(id)
+	j, err := s.GetJob(id)
 	if err != nil {
 		return err
 	}
-	job.Status = "running"
-	err = s.UpdateJob(job)
+
+	j.Status = "running"
+
+	err = s.UpdateJob(j)
 	if err != nil {
 		return err
 	}
