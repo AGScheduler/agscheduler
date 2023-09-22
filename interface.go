@@ -2,8 +2,8 @@ package agscheduler
 
 type Store interface {
 	AddJob(job *Job)
-	GetJobById(id string) (*Job, error)
+	GetJob(id string) (*Job, error)
 	GetAllJobs() []*Job
 	UpdateJob(Job *Job) error
-	DeleteJobById(id string) error
+	DeleteJob(id string) error
 }

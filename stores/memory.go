@@ -14,7 +14,7 @@ func (s *MemoryStore) AddJob(job *agscheduler.Job) {
 	s.Jobs = append(s.Jobs, job)
 }
 
-func (s *MemoryStore) GetJobById(id string) (*agscheduler.Job, error) {
+func (s *MemoryStore) GetJob(id string) (*agscheduler.Job, error) {
 	for _, j := range s.Jobs {
 		if j.Id() == id {
 			return j, nil
@@ -39,7 +39,7 @@ func (s *MemoryStore) UpdateJob(job *agscheduler.Job) error {
 	return agscheduler.JobNotFound(job.Id())
 }
 
-func (s *MemoryStore) DeleteJobById(id string) error {
+func (s *MemoryStore) DeleteJob(id string) error {
 	for i, j := range s.Jobs {
 		if j.Id() == id {
 			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
