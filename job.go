@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Task struct {
+type Job struct {
 	id          string
 	Name        string
 	Type        string // datetime | interval | cron
@@ -22,24 +22,10 @@ type Task struct {
 	Status      string // running | paused
 }
 
-func (t *Task) SetId() {
+func (t *Job) SetId() {
 	t.id = strings.Replace(uuid.New().String(), "-", "", -1)
 }
 
-func (t *Task) Id() string {
+func (t *Job) Id() string {
 	return t.id
-}
-
-type Storage interface {
-	AddTask(task *Task)
-	GetTaskById(id string) (*Task, error)
-	GetAllTasks() []*Task
-	UpdateTask(task *Task) error
-	DeleteTaskById(id string) error
-}
-
-type Scheduler struct {
-	Storage  Storage
-	Timer    *time.Timer
-	QuitChan chan struct{}
 }

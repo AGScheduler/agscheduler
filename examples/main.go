@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"agscheduler"
-	"agscheduler/storages"
+	"agscheduler/stores"
 )
 
 func printMsg(args ...any) {
@@ -13,7 +13,7 @@ func printMsg(args ...any) {
 }
 
 func main() {
-	task := &agscheduler.Task{
+	job := &agscheduler.Job{
 		Name:     "Print message",
 		Type:     "interval",
 		Func:     printMsg,
@@ -21,16 +21,15 @@ func main() {
 		Interval: 1 * time.Second,
 	}
 
-	storage := &storages.MemoryStorage{}
+	store := &stores.MemoryStore{}
 
-	scheduler := &agscheduler.Scheduler{
-		Storage: storage,
-	}
+	scheduler := &agscheduler.Scheduler{}
+    scheduler.SetStore(store)
 
-	scheduler.AddTask(task)
+	scheduler.AddJob(job)
 	scheduler.Start()
 
-	task2 := &agscheduler.Task{
+	job2 := &agscheduler.Job{
 		Name:     "Print message2",
 		Type:     "cron",
 		Func:     printMsg,
@@ -38,16 +37,16 @@ func main() {
 		CronExpr: "*/1 * * * *",
 	}
 
-	task2Id := scheduler.AddTask(task2)
+	job2Id := scheduler.AddJob(job2)
 
 	time.Sleep(6 * time.Second)
-	task2, _ = scheduler.GetTaskById(task2Id)
-	task2.Type = "interval"
-	task2.Interval = 4 * time.Second
-	scheduler.UpdateTask(task2)
+	job2, _ = scheduler.GetJobById(job2Id)
+	job2.Type = "interval"
+	job2.Interval = 4 * time.Second
+	scheduler.UpdateJob(job2)
 
 	time.Sleep(6 * time.Second)
-	scheduler.DeleteTaskById(task2Id)
+	scheduler.DeleteJobById(job2Id)
 
 	select {}
 }

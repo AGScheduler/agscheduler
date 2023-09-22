@@ -7,71 +7,81 @@ import (
 	"github.com/gorhill/cronexpr"
 )
 
-func calculateNextRunTime(task *Task) time.Time {
-	switch task.Type {
+type Scheduler struct {
+	store    Store
+	timer    *time.Timer
+	quitChan chan struct{}
+}
+
+func (s *Scheduler) SetStore(sto Store) {
+	s.store = sto
+}
+
+func calcNextRunTime(job *Job) time.Time {
+	switch job.Type {
 	case "datetime":
-		return task.StartAt
+		return job.StartAt
 	case "interval":
-		return time.Now().Add(task.Interval)
+		return time.Now().Add(job.Interval)
 	case "cron":
-		return cronexpr.MustParse(task.CronExpr).Next(time.Now())
+		return cronexpr.MustParse(job.CronExpr).Next(time.Now())
 	default:
-		panic(fmt.Sprintf("Unknown task type %s", task.Type))
+		panic(fmt.Sprintf("Unknown job type %s", job.Type))
 	}
 }
 
-func (s *Scheduler) AddTask(task *Task) (id string) {
-	if task.NextRunTime.IsZero() {
-		task.NextRunTime = calculateNextRunTime(task)
+func (s *Scheduler) AddJob(job *Job) (id string) {
+	if job.NextRunTime.IsZero() {
+		job.NextRunTime = calcNextRunTime(job)
 	}
 
-	task.SetId()
-	s.Storage.AddTask(task)
+	job.SetId()
+	s.store.AddJob(job)
 
-	return task.id
+	return job.id
 }
 
-func (s *Scheduler) GetTaskById(id string) (*Task, error) {
-	return s.Storage.GetTaskById(id)
+func (s *Scheduler) GetJobById(id string) (*Job, error) {
+	return s.store.GetJobById(id)
 }
 
-func (s *Scheduler) UpdateTask(task *Task) error {
-	return s.Storage.UpdateTask(task)
+func (s *Scheduler) UpdateJob(job *Job) error {
+	return s.store.UpdateJob(job)
 }
 
-func (s *Scheduler) DeleteTaskById(id string) error {
-	return s.Storage.DeleteTaskById(id)
+func (s *Scheduler) DeleteJobById(id string) error {
+	return s.store.DeleteJobById(id)
 }
 
 func (s *Scheduler) run() {
 	for {
 		select {
-		case <-s.QuitChan:
+		case <-s.quitChan:
 			return
-		case <-s.Timer.C:
+		case <-s.timer.C:
 			now := time.Now()
 
-			for _, task := range s.Storage.GetAllTasks() {
-				if task.Status == "paused" {
+			for _, Job := range s.store.GetAllJobs() {
+				if Job.Status == "paused" {
 					continue
 				}
 
-				if task.NextRunTime.Before(now) {
-					task.LastRunTime = now
-					task.NextRunTime = calculateNextRunTime(task)
+				if Job.NextRunTime.Before(now) {
+					Job.LastRunTime = now
+					Job.NextRunTime = calcNextRunTime(Job)
 
-					go task.Func(task.Args...)
+					go Job.Func(Job.Args...)
 				}
 			}
 
-			s.Timer.Reset(time.Second)
+			s.timer.Reset(time.Second)
 		}
 	}
 }
 
 func (s *Scheduler) Start() {
-	s.Timer = time.NewTimer(0)
-	s.QuitChan = make(chan struct{})
+	s.timer = time.NewTimer(0)
+	s.quitChan = make(chan struct{})
 
 	go s.run()
 }
