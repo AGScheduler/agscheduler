@@ -7,15 +7,15 @@ import (
 )
 
 type MemoryStore struct {
-	Jobs []agscheduler.Job
+	jobs []agscheduler.Job
 }
 
 func (s *MemoryStore) AddJob(j agscheduler.Job) {
-	s.Jobs = append(s.Jobs, j)
+	s.jobs = append(s.jobs, j)
 }
 
 func (s *MemoryStore) GetJob(id string) (agscheduler.Job, error) {
-	for _, j := range s.Jobs {
+	for _, j := range s.jobs {
 		if j.Id() == id {
 			return j, nil
 		}
@@ -24,14 +24,14 @@ func (s *MemoryStore) GetJob(id string) (agscheduler.Job, error) {
 }
 
 func (s *MemoryStore) GetAllJobs() []agscheduler.Job {
-	return s.Jobs
+	return s.jobs
 }
 
 func (s *MemoryStore) UpdateJob(j agscheduler.Job) error {
-	for i, sj := range s.Jobs {
+	for i, sj := range s.jobs {
 		if sj.Id() == j.Id() {
-			s.Jobs[i] = j
-			s.Jobs[i].NextRunTime = agscheduler.CalcNextRunTime(j)
+			s.jobs[i] = j
+			s.jobs[i].NextRunTime = agscheduler.CalcNextRunTime(j)
 			return nil
 		}
 	}
@@ -40,9 +40,9 @@ func (s *MemoryStore) UpdateJob(j agscheduler.Job) error {
 }
 
 func (s *MemoryStore) DeleteJob(id string) error {
-	for i, j := range s.Jobs {
+	for i, j := range s.jobs {
 		if j.Id() == id {
-			s.Jobs = append(s.Jobs[:i], s.Jobs[i+1:]...)
+			s.jobs = append(s.jobs[:i], s.jobs[i+1:]...)
 			return nil
 		}
 	}
@@ -50,12 +50,12 @@ func (s *MemoryStore) DeleteJob(id string) error {
 }
 
 func (s *MemoryStore) GetNextRunTime() time.Time {
-	if len(s.Jobs) == 0 {
+	if len(s.jobs) == 0 {
 		return time.Time{}
 	}
 
-	minNextRunTime := s.Jobs[0].NextRunTime
-	for _, j := range s.Jobs {
+	minNextRunTime := s.jobs[0].NextRunTime
+	for _, j := range s.jobs {
 		if minNextRunTime.After(j.NextRunTime) {
 			minNextRunTime = j.NextRunTime
 		}
