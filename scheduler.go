@@ -17,7 +17,11 @@ func (s *Scheduler) SetStore(sto Store) {
 	s.store = sto
 }
 
-func calcNextRunTime(job *Job) time.Time {
+func CalcNextRunTime(job *Job) time.Time {
+	if job.Status == "paused" {
+		nextRunTime, _ := time.Parse("2006-01-02 15:04:05", "9999-09-09 09:09:09")
+		return nextRunTime
+	}
 	switch job.Type {
 	case "datetime":
 		return job.StartAt
@@ -35,7 +39,7 @@ func (s *Scheduler) AddJob(job *Job) (id string) {
 	job.Status = "running"
 
 	if job.NextRunTime.IsZero() {
-		job.NextRunTime = calcNextRunTime(job)
+		job.NextRunTime = CalcNextRunTime(job)
 	}
 
 	s.store.AddJob(job)
@@ -48,7 +52,9 @@ func (s *Scheduler) GetJob(id string) (*Job, error) {
 }
 
 func (s *Scheduler) UpdateJob(job *Job) error {
-	return s.store.UpdateJob(job)
+	err := s.store.UpdateJob(job)
+	s.wakeup()
+	return err
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
@@ -98,7 +104,7 @@ func (s *Scheduler) run() {
 
 				if j.NextRunTime.Before(now) {
 					j.LastRunTime = now
-					j.NextRunTime = calcNextRunTime(j)
+					j.NextRunTime = CalcNextRunTime(j)
 
 					t := *j
 					t.Func = nil
@@ -110,7 +116,13 @@ func (s *Scheduler) run() {
 				}
 			}
 
-			s.timer.Reset(time.Second)
+			minNextRunTime := s.store.GetNextRunTime()
+			now = time.Now()
+			nextWakeupInterval := minNextRunTime.Sub(now)
+			if nextWakeupInterval < 0 {
+				nextWakeupInterval = time.Second
+			}
+			s.timer.Reset(nextWakeupInterval)
 		}
 	}
 }
@@ -124,4 +136,8 @@ func (s *Scheduler) Start() {
 
 func (s *Scheduler) Stop() {
 	s.quitChan <- struct{}{}
+}
+
+func (s *Scheduler) wakeup() {
+	s.timer.Reset(0)
 }

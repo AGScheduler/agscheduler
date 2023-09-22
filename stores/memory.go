@@ -31,7 +31,7 @@ func (s *MemoryStore) UpdateJob(job *agscheduler.Job) error {
 	for i, j := range s.Jobs {
 		if j.Id() == job.Id() {
 			s.Jobs[i] = job
-			s.Jobs[i].NextRunTime = time.Time{}
+			s.Jobs[i].NextRunTime = agscheduler.CalcNextRunTime(job)
 			return nil
 		}
 	}
@@ -47,4 +47,19 @@ func (s *MemoryStore) DeleteJob(id string) error {
 		}
 	}
 	return agscheduler.JobNotFound(id)
+}
+
+func (s *MemoryStore) GetNextRunTime() time.Time {
+	if len(s.Jobs) == 0 {
+		return time.Time{}
+	}
+
+	minNextRunTime := s.Jobs[0].NextRunTime
+	for _, j := range s.Jobs {
+		if minNextRunTime.After(j.NextRunTime) {
+			minNextRunTime = j.NextRunTime
+		}
+	}
+
+	return minNextRunTime
 }
