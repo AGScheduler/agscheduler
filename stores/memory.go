@@ -7,27 +7,27 @@ import (
 )
 
 type MemoryStore struct {
-	Jobs []*agscheduler.Job
+	Jobs []agscheduler.Job
 }
 
-func (s *MemoryStore) AddJob(j *agscheduler.Job) {
+func (s *MemoryStore) AddJob(j agscheduler.Job) {
 	s.Jobs = append(s.Jobs, j)
 }
 
-func (s *MemoryStore) GetJob(id string) (*agscheduler.Job, error) {
+func (s *MemoryStore) GetJob(id string) (agscheduler.Job, error) {
 	for _, j := range s.Jobs {
 		if j.Id() == id {
 			return j, nil
 		}
 	}
-	return nil, agscheduler.JobNotFound(id)
+	return agscheduler.Job{}, agscheduler.JobNotFound(id)
 }
 
-func (s *MemoryStore) GetAllJobs() []*agscheduler.Job {
+func (s *MemoryStore) GetAllJobs() []agscheduler.Job {
 	return s.Jobs
 }
 
-func (s *MemoryStore) UpdateJob(j *agscheduler.Job) error {
+func (s *MemoryStore) UpdateJob(j agscheduler.Job) error {
 	for i, sj := range s.Jobs {
 		if sj.Id() == j.Id() {
 			s.Jobs[i] = j

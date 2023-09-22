@@ -31,7 +31,7 @@ func (j *Job) Id() string {
 	return j.id
 }
 
-func (j *Job) String() string {
+func (j Job) String() string {
 	return fmt.Sprintf(
 		"Job{'id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Args':'%s', "+
