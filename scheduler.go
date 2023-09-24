@@ -12,7 +12,7 @@ import (
 
 type Scheduler struct {
 	store    Store
-	ticker   *time.Timer
+	timer    *time.Timer
 	quitChan chan struct{}
 }
 
@@ -116,7 +116,7 @@ func (s *Scheduler) run() {
 		select {
 		case <-s.quitChan:
 			return
-		case <-s.ticker.C:
+		case <-s.timer.C:
 			now := time.Now()
 
 			jobs, _ := s.store.GetAllJobs()
@@ -149,13 +149,13 @@ func (s *Scheduler) run() {
 			}
 
 			nextWakeupInterval := s.getNextWakeupInterval()
-			s.ticker.Reset(nextWakeupInterval)
+			s.timer.Reset(nextWakeupInterval)
 		}
 	}
 }
 
 func (s *Scheduler) Start() {
-	s.ticker = time.NewTimer(0)
+	s.timer = time.NewTimer(0)
 	s.quitChan = make(chan struct{})
 
 	go s.run()
@@ -176,5 +176,5 @@ func (s *Scheduler) getNextWakeupInterval() time.Duration {
 }
 
 func (s *Scheduler) wakeup() {
-	s.ticker.Reset(0)
+	s.timer.Reset(0)
 }
