@@ -2,6 +2,8 @@ package agscheduler
 
 import (
 	"fmt"
+	"reflect"
+	"runtime"
 	"strings"
 	"time"
 
@@ -9,7 +11,7 @@ import (
 )
 
 type Job struct {
-	id          string
+	Id          string
 	Name        string
 	Type        string // datetime | interval | cron
 	StartAt     time.Time
@@ -18,6 +20,7 @@ type Job struct {
 	CronExpr    string
 	Timezone    string
 	Func        func(Job)
+	FuncName    string
 	Args        []any
 	LastRunTime time.Time
 	NextRunTime time.Time
@@ -25,20 +28,25 @@ type Job struct {
 }
 
 func (j *Job) SetId() {
-	j.id = strings.Replace(uuid.New().String(), "-", "", -1)
-}
-
-func (j *Job) Id() string {
-	return j.id
+	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)
 }
 
 func (j Job) String() string {
 	return fmt.Sprintf(
 		"Job{'id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
-			"'Interval':'%s', 'CronExpr':'%s', 'Args':'%s', "+
+			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
+			"'FuncName':'%s', 'Args':'%s', "+
 			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s'}",
-		j.id, j.Name, j.Type, j.StartAt, j.EndAt,
-		j.Interval, j.CronExpr, j.Args,
+		j.Id, j.Name, j.Type, j.StartAt, j.EndAt,
+		j.Interval, j.CronExpr, j.Timezone,
+		j.FuncName, j.Args,
 		j.LastRunTime, j.NextRunTime, j.Status,
 	)
+}
+
+var funcs = make(map[string]func(Job))
+
+func RegisterFuncs(f func(Job)) {
+	fName := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
+	funcs[fName] = f
 }

@@ -4,6 +4,9 @@ import (
 	"log"
 	"time"
 
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+
 	"agscheduler"
 	"agscheduler/stores"
 )
@@ -15,7 +18,13 @@ func printMsg(j agscheduler.Job) {
 func main() {
 	agscheduler.RegisterFuncs(printMsg)
 
-	store := &stores.MemoryStore{}
+	dsn := "root:123456@tcp(127.0.0.1:33306)/test?charset=utf8mb4&parseTime=True&loc=UTC"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %s", err)
+	}
+	store := &stores.GORMStore{DB: db}
+
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 

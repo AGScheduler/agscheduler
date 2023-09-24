@@ -3,6 +3,8 @@ package agscheduler
 import (
 	"fmt"
 	"log"
+	"reflect"
+	"runtime"
 	"time"
 
 	"github.com/gorhill/cronexpr"
@@ -10,12 +12,13 @@ import (
 
 type Scheduler struct {
 	store    Store
-	timer    *time.Timer
+	ticker   *time.Timer
 	quitChan chan struct{}
 }
 
 func (s *Scheduler) SetStore(sto Store) {
 	s.store = sto
+	s.store.Init()
 }
 
 func CalcNextRunTime(j Job) time.Time {
@@ -48,9 +51,11 @@ func (s *Scheduler) AddJob(j Job) (id string) {
 		j.NextRunTime = CalcNextRunTime(j)
 	}
 
+	j.FuncName = runtime.FuncForPC(reflect.ValueOf(j.Func).Pointer()).Name()
+
 	s.store.AddJob(j)
 
-	return j.id
+	return j.Id
 }
 
 func (s *Scheduler) GetJob(id string) (Job, error) {
@@ -104,10 +109,11 @@ func (s *Scheduler) run() {
 		select {
 		case <-s.quitChan:
 			return
-		case <-s.timer.C:
+		case <-s.ticker.C:
 			now := time.Now()
 
-			for _, j := range s.store.GetAllJobs() {
+			jobs, _ := s.store.GetAllJobs()
+			for _, j := range jobs {
 				if j.Status == "paused" {
 					continue
 				}
@@ -118,12 +124,13 @@ func (s *Scheduler) run() {
 				if j.NextRunTime.Before(now) {
 					j.NextRunTime = CalcNextRunTime(j)
 
-					go j.Func(j)
+					f := reflect.ValueOf(funcs[j.FuncName])
+					go f.Call([]reflect.Value{reflect.ValueOf(j)})
 
 					j.LastRunTime = now
 
 					if j.Type == "datetime" {
-						s.DeleteJob(j.id)
+						s.DeleteJob(j.Id)
 					} else {
 						err := s.UpdateJob(j)
 						if err != nil {
@@ -134,19 +141,19 @@ func (s *Scheduler) run() {
 				}
 			}
 
-			minNextRunTime := s.store.GetNextRunTime()
+			minNextRunTime, _ := s.store.GetNextRunTime()
 			now = time.Now().In(minNextRunTime.Location())
 			nextWakeupInterval := minNextRunTime.Sub(now)
 			if nextWakeupInterval < 0 {
 				nextWakeupInterval = time.Second
 			}
-			s.timer.Reset(nextWakeupInterval)
+			s.ticker.Reset(nextWakeupInterval)
 		}
 	}
 }
 
 func (s *Scheduler) Start() {
-	s.timer = time.NewTimer(0)
+	s.ticker = time.NewTimer(0)
 	s.quitChan = make(chan struct{})
 
 	go s.run()
@@ -157,5 +164,5 @@ func (s *Scheduler) Stop() {
 }
 
 func (s *Scheduler) wakeup() {
-	s.timer.Reset(0)
+	s.ticker.Reset(0)
 }

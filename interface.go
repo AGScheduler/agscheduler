@@ -3,10 +3,11 @@ package agscheduler
 import "time"
 
 type Store interface {
-	AddJob(j Job)
+	Init()
+	AddJob(j Job) error
 	GetJob(id string) (Job, error)
-	GetAllJobs() []Job
+	GetAllJobs() ([]Job, error)
 	UpdateJob(j Job) error
 	DeleteJob(id string) error
-	GetNextRunTime() time.Time
+	GetNextRunTime() (time.Time, error)
 }
