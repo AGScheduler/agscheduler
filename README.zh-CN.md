@@ -2,26 +2,26 @@
 
 [![license](https://img.shields.io/github/license/kwkwc/flask-docs)](https://github.com/kwkwc/flask-docs/blob/master/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) is a task scheduler for Golang, that supports multiple scheduling types and persistent tasks
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式和持久化任务
 
-English | [简体中文](README.zh-CN.md)
+[English](README.md) | 简体中文
 
-## Warning
-> **_This library is experimental and should not be used in a production environment_**
+## 警示
+> **_该库处于实验阶段，请勿用于生产环境_**
 
-## Features
+## 特性
 
-- Support three scheduling type
-    - [x] One-off execution
-    - [x] Interval execution
-    - [x] Cron-style scheduling
-- Support for storage jobs
+- 支持三种调度方式
+    - [x] 一次性执行
+    - [x] 间隔执行
+    - [x] Cron 式调度
+- 支持存储工作
     - [x] Memory
     - [x] [GROM](https://gorm.io/)(MySQL | SQLite)
     - [ ] [Redis](https://redis.io/)
     - [ ] [MongoDB](https://www.mongodb.com/)
 
-## Usage
+## 使用
 
 ```golang
 package main
@@ -64,14 +64,14 @@ func main() {
 }
 ```
 
-## Register Funcs
-> **_Since golang can't serialize functions, you need to register them with `RegisterFuncs` before `scheduler.Start()`_**
+## 注册函数
+> **_由于 golang 无法序列化函数，所以 `scheduler.Start()` 之前需要使用 `RegisterFuncs` 注册函数_**
 
-## Examples
+## 示例
 
-[Complete example][examples]
+[完整示例][examples]
 
-## Thanks
+## 致谢
 
 [APScheduler](https://github.com/agronholm/apscheduler/tree/3.x)
 
