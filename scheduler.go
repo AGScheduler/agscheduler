@@ -63,8 +63,15 @@ func (s *Scheduler) GetJob(id string) (Job, error) {
 }
 
 func (s *Scheduler) UpdateJob(j Job) error {
+	lastNextWakeupInterval := s.getNextWakeupInterval()
+
 	err := s.store.UpdateJob(j)
-	s.wakeup()
+
+	nextWakeupInterval := s.getNextWakeupInterval()
+	if nextWakeupInterval < lastNextWakeupInterval {
+		s.wakeup()
+	}
+
 	return err
 }
 
@@ -141,12 +148,7 @@ func (s *Scheduler) run() {
 				}
 			}
 
-			minNextRunTime, _ := s.store.GetNextRunTime()
-			now = time.Now().In(minNextRunTime.Location())
-			nextWakeupInterval := minNextRunTime.Sub(now)
-			if nextWakeupInterval < 0 {
-				nextWakeupInterval = time.Second
-			}
+			nextWakeupInterval := s.getNextWakeupInterval()
 			s.ticker.Reset(nextWakeupInterval)
 		}
 	}
@@ -161,6 +163,16 @@ func (s *Scheduler) Start() {
 
 func (s *Scheduler) Stop() {
 	s.quitChan <- struct{}{}
+}
+
+func (s *Scheduler) getNextWakeupInterval() time.Duration {
+	minNextRunTime, _ := s.store.GetNextRunTime()
+	now := time.Now().In(minNextRunTime.Location())
+	nextWakeupInterval := minNextRunTime.Sub(now)
+	if nextWakeupInterval < 0 {
+		nextWakeupInterval = time.Second
+	}
+	return nextWakeupInterval
 }
 
 func (s *Scheduler) wakeup() {
