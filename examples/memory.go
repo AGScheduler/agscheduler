@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"agscheduler"
-	"agscheduler/stores"
+	"github.com/kwkwc/agscheduler"
+	"github.com/kwkwc/agscheduler/stores"
 )
 
 func printMsg(j agscheduler.Job) {

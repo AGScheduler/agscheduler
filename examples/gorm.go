@@ -8,8 +8,8 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"agscheduler"
-	"agscheduler/stores"
+	"github.com/kwkwc/agscheduler"
+	"github.com/kwkwc/agscheduler/stores"
 )
 
 func printMsg(j agscheduler.Job) {

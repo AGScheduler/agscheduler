@@ -8,7 +8,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"agscheduler"
+	"github.com/kwkwc/agscheduler"
 )
 
 type Jobs struct {
