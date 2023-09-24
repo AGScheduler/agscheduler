@@ -3,7 +3,7 @@ package stores
 import (
 	"time"
 
-	"agscheduler"
+	"github.com/kwkwc/agscheduler"
 )
 
 type MemoryStore struct {
