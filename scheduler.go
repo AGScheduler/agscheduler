@@ -5,6 +5,7 @@ import (
 	"log"
 	"reflect"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/gorhill/cronexpr"
@@ -27,7 +28,7 @@ func CalcNextRunTime(j Job) time.Time {
 		nextRunTime, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
 		return nextRunTime
 	}
-	switch j.Type {
+	switch strings.ToLower(j.Type) {
 	case "datetime":
 		return j.StartAt.In(timezone)
 	case "interval":
