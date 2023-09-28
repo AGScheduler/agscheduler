@@ -76,6 +76,16 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
+	var js Jobs
+
+	result := s.DB.Where("id = ?", j.Id).Limit(1).Find(&js)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return agscheduler.JobNotFound(j.Id)
+	}
+
 	j.NextRunTime = agscheduler.CalcNextRunTime(j)
 
 	state, err := agscheduler.StateDumps(j)
@@ -83,9 +93,9 @@ func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
 		return err
 	}
 
-	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State: state}
+	newJs := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State: state}
 
-	return s.DB.Save(js).Error
+	return s.DB.Save(newJs).Error
 }
 
 func (s *GORMStore) DeleteJob(id string) error {
