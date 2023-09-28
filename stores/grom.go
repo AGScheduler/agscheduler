@@ -47,7 +47,7 @@ func (s *GORMStore) AddJob(j agscheduler.Job) error {
 func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 	var js Jobs
 
-	result := s.DB.Where("id = ?", id).First(&js)
+	result := s.DB.Where("id = ?", id).Limit(1).Find(&js)
 	if result.Error != nil {
 		return agscheduler.Job{}, result.Error
 	}
@@ -101,7 +101,7 @@ func (s *GORMStore) DeleteAllJobs() error {
 func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 	var js Jobs
 
-	result := s.DB.Order("next_run_time").First(&js)
+	result := s.DB.Order("next_run_time").Limit(1).Find(&js)
 	if result.Error != nil {
 		return time.Time{}, result.Error
 	}
