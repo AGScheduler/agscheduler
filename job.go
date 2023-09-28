@@ -56,7 +56,7 @@ func StateDumps(j Job) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func Stateloads(state []byte) (Job, error) {
+func StateLoads(state []byte) (Job, error) {
 	var j Job
 	buf := bytes.NewBuffer(state)
 	dec := gob.NewDecoder(buf)

@@ -53,7 +53,7 @@ func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, agscheduler.JobNotFound(id)
 	}
 
-	return agscheduler.Stateloads(js.State)
+	return agscheduler.StateLoads(js.State)
 }
 
 func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -65,7 +65,7 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 
 	var jobList []agscheduler.Job
 	for _, js := range jsList {
-		aj, err := agscheduler.Stateloads(js.State)
+		aj, err := agscheduler.StateLoads(js.State)
 		if err != nil {
 			return nil, err
 		}

@@ -49,7 +49,7 @@ func (s *RedisStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, agscheduler.JobNotFound(id)
 	}
 
-	return agscheduler.Stateloads(state)
+	return agscheduler.StateLoads(state)
 }
 
 func (s *RedisStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -60,7 +60,7 @@ func (s *RedisStore) GetAllJobs() ([]agscheduler.Job, error) {
 
 	var jobList []agscheduler.Job
 	for _, v := range mapStates {
-		j, err := agscheduler.Stateloads([]byte(v))
+		j, err := agscheduler.StateLoads([]byte(v))
 		if err != nil {
 			return nil, err
 		}
