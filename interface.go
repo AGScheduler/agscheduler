@@ -9,5 +9,6 @@ type Store interface {
 	GetAllJobs() ([]Job, error)
 	UpdateJob(j Job) error
 	DeleteJob(id string) error
+	DeleteAllJobs() error
 	GetNextRunTime() (time.Time, error)
 }

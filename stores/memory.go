@@ -52,6 +52,11 @@ func (s *MemoryStore) DeleteJob(id string) error {
 	return agscheduler.JobNotFound(id)
 }
 
+func (s *MemoryStore) DeleteAllJobs() error {
+	s.jobs = nil
+	return nil
+}
+
 func (s *MemoryStore) GetNextRunTime() (time.Time, error) {
 	if len(s.jobs) == 0 {
 		return time.Time{}, nil

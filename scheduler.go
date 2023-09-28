@@ -80,6 +80,10 @@ func (s *Scheduler) DeleteJob(id string) error {
 	return s.store.DeleteJob(id)
 }
 
+func (s *Scheduler) DeleteAllJobs() error {
+	return s.store.DeleteAllJobs()
+}
+
 func (s *Scheduler) PauseJob(id string) error {
 	j, err := s.GetJob(id)
 	if err != nil {

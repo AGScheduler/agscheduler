@@ -96,5 +96,11 @@ func main() {
 	scheduler.Start()
 	log.Print("Scheduler Start.\n\n")
 
+	log.Print("Sleep 4s......\n\n")
+	time.Sleep(4 * time.Second)
+
+	scheduler.DeleteAllJobs()
+	log.Print("Scheduler delete all jobs.\n\n")
+
 	select {}
 }
