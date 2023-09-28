@@ -1,6 +1,8 @@
 package agscheduler
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -42,6 +44,27 @@ func (j Job) String() string {
 		j.FuncName, j.Args,
 		j.LastRunTime, j.NextRunTime, j.Status,
 	)
+}
+
+func StateDumps(j Job) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(j)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func StateLoads(state []byte) (Job, error) {
+	var j Job
+	buf := bytes.NewBuffer(state)
+	dec := gob.NewDecoder(buf)
+	err := dec.Decode(&j)
+	if err != nil {
+		return Job{}, err
+	}
+	return j, nil
 }
 
 var funcs = make(map[string]func(Job))

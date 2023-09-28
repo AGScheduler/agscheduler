@@ -2,7 +2,7 @@
 
 [![license](https://img.shields.io/github/license/kwkwc/flask-docs)](https://github.com/kwkwc/flask-docs/blob/master/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) is a task scheduler for Golang, that supports multiple scheduling types and persistent tasks
+> Advanced Golang Scheduler (AGScheduler) is a task scheduler for Golang, that supports multiple scheduling types, dynamic changes and persistent tasks.
 
 English | [简体中文](README.zh-CN.md)
 
@@ -18,7 +18,7 @@ English | [简体中文](README.zh-CN.md)
 - Support for storage jobs
     - [x] Memory
     - [x] [GROM](https://gorm.io/)(MySQL | SQLite)
-    - [ ] [Redis](https://redis.io/)
+    - [x] [Redis](https://redis.io/)
     - [ ] [MongoDB](https://www.mongodb.com/)
 
 ## Usage
