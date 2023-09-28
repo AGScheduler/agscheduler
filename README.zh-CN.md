@@ -2,7 +2,7 @@
 
 [![license](https://img.shields.io/github/license/kwkwc/flask-docs)](https://github.com/kwkwc/flask-docs/blob/master/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式和持久化任务
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，动态更改和持久化任务
 
 [English](README.md) | 简体中文
 
@@ -18,7 +18,7 @@
 - 支持存储工作
     - [x] Memory
     - [x] [GROM](https://gorm.io/)(MySQL | SQLite)
-    - [ ] [Redis](https://redis.io/)
+    - [x] [Redis](https://redis.io/)
     - [ ] [MongoDB](https://www.mongodb.com/)
 
 ## 使用
