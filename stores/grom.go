@@ -94,6 +94,10 @@ func (s *GORMStore) DeleteJob(id string) error {
 	return s.DB.Where("id = ?", id).Delete(&Jobs{}).Error
 }
 
+func (s *GORMStore) DeleteAllJobs() error {
+	return s.DB.Where("1 = 1").Delete(&Jobs{}).Error
+}
+
 func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 	var js Jobs
 
