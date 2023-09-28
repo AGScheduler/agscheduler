@@ -1,8 +1,6 @@
 package stores
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 	"time"
 
@@ -34,7 +32,7 @@ func (s *GORMStore) Init() {
 }
 
 func (s *GORMStore) AddJob(j agscheduler.Job) error {
-	state, err := s.stateDumps(j)
+	state, err := agscheduler.StateDumps(j)
 	if err != nil {
 		return err
 	}
@@ -55,7 +53,7 @@ func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, agscheduler.JobNotFound(id)
 	}
 
-	return s.stateloads(js.State)
+	return agscheduler.Stateloads(js.State)
 }
 
 func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -67,7 +65,7 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 
 	var jobList []agscheduler.Job
 	for _, js := range jsList {
-		aj, err := s.stateloads(js.State)
+		aj, err := agscheduler.Stateloads(js.State)
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +78,7 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
 	j.NextRunTime = agscheduler.CalcNextRunTime(j)
 
-	state, err := s.stateDumps(j)
+	state, err := agscheduler.StateDumps(j)
 	if err != nil {
 		return err
 	}
@@ -110,25 +108,4 @@ func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 	}
 
 	return js.NextRunTime, nil
-}
-
-func (s *GORMStore) stateDumps(j agscheduler.Job) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(j)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func (s *GORMStore) stateloads(state []byte) (agscheduler.Job, error) {
-	var j agscheduler.Job
-	buf := bytes.NewBuffer(state)
-	dec := gob.NewDecoder(buf)
-	err := dec.Decode(&j)
-	if err != nil {
-		return agscheduler.Job{}, err
-	}
-	return j, nil
 }
