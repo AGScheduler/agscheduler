@@ -60,12 +60,12 @@ func main() {
 	timezone, _ := time.LoadLocation("America/New_York")
 	startAt, _ := time.ParseInLocation("2006-01-02 15:04:05", "2023-09-22 07:30:08", timezone)
 	job3 := agscheduler.Job{
-		Name:    "Job3",
-		Type:    "datetime",
+		Name:     "Job3",
+		Type:     "datetime",
 		Timezone: timezone.String(),
-		Func:    printMsg,
-		Args:    []any{"arg8", "arg9"},
-		StartAt: startAt,
+		Func:     printMsg,
+		Args:     []any{"arg8", "arg9"},
+		StartAt:  startAt,
 	}
 	job3Id := scheduler.AddJob(job3)
 	job3, _ = scheduler.GetJob(job3Id)

@@ -37,7 +37,7 @@ func (s *GORMStore) AddJob(j agscheduler.Job) error {
 		return err
 	}
 
-	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State:state}
+	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State: state}
 
 	return s.DB.Create(&js).Error
 }
