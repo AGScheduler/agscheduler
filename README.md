@@ -11,13 +11,13 @@ English | [简体中文](README.zh-CN.md)
 
 ## Features
 
-- Support three scheduling type
+- Support for three scheduling types
     - [x] One-off execution
     - [x] Interval execution
     - [x] Cron-style scheduling
-- Support for storage jobs
+- Support for multiple task storage methods
     - [x] Memory
-    - [x] [GROM](https://gorm.io/)(MySQL | SQLite)
+    - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
     - [x] [Redis](https://redis.io/)
     - [ ] [MongoDB](https://www.mongodb.com/)
 

@@ -15,9 +15,9 @@
     - [x] 一次性执行
     - [x] 间隔执行
     - [x] Cron 式调度
-- 支持存储工作
+- 支持多种任务存储方式
     - [x] Memory
-    - [x] [GROM](https://gorm.io/)(MySQL | SQLite)
+    - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
     - [x] [Redis](https://redis.io/)
     - [ ] [MongoDB](https://www.mongodb.com/)
 
