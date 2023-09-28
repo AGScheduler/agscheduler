@@ -55,7 +55,7 @@ func main() {
 	log.Printf("Scheduler add %s %s.\n\n", job2.Name, job2)
 
 	scheduler.Start()
-	log.Print("Scheduler Start.\n\n")
+	log.Print("Scheduler start.\n\n")
 
 	timezone, _ := time.LoadLocation("America/New_York")
 	startAt, _ := time.ParseInLocation("2006-01-02 15:04:05", "2023-09-22 07:30:08", timezone)
@@ -100,13 +100,13 @@ func main() {
 	time.Sleep(6 * time.Second)
 
 	scheduler.Stop()
-	log.Print("Scheduler Stop.\n\n")
+	log.Print("Scheduler stop.\n\n")
 
 	log.Print("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
 	scheduler.Start()
-	log.Print("Scheduler Start.\n\n")
+	log.Print("Scheduler start.\n\n")
 
 	select {}
 }
