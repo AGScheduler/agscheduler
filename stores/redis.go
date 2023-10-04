@@ -1,15 +1,12 @@
 package stores
 
 import (
-	"context"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 
 	"github.com/kwkwc/agscheduler"
 )
-
-var ctx = context.Background()
 
 const (
 	jobs_key      = "agscheduler.jobs"

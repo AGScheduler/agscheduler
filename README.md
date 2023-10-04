@@ -19,7 +19,7 @@ English | [简体中文](README.zh-CN.md)
     - [x] Memory
     - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
     - [x] [Redis](https://redis.io/)
-    - [ ] [MongoDB](https://www.mongodb.com/)
+    - [x] [MongoDB](https://www.mongodb.com/)
 
 ## Usage
 
