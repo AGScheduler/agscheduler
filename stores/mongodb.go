@@ -45,7 +45,7 @@ func (s *MongoDBStore) AddJob(j agscheduler.Job) error {
 	_, err = s.coll.InsertOne(ctx,
 		bson.M{
 			"_id":           j.Id,
-			"next_run_time": float64(j.NextRunTime.UTC().Unix()),
+			"next_run_time": j.NextRunTime.UTC().Unix(),
 			"state":         state,
 		},
 	)
@@ -103,7 +103,7 @@ func (s *MongoDBStore) UpdateJob(j agscheduler.Job) error {
 	err = s.coll.FindOneAndReplace(ctx,
 		bson.M{"_id": j.Id},
 		bson.M{
-			"next_run_time": float64(j.NextRunTime.UTC().Unix()),
+			"next_run_time": j.NextRunTime.UTC().Unix(),
 			"state":         state,
 		},
 	).Decode(&result)
@@ -132,6 +132,6 @@ func (s *MongoDBStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	minNextRunTime := time.Unix(int64(result["next_run_time"].(float64)), 0)
+	minNextRunTime := time.Unix(result["next_run_time"].(int64), 0)
 	return minNextRunTime, nil
 }
