@@ -19,7 +19,7 @@
     - [x] Memory
     - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
     - [x] [Redis](https://redis.io/)
-    - [ ] [MongoDB](https://www.mongodb.com/)
+    - [x] [MongoDB](https://www.mongodb.com/)
 
 ## 使用
 
