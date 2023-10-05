@@ -12,10 +12,19 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	TYPE_DATETIME = "datetime"
+	TYPE_INTERVAL = "interval"
+	TYPE_CRON     = "cron"
+
+	STATUS_RUNNING = "running"
+	STATUS_PAUSED  = "paused"
+)
+
 type Job struct {
 	Id          string
 	Name        string
-	Type        string // datetime | interval | cron
+	Type        string
 	StartAt     time.Time
 	EndAt       time.Time
 	Interval    time.Duration
@@ -26,7 +35,7 @@ type Job struct {
 	Args        []any
 	LastRunTime time.Time
 	NextRunTime time.Time
-	Status      string // running | paused
+	Status      string
 }
 
 func (j *Job) SetId() {

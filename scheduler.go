@@ -25,16 +25,16 @@ func (s *Scheduler) SetStore(sto Store) {
 
 func CalcNextRunTime(j Job) time.Time {
 	timezone, _ := time.LoadLocation(j.Timezone)
-	if j.Status == "paused" {
+	if j.Status == STATUS_PAUSED {
 		nextRunTime, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
 		return nextRunTime
 	}
 	switch strings.ToLower(j.Type) {
-	case "datetime":
+	case TYPE_DATETIME:
 		return j.StartAt.In(timezone)
-	case "interval":
+	case TYPE_INTERVAL:
 		return time.Now().In(timezone).Add(j.Interval)
-	case "cron":
+	case TYPE_CRON:
 		return cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
 		panic(fmt.Sprintf("Unknown job type %s", j.Type))
@@ -43,7 +43,7 @@ func CalcNextRunTime(j Job) time.Time {
 
 func (s *Scheduler) AddJob(j Job) (id string) {
 	j.SetId()
-	j.Status = "running"
+	j.Status = STATUS_RUNNING
 
 	if j.Timezone == "" {
 		j.Timezone = "UTC"
@@ -93,7 +93,7 @@ func (s *Scheduler) PauseJob(id string) error {
 		return err
 	}
 
-	j.Status = "paused"
+	j.Status = STATUS_PAUSED
 
 	err = s.UpdateJob(j)
 	if err != nil {
@@ -109,7 +109,7 @@ func (s *Scheduler) ResumeJob(id string) error {
 		return err
 	}
 
-	j.Status = "running"
+	j.Status = STATUS_RUNNING
 
 	err = s.UpdateJob(j)
 	if err != nil {
@@ -134,7 +134,7 @@ func (s *Scheduler) run() {
 			}
 
 			for _, j := range jobs {
-				if j.Status == "paused" {
+				if j.Status == STATUS_PAUSED {
 					continue
 				}
 
@@ -149,7 +149,7 @@ func (s *Scheduler) run() {
 
 					j.LastRunTime = now
 
-					if j.Type == "datetime" {
+					if j.Type == TYPE_DATETIME {
 						s.DeleteJob(j.Id)
 					} else {
 						err := s.UpdateJob(j)
