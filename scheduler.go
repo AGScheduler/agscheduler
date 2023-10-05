@@ -12,9 +12,10 @@ import (
 )
 
 type Scheduler struct {
-	store    Store
-	timer    *time.Timer
-	quitChan chan struct{}
+	store     Store
+	timer     *time.Timer
+	quitChan  chan struct{}
+	isRunning bool
 }
 
 func (s *Scheduler) SetStore(sto Store) {
@@ -55,6 +56,8 @@ func (s *Scheduler) AddJob(j Job) (id string) {
 	j.FuncName = runtime.FuncForPC(reflect.ValueOf(j.Func).Pointer()).Name()
 
 	s.store.AddJob(j)
+
+	s.Start()
 
 	return j.Id
 }
@@ -125,6 +128,11 @@ func (s *Scheduler) run() {
 			now := time.Now()
 
 			jobs, _ := s.store.GetAllJobs()
+			if len(jobs) == 0 {
+				s.Stop()
+				return
+			}
+
 			for _, j := range jobs {
 				if j.Status == "paused" {
 					continue
@@ -160,13 +168,23 @@ func (s *Scheduler) run() {
 }
 
 func (s *Scheduler) Start() {
+	if s.isRunning {
+		return
+	}
+
 	s.timer = time.NewTimer(0)
 	s.quitChan = make(chan struct{})
+	s.isRunning = true
 
 	go s.run()
 }
 
 func (s *Scheduler) Stop() {
+	if !s.isRunning {
+		return
+	}
+
+	s.isRunning = false
 	s.quitChan <- struct{}{}
 }
 
