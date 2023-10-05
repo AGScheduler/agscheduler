@@ -27,18 +27,22 @@ func CalcNextRunTime(j Job) time.Time {
 	timezone, _ := time.LoadLocation(j.Timezone)
 	if j.Status == STATUS_PAUSED {
 		nextRunTime, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
-		return nextRunTime
+		return time.Unix(nextRunTime.Unix(), 0)
 	}
+
+	var nextRunTime time.Time
 	switch strings.ToLower(j.Type) {
 	case TYPE_DATETIME:
-		return j.StartAt.In(timezone)
+		nextRunTime = j.StartAt.In(timezone)
 	case TYPE_INTERVAL:
-		return time.Now().In(timezone).Add(j.Interval)
+		nextRunTime = time.Now().In(timezone).Add(j.Interval)
 	case TYPE_CRON:
-		return cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
+		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
 		panic(fmt.Sprintf("Unknown job type %s", j.Type))
 	}
+
+	return time.Unix(nextRunTime.Unix(), 0)
 }
 
 func (s *Scheduler) AddJob(j Job) (id string) {
@@ -147,7 +151,7 @@ func (s *Scheduler) run() {
 					f := reflect.ValueOf(funcs[j.FuncName])
 					go f.Call([]reflect.Value{reflect.ValueOf(j)})
 
-					j.LastRunTime = now
+					j.LastRunTime = time.Unix(now.Unix(), 0)
 
 					if j.Type == TYPE_DATETIME {
 						s.DeleteJob(j.Id)
