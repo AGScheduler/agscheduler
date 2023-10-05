@@ -12,9 +12,10 @@ import (
 )
 
 type Scheduler struct {
-	store    Store
-	timer    *time.Timer
-	quitChan chan struct{}
+	store     Store
+	timer     *time.Timer
+	quitChan  chan struct{}
+	isRunning bool
 }
 
 func (s *Scheduler) SetStore(sto Store) {
@@ -24,25 +25,29 @@ func (s *Scheduler) SetStore(sto Store) {
 
 func CalcNextRunTime(j Job) time.Time {
 	timezone, _ := time.LoadLocation(j.Timezone)
-	if j.Status == "paused" {
+	if j.Status == STATUS_PAUSED {
 		nextRunTime, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
-		return nextRunTime
+		return time.Unix(nextRunTime.Unix(), 0)
 	}
+
+	var nextRunTime time.Time
 	switch strings.ToLower(j.Type) {
-	case "datetime":
-		return j.StartAt.In(timezone)
-	case "interval":
-		return time.Now().In(timezone).Add(j.Interval)
-	case "cron":
-		return cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
+	case TYPE_DATETIME:
+		nextRunTime = j.StartAt.In(timezone)
+	case TYPE_INTERVAL:
+		nextRunTime = time.Now().In(timezone).Add(j.Interval)
+	case TYPE_CRON:
+		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
 		panic(fmt.Sprintf("Unknown job type %s", j.Type))
 	}
+
+	return time.Unix(nextRunTime.Unix(), 0)
 }
 
 func (s *Scheduler) AddJob(j Job) (id string) {
 	j.SetId()
-	j.Status = "running"
+	j.Status = STATUS_RUNNING
 
 	if j.Timezone == "" {
 		j.Timezone = "UTC"
@@ -55,6 +60,8 @@ func (s *Scheduler) AddJob(j Job) (id string) {
 	j.FuncName = runtime.FuncForPC(reflect.ValueOf(j.Func).Pointer()).Name()
 
 	s.store.AddJob(j)
+
+	s.Start()
 
 	return j.Id
 }
@@ -90,7 +97,7 @@ func (s *Scheduler) PauseJob(id string) error {
 		return err
 	}
 
-	j.Status = "paused"
+	j.Status = STATUS_PAUSED
 
 	err = s.UpdateJob(j)
 	if err != nil {
@@ -106,7 +113,7 @@ func (s *Scheduler) ResumeJob(id string) error {
 		return err
 	}
 
-	j.Status = "running"
+	j.Status = STATUS_RUNNING
 
 	err = s.UpdateJob(j)
 	if err != nil {
@@ -125,8 +132,13 @@ func (s *Scheduler) run() {
 			now := time.Now()
 
 			jobs, _ := s.store.GetAllJobs()
+			if len(jobs) == 0 {
+				s.Stop()
+				return
+			}
+
 			for _, j := range jobs {
-				if j.Status == "paused" {
+				if j.Status == STATUS_PAUSED {
 					continue
 				}
 
@@ -139,9 +151,9 @@ func (s *Scheduler) run() {
 					f := reflect.ValueOf(funcs[j.FuncName])
 					go f.Call([]reflect.Value{reflect.ValueOf(j)})
 
-					j.LastRunTime = now
+					j.LastRunTime = time.Unix(now.Unix(), 0)
 
-					if j.Type == "datetime" {
+					if j.Type == TYPE_DATETIME {
 						s.DeleteJob(j.Id)
 					} else {
 						err := s.UpdateJob(j)
@@ -160,13 +172,23 @@ func (s *Scheduler) run() {
 }
 
 func (s *Scheduler) Start() {
+	if s.isRunning {
+		return
+	}
+
 	s.timer = time.NewTimer(0)
 	s.quitChan = make(chan struct{})
+	s.isRunning = true
 
 	go s.run()
 }
 
 func (s *Scheduler) Stop() {
+	if !s.isRunning {
+		return
+	}
+
+	s.isRunning = false
 	s.quitChan <- struct{}{}
 }
 

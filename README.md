@@ -47,7 +47,7 @@ func main() {
 
 	job := agscheduler.Job{
 		Name:     "Job",
-		Type:     "interval",
+		Type:     agscheduler.TYPE_INTERVAL,
 		Timezone: "UTC",
 		Func:     printMsg,
 		Args:     []any{"arg1", "arg2", "arg3"},

@@ -21,7 +21,7 @@ func main() {
 
 	job1 := agscheduler.Job{
 		Name:     "Job1",
-		Type:     "interval",
+		Type:     agscheduler.TYPE_INTERVAL,
 		Timezone: "Asia/Shanghai",
 		Func:     printMsg,
 		Args:     []any{"arg1", "arg2", "arg3"},
@@ -33,7 +33,7 @@ func main() {
 
 	job2 := agscheduler.Job{
 		Name:     "Job2",
-		Type:     "cron",
+		Type:     agscheduler.TYPE_CRON,
 		Func:     printMsg,
 		Args:     []any{"arg4", "arg5", "arg6", "arg7"},
 		CronExpr: "*/1 * * * *",
@@ -49,7 +49,7 @@ func main() {
 	startAt, _ := time.ParseInLocation("2006-01-02 15:04:05", "2023-09-22 07:30:08", timezone)
 	job3 := agscheduler.Job{
 		Name:     "Job3",
-		Type:     "datetime",
+		Type:     agscheduler.TYPE_DATETIME,
 		Timezone: timezone.String(),
 		Func:     printMsg,
 		Args:     []any{"arg8", "arg9"},
@@ -63,7 +63,7 @@ func main() {
 	time.Sleep(10 * time.Second)
 
 	job2, _ = scheduler.GetJob(job2Id)
-	job2.Type = "interval"
+	job2.Type = agscheduler.TYPE_INTERVAL
 	job2.Interval = 4 * time.Second
 	scheduler.UpdateJob(job2)
 	job2, _ = scheduler.GetJob(job2Id)
