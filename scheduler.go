@@ -123,6 +123,10 @@ func (s *Scheduler) ResumeJob(id string) error {
 	return nil
 }
 
+func (s *Scheduler) GetAllJobs() ([]Job, error) {
+	return s.store.GetAllJobs()
+}
+
 func (s *Scheduler) run() {
 	for {
 		select {
@@ -131,7 +135,7 @@ func (s *Scheduler) run() {
 		case <-s.timer.C:
 			now := time.Now()
 
-			jobs, _ := s.store.GetAllJobs()
+			jobs, _ := s.GetAllJobs()
 			if len(jobs) == 0 {
 				s.Stop()
 				return
