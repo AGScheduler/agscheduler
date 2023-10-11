@@ -18,6 +18,8 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 
 	s.Start()
 
+	time.Sleep(1 * time.Second)
+
 	job := agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
@@ -60,7 +62,9 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	jobs, _ := s.GetAllJobs()
 	assert.Equal(t, 0, len(jobs))
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 
 	s.Stop()
+
+	time.Sleep(1 * time.Second)
 }
