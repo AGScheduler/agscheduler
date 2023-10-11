@@ -2,8 +2,8 @@ package agscheduler
 
 import "fmt"
 
-type JobNotFound string
+type JobNotFoundError string
 
-func (j JobNotFound) Error() string {
+func (j JobNotFoundError) Error() string {
 	return fmt.Sprintf("Job with id %s not found!", string(j))
 }

@@ -50,7 +50,7 @@ func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, result.Error
 	}
 	if result.RowsAffected == 0 {
-		return agscheduler.Job{}, agscheduler.JobNotFound(id)
+		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
 
 	return agscheduler.StateLoads(js.State)
@@ -83,7 +83,7 @@ func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		return agscheduler.JobNotFound(j.Id)
+		return agscheduler.JobNotFoundError(j.Id)
 	}
 
 	j.NextRunTime = agscheduler.CalcNextRunTime(j)

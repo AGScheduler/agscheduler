@@ -43,7 +43,7 @@ func (s *RedisStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, err
 	}
 	if err == redis.Nil {
-		return agscheduler.Job{}, agscheduler.JobNotFound(id)
+		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
 
 	return agscheduler.StateLoads(state)
@@ -73,7 +73,7 @@ func (s *RedisStore) UpdateJob(j agscheduler.Job) error {
 		return err
 	}
 	if !isExists {
-		return agscheduler.JobNotFound(j.Id)
+		return agscheduler.JobNotFoundError(j.Id)
 	}
 
 	j.NextRunTime = agscheduler.CalcNextRunTime(j)

@@ -60,7 +60,7 @@ func (s *MongoDBStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, err
 	}
 	if err == mongo.ErrNoDocuments {
-		return agscheduler.Job{}, agscheduler.JobNotFound(id)
+		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
 
 	state := result["state"].(primitive.Binary).Data
