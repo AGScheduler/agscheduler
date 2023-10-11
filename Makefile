@@ -25,7 +25,7 @@ test:
 check-all: format-check lint test
 
 up-ci-services:
-	docker compose -f docker-compose.ci.yml up -d
+	docker compose -f ci/docker-compose.ci.yml up -d
 
 down-ci-services:
-	docker compose -f docker-compose.ci.yml down
+	docker compose -f ci/docker-compose.ci.yml down
