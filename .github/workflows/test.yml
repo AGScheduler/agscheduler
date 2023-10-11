@@ -21,6 +21,10 @@ jobs:
       uses: actions/setup-go@v4
       with:
         go-version: ${{ matrix.go-version }}
+
+    - name: Start external services
+      run: |
+        make up-services
   
     - name: Install dependencies
       run: |
