@@ -23,7 +23,7 @@ func (s *MemoryStore) GetJob(id string) (agscheduler.Job, error) {
 			return j, nil
 		}
 	}
-	return agscheduler.Job{}, agscheduler.JobNotFound(id)
+	return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 }
 
 func (s *MemoryStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -39,7 +39,7 @@ func (s *MemoryStore) UpdateJob(j agscheduler.Job) error {
 		}
 	}
 
-	return agscheduler.JobNotFound(j.Id)
+	return agscheduler.JobNotFoundError(j.Id)
 }
 
 func (s *MemoryStore) DeleteJob(id string) error {
@@ -49,7 +49,7 @@ func (s *MemoryStore) DeleteJob(id string) error {
 			return nil
 		}
 	}
-	return agscheduler.JobNotFound(id)
+	return agscheduler.JobNotFoundError(id)
 }
 
 func (s *MemoryStore) DeleteAllJobs() error {
