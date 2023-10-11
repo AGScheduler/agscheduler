@@ -1,6 +1,7 @@
 SHELL=/bin/bash
 
-.PHONY: install format format-check lint test check-all
+.PHONY: install format format-check lint test check-all \
+	up-ci-services down-ci-services
 
 install:
 	go mod tidy
@@ -23,5 +24,8 @@ test:
 
 check-all: format-check lint test
 
-up-services:
+up-ci-services:
 	docker compose -f docker-compose.ci.yml up -d
+
+down-ci-services:
+	docker compose -f docker-compose.ci.yml down

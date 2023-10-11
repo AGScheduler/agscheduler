@@ -24,7 +24,7 @@ jobs:
 
     - name: Start external services
       run: |
-        make up-services
+        make up-ci-services
   
     - name: Install dependencies
       run: |
