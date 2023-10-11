@@ -16,6 +16,7 @@ func main() {
 	agscheduler.RegisterFuncs(printMsg)
 
 	store := &stores.MemoryStore{}
+
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
