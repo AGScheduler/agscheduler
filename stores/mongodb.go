@@ -56,11 +56,11 @@ func (s *MongoDBStore) AddJob(j agscheduler.Job) error {
 func (s *MongoDBStore) GetJob(id string) (agscheduler.Job, error) {
 	var result bson.M
 	err := s.coll.FindOne(ctx, bson.M{"_id": id}).Decode(&result)
-	if err != nil {
-		return agscheduler.Job{}, err
-	}
 	if err == mongo.ErrNoDocuments {
 		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
+	}
+	if err != nil {
+		return agscheduler.Job{}, err
 	}
 
 	state := result["state"].(primitive.Binary).Data
