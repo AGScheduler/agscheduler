@@ -39,11 +39,11 @@ func (s *RedisStore) AddJob(j agscheduler.Job) error {
 
 func (s *RedisStore) GetJob(id string) (agscheduler.Job, error) {
 	state, err := s.RDB.HGet(ctx, jobs_key, id).Bytes()
-	if err != nil {
-		return agscheduler.Job{}, err
-	}
 	if err == redis.Nil {
 		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
+	}
+	if err != nil {
+		return agscheduler.Job{}, err
 	}
 
 	return agscheduler.StateLoads(state)
