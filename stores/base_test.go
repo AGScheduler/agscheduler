@@ -18,7 +18,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 
 	s.Start()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(200 * time.Millisecond)
 
 	job := agscheduler.Job{
 		Name:     "Job",
@@ -27,14 +27,14 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 		Args:     []any{"arg1", "arg2", "arg3"},
 		Interval: 1 * time.Second,
 	}
-	assert.Equal(t, "", job.FuncName)
-	assert.Equal(t, "", job.Status)
+	assert.Empty(t, job.FuncName)
+	assert.Empty(t, job.Status)
 
 	jobId := s.AddJob(job)
-	assert.Equal(t, 32, len(jobId))
+	assert.Len(t, jobId, 32)
 	job, _ = s.GetJob(jobId)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, job.Status)
-	assert.NotEqual(t, "", job.FuncName)
+	assert.NotEmpty(t, job.FuncName)
 
 	job.Type = agscheduler.TYPE_CRON
 	job.CronExpr = "*/1 * * * *"
@@ -56,15 +56,13 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 
 	s.DeleteJob(jobId)
 	_, err := s.GetJob(jobId)
-	assert.NotNil(t, err)
+	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(jobId))
 
 	s.DeleteAllJobs()
 	jobs, _ := s.GetAllJobs()
-	assert.Equal(t, 0, len(jobs))
-
-	time.Sleep(2 * time.Second)
+	assert.Len(t, jobs, 0)
 
 	s.Stop()
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(100 * time.Millisecond)
 }
