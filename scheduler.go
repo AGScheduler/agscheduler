@@ -70,6 +70,10 @@ func (s *Scheduler) GetJob(id string) (Job, error) {
 	return s.store.GetJob(id)
 }
 
+func (s *Scheduler) GetAllJobs() ([]Job, error) {
+	return s.store.GetAllJobs()
+}
+
 func (s *Scheduler) UpdateJob(j Job) error {
 	lastNextWakeupInterval := s.getNextWakeupInterval()
 
@@ -121,10 +125,6 @@ func (s *Scheduler) ResumeJob(id string) error {
 	}
 
 	return nil
-}
-
-func (s *Scheduler) GetAllJobs() ([]Job, error) {
-	return s.store.GetAllJobs()
 }
 
 func (s *Scheduler) run() {
