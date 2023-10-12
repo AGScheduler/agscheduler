@@ -44,7 +44,7 @@ func (j *Job) SetId() {
 
 func (j Job) String() string {
 	return fmt.Sprintf(
-		"Job{'id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
+		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
 			"'FuncName':'%s', 'Args':'%s', "+
 			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s'}",
