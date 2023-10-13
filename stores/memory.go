@@ -68,12 +68,12 @@ func (s *MemoryStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	minNextRunTime := s.jobs[0].NextRunTime
+	nextRunTimeMin := s.jobs[0].NextRunTime
 	for _, j := range s.jobs {
-		if minNextRunTime.After(j.NextRunTime) {
-			minNextRunTime = j.NextRunTime
+		if nextRunTimeMin.After(j.NextRunTime) {
+			nextRunTimeMin = j.NextRunTime
 		}
 	}
 
-	return minNextRunTime, nil
+	return nextRunTimeMin, nil
 }

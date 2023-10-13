@@ -235,17 +235,18 @@ func (s *Scheduler) Stop() {
 }
 
 func (s *Scheduler) getNextWakeupInterval() time.Duration {
-	minNextRunTime, err := s.store.GetNextRunTime()
+	nextRunTimeMin, err := s.store.GetNextRunTime()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Get next wakeup interval error: %s\n", err))
-		minNextRunTime = time.Now().UTC()
+		nextRunTimeMin = time.Now().UTC().Add(1 * time.Second)
 	}
 
-	now := time.Now().In(minNextRunTime.Location())
-	nextWakeupInterval := minNextRunTime.Sub(now)
+	now := time.Now().In(nextRunTimeMin.Location())
+	nextWakeupInterval := nextRunTimeMin.Sub(now)
 	if nextWakeupInterval < 0 {
 		nextWakeupInterval = time.Second
 	}
+
 	return nextWakeupInterval
 }
 
