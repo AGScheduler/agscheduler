@@ -17,7 +17,9 @@ type RedisStore struct {
 	RDB *redis.Client
 }
 
-func (s *RedisStore) Init() {}
+func (s *RedisStore) Init() error {
+	return nil
+}
 
 func (s *RedisStore) AddJob(j agscheduler.Job) error {
 	state, err := agscheduler.StateDumps(j)
@@ -76,7 +78,11 @@ func (s *RedisStore) UpdateJob(j agscheduler.Job) error {
 		return agscheduler.JobNotFoundError(j.Id)
 	}
 
-	j.NextRunTime = agscheduler.CalcNextRunTime(j)
+	nextRunTime, err := agscheduler.CalcNextRunTime(j)
+	if err != nil {
+		return err
+	}
+	j.NextRunTime = nextRunTime
 
 	state, err := agscheduler.StateDumps(j)
 	if err != nil {

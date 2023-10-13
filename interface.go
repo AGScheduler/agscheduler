@@ -3,7 +3,7 @@ package agscheduler
 import "time"
 
 type Store interface {
-	Init()
+	Init() error
 	AddJob(j Job) error
 	GetJob(id string) (Job, error)
 	GetAllJobs() ([]Job, error)

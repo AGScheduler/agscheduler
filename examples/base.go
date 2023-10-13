@@ -23,7 +23,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Args:     []any{"arg1", "arg2", "arg3"},
 		Interval: 2 * time.Second,
 	}
-	job1Id := s.AddJob(job1)
+	job1Id, _ := s.AddJob(job1)
 	job1, _ = s.GetJob(job1Id)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job1.Name, job1))
 
@@ -34,7 +34,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Args:     []any{"arg4", "arg5", "arg6", "arg7"},
 		CronExpr: "*/1 * * * *",
 	}
-	job2Id := s.AddJob(job2)
+	job2Id, _ := s.AddJob(job2)
 	job2, _ = s.GetJob(job2Id)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job2.Name, job2))
 
@@ -51,7 +51,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Args:     []any{"arg8", "arg9"},
 		StartAt:  startAt,
 	}
-	job3Id := s.AddJob(job3)
+	job3Id, _ := s.AddJob(job3)
 	job3, _ = s.GetJob(job3Id)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job3.Name, job3))
 

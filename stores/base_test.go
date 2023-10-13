@@ -31,7 +31,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	assert.Empty(t, job.FuncName)
 	assert.Empty(t, job.Status)
 
-	jobId := s.AddJob(job)
+	jobId, _ := s.AddJob(job)
 	job, _ = s.GetJob(jobId)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, job.Status)
 	assert.NotEmpty(t, job.FuncName)

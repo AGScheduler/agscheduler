@@ -2,7 +2,6 @@ package stores
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +22,7 @@ type MongoDBStore struct {
 	coll   *mongo.Collection
 }
 
-func (s *MongoDBStore) Init() {
+func (s *MongoDBStore) Init() error {
 	s.coll = s.Client.Database(database).Collection(collection)
 
 	indexModel := mongo.IndexModel{
@@ -33,10 +32,10 @@ func (s *MongoDBStore) Init() {
 	}
 	_, err := s.coll.Indexes().CreateOne(ctx, indexModel)
 	if err != nil {
-		errStr := fmt.Sprintf("Failed to create index: %s\n", err)
-		slog.Error(errStr)
-		panic(errStr)
+		return fmt.Errorf("failed to create index: %s", err)
 	}
+
+	return nil
 }
 
 func (s *MongoDBStore) AddJob(j agscheduler.Job) error {
@@ -95,7 +94,11 @@ func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *MongoDBStore) UpdateJob(j agscheduler.Job) error {
-	j.NextRunTime = agscheduler.CalcNextRunTime(j)
+	nextRunTime, err := agscheduler.CalcNextRunTime(j)
+	if err != nil {
+		return err
+	}
+	j.NextRunTime = nextRunTime
 
 	state, err := agscheduler.StateDumps(j)
 	if err != nil {
