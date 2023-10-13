@@ -1,7 +1,8 @@
 package stores
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -10,7 +11,7 @@ import (
 )
 
 func printMsg(j agscheduler.Job) {
-	log.Printf("Run %s %s\n", j.Name, j.Args)
+	slog.Info(fmt.Sprintf("Run %s %s\n", j.Name, j.Args))
 }
 
 func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
