@@ -1,7 +1,8 @@
 package stores
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -32,7 +33,9 @@ func (s *MongoDBStore) Init() {
 	}
 	_, err := s.coll.Indexes().CreateOne(ctx, indexModel)
 	if err != nil {
-		log.Panicf("Failed to create index: %s\n", err)
+		errStr := fmt.Sprintf("Failed to create index: %s\n", err)
+		slog.Error(errStr)
+		panic(errStr)
 	}
 }
 
