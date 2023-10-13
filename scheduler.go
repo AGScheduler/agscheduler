@@ -23,6 +23,10 @@ func (s *Scheduler) SetStore(sto Store) {
 	s.store.Init()
 }
 
+func (s *Scheduler) Store() Store {
+	return s.store
+}
+
 func CalcNextRunTime(j Job) time.Time {
 	timezone, _ := time.LoadLocation(j.Timezone)
 	if j.Status == STATUS_PAUSED {
