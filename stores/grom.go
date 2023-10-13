@@ -123,5 +123,6 @@ func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	return js.NextRunTime, nil
+	nextRunTimeMin := js.NextRunTime
+	return nextRunTimeMin, nil
 }
