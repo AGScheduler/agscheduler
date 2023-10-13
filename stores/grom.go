@@ -2,7 +2,6 @@ package stores
 
 import (
 	"fmt"
-	"log/slog"
 	"time"
 
 	"gorm.io/gorm"
@@ -24,14 +23,14 @@ type GORMStore struct {
 	DB *gorm.DB
 }
 
-func (s *GORMStore) Init() {
+func (s *GORMStore) Init() error {
 	if !s.DB.Migrator().HasTable(&Jobs{}) {
 		if err := s.DB.Migrator().CreateTable(&Jobs{}); err != nil {
-			errStr := fmt.Sprintf("Failed to create table: %s\n", err)
-			slog.Error(errStr)
-			panic(errStr)
+			return fmt.Errorf("failed to create table: %s", err)
 		}
 	}
+
+	return nil
 }
 
 func (s *GORMStore) AddJob(j agscheduler.Job) error {
@@ -89,7 +88,11 @@ func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
 		return agscheduler.JobNotFoundError(j.Id)
 	}
 
-	j.NextRunTime = agscheduler.CalcNextRunTime(j)
+	nextRunTime, err := agscheduler.CalcNextRunTime(j)
+	if err != nil {
+		return err
+	}
+	j.NextRunTime = nextRunTime
 
 	state, err := agscheduler.StateDumps(j)
 	if err != nil {

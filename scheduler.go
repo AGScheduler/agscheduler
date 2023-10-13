@@ -2,7 +2,6 @@ package agscheduler
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"reflect"
 	"runtime"
@@ -19,23 +18,27 @@ type Scheduler struct {
 	isRunning bool
 }
 
-func (s *Scheduler) SetStore(sto Store) {
+func (s *Scheduler) SetStore(sto Store) error {
 	s.store = sto
-	s.store.Init()
+	if err := s.store.Init(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Scheduler) Store() Store {
 	return s.store
 }
 
-func CalcNextRunTime(j Job) time.Time {
+func CalcNextRunTime(j Job) (time.Time, error) {
 	timezone, err := time.LoadLocation(j.Timezone)
 	if err != nil {
-		log.Panicf("Job `%s` timezone `%s` error: %s\n", j.Id, j.Timezone, err)
+		return time.Time{}, fmt.Errorf("job `%s` timezone `%s` error: %s", j.Id, j.Timezone, err)
 	}
 	if j.Status == STATUS_PAUSED {
-		nextRunTime, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
-		return time.Unix(nextRunTime.Unix(), 0)
+		nextRunTimeMax, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
+		return time.Unix(nextRunTimeMax.Unix(), 0), nil
 	}
 
 	var nextRunTime time.Time
@@ -47,13 +50,13 @@ func CalcNextRunTime(j Job) time.Time {
 	case TYPE_CRON:
 		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
-		log.Panicf("Unknown job type %s\n", j.Type)
+		return time.Time{}, fmt.Errorf("unknown job type %s", j.Type)
 	}
 
-	return time.Unix(nextRunTime.Unix(), 0)
+	return time.Unix(nextRunTime.Unix(), 0), nil
 }
 
-func (s *Scheduler) AddJob(j Job) (id string) {
+func (s *Scheduler) AddJob(j Job) (id string, err error) {
 	j.SetId()
 	j.Status = STATUS_RUNNING
 
@@ -62,16 +65,22 @@ func (s *Scheduler) AddJob(j Job) (id string) {
 	}
 
 	if j.NextRunTime.IsZero() {
-		j.NextRunTime = CalcNextRunTime(j)
+		nextRunTime, err := CalcNextRunTime(j)
+		if err != nil {
+			return id, err
+		}
+		j.NextRunTime = nextRunTime
 	}
 
 	j.FuncName = runtime.FuncForPC(reflect.ValueOf(j.Func).Pointer()).Name()
 
-	s.store.AddJob(j)
+	if err := s.store.AddJob(j); err != nil {
+		return id, err
+	}
 
 	s.Start()
 
-	return j.Id
+	return j.Id, nil
 }
 
 func (s *Scheduler) GetJob(id string) (Job, error) {
@@ -143,7 +152,11 @@ func (s *Scheduler) run() {
 		case <-s.timer.C:
 			now := time.Now()
 
-			jobs, _ := s.GetAllJobs()
+			jobs, err := s.GetAllJobs()
+			if err != nil {
+				slog.Error(fmt.Sprintf("Get all jobs error: %s\n", err))
+				continue
+			}
 			if len(jobs) == 0 {
 				s.Stop()
 				return
@@ -162,7 +175,12 @@ func (s *Scheduler) run() {
 				now := now.In(timezone)
 
 				if j.NextRunTime.Before(now) {
-					j.NextRunTime = CalcNextRunTime(j)
+					nextRunTime, err := CalcNextRunTime(j)
+					if err != nil {
+						slog.Error(fmt.Sprintf("Calc next run time error: %s\n", err))
+						continue
+					}
+					j.NextRunTime = nextRunTime
 
 					f := reflect.ValueOf(funcs[j.FuncName])
 					if f.IsNil() {
@@ -174,11 +192,15 @@ func (s *Scheduler) run() {
 					j.LastRunTime = time.Unix(now.Unix(), 0)
 
 					if j.Type == TYPE_DATETIME {
-						s.DeleteJob(j.Id)
+						err := s.DeleteJob(j.Id)
+						if err != nil {
+							slog.Error(fmt.Sprintf("Delete job `%s` error: %s\n", j.Id, err))
+							continue
+						}
 					} else {
 						err := s.UpdateJob(j)
 						if err != nil {
-							slog.Error("Scheduler run error:", err)
+							slog.Error(fmt.Sprintf("Update job `%s` error: %s\n", j.Id, err))
 							continue
 						}
 					}
