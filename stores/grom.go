@@ -1,7 +1,7 @@
 package stores
 
 import (
-	"fmt"
+	"log"
 	"time"
 
 	"gorm.io/gorm"
@@ -26,7 +26,7 @@ type GORMStore struct {
 func (s *GORMStore) Init() {
 	if !s.DB.Migrator().HasTable(&Jobs{}) {
 		if err := s.DB.Migrator().CreateTable(&Jobs{}); err != nil {
-			panic(fmt.Sprintf("Failed to create table: %s\n", err))
+			log.Panicf("Failed to create table: %s\n", err)
 		}
 	}
 }
