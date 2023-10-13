@@ -42,7 +42,7 @@ func TestSchedulerAddJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id := s.AddJob(j)
+	id, _ := s.AddJob(j)
 	j, _ = s.GetJob(id)
 
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
@@ -54,7 +54,7 @@ func TestSchedulerGetJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id := s.AddJob(j)
+	id, _ := s.AddJob(j)
 	j2, _ := s.GetJob(id)
 
 	assert.NotEqual(t, j, j2)
@@ -77,7 +77,7 @@ func TestSchedulerUpdateJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id := s.AddJob(j)
+	id, _ := s.AddJob(j)
 	j, _ = s.GetJob(id)
 
 	interval := 2 * time.Second
@@ -92,7 +92,7 @@ func TestSchedulerDeleteJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id := s.AddJob(j)
+	id, _ := s.AddJob(j)
 	s.DeleteJob(id)
 
 	_, err := s.GetJob(id)
@@ -114,7 +114,7 @@ func TestSchedulerPauseJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id := s.AddJob(j)
+	id, _ := s.AddJob(j)
 
 	s.PauseJob(id)
 	j, _ = s.GetJob(id)
@@ -132,7 +132,7 @@ func TestSchedulerResumeJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id := s.AddJob(j)
+	id, _ := s.AddJob(j)
 
 	s.PauseJob(id)
 	j, _ = s.GetJob(id)
@@ -188,41 +188,37 @@ func TestCalcNextRunTime(t *testing.T) {
 	startAt, _ := time.ParseInLocation("2006-01-02 15:04:05", "2023-09-22 07:30:08", timezone)
 	job.StartAt = startAt
 	nextRunTime := startAt.In(timezone)
-	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), agscheduler.CalcNextRunTime(job))
+	nextRunTimeNew, _ := agscheduler.CalcNextRunTime(job)
+	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
 
 	job.Type = agscheduler.TYPE_INTERVAL
 	interval := 1 * time.Second
 	job.Interval = interval
 	nextRunTime = time.Now().In(timezone).Add(interval)
-	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), agscheduler.CalcNextRunTime(job))
+	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(job)
+	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
 
 	job.Type = agscheduler.TYPE_CRON
 	cronExpr := "*/1 * * * *"
 	job.CronExpr = cronExpr
 	nextRunTime = cronexpr.MustParse(cronExpr).Next(time.Now().In(timezone))
-	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), agscheduler.CalcNextRunTime(job))
+	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(job)
+	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
 
 	job.Status = agscheduler.STATUS_PAUSED
 	nextRunTimeMax, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
-	assert.Equal(t, time.Unix(nextRunTimeMax.Unix(), 0), agscheduler.CalcNextRunTime(job))
-
-	defer func() {
-		err := recover()
-		assert.NotNil(t, err)
-	}()
+	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(job)
+	assert.Equal(t, time.Unix(nextRunTimeMax.Unix(), 0), nextRunTimeNew)
 
 	job.Status = agscheduler.STATUS_RUNNING
 	job.Type = "unknown"
-	agscheduler.CalcNextRunTime(job)
+	_, err := agscheduler.CalcNextRunTime(job)
+	assert.Error(t, err)
 }
 
 func TestCalcNextRunTimeTimezoneUnknown(t *testing.T) {
 	job := agscheduler.Job{Timezone: "unknown"}
 
-	defer func() {
-		err := recover()
-		assert.NotNil(t, err)
-	}()
-
-	agscheduler.CalcNextRunTime(job)
+	_, err := agscheduler.CalcNextRunTime(job)
+	assert.Error(t, err)
 }
