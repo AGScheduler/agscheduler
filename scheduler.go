@@ -28,7 +28,10 @@ func (s *Scheduler) Store() Store {
 }
 
 func CalcNextRunTime(j Job) time.Time {
-	timezone, _ := time.LoadLocation(j.Timezone)
+	timezone, err := time.LoadLocation(j.Timezone)
+	if err != nil {
+		log.Panicf("Job `%s` timezone `%s` error: %s\n", j.Id, j.Timezone, err)
+	}
 	if j.Status == STATUS_PAUSED {
 		nextRunTime, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
 		return time.Unix(nextRunTime.Unix(), 0)
@@ -150,7 +153,11 @@ func (s *Scheduler) run() {
 					continue
 				}
 
-				timezone, _ := time.LoadLocation(j.Timezone)
+				timezone, err := time.LoadLocation(j.Timezone)
+				if err != nil {
+					log.Printf("Job `%s` timezone `%s` error: %s\n", j.Id, j.Timezone, err)
+					continue
+				}
 				now := now.In(timezone)
 
 				if j.NextRunTime.Before(now) {
