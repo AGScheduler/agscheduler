@@ -165,10 +165,9 @@ func (s *Scheduler) run() {
 					f := reflect.ValueOf(funcs[j.FuncName])
 					if f.IsNil() {
 						log.Printf("Job `%s` Func is nil\n", j.Id)
-						continue
+					} else {
+						go f.Call([]reflect.Value{reflect.ValueOf(j)})
 					}
-
-					go f.Call([]reflect.Value{reflect.ValueOf(j)})
 
 					j.LastRunTime = time.Unix(now.Unix(), 0)
 
