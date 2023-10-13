@@ -1,7 +1,6 @@
 package agscheduler
 
 import (
-	"fmt"
 	"log"
 	"reflect"
 	"runtime"
@@ -46,7 +45,7 @@ func CalcNextRunTime(j Job) time.Time {
 	case TYPE_CRON:
 		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
-		panic(fmt.Sprintf("Unknown job type %s", j.Type))
+		log.Panicf("Unknown job type %s\n", j.Type)
 	}
 
 	return time.Unix(nextRunTime.Unix(), 0)
