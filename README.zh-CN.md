@@ -33,7 +33,8 @@
 package main
 
 import (
-	"log"
+	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/kwkwc/agscheduler"
@@ -41,7 +42,7 @@ import (
 )
 
 func printMsg(j agscheduler.Job) {
-	log.Printf("Run %s %s\n", j.Name, j.Args)
+	slog.Info(fmt.Sprintf("Run %s %s\n", j.Name, j.Args))
 }
 
 func main() {
@@ -61,10 +62,10 @@ func main() {
 	}
 	jobId := scheduler.AddJob(job)
 	job, _ = scheduler.GetJob(jobId)
-	log.Printf("Scheduler add %s %s.\n\n", job.Name, job)
+	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job.Name, job))
 
 	scheduler.Start()
-	log.Print("Scheduler Start.\n\n")
+	slog.Info("Scheduler Start.\n\n")
 
 	select {}
 }

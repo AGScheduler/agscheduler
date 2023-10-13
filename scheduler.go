@@ -1,7 +1,9 @@
 package agscheduler
 
 import (
+	"fmt"
 	"log"
+	"log/slog"
 	"reflect"
 	"runtime"
 	"strings"
@@ -154,7 +156,7 @@ func (s *Scheduler) run() {
 
 				timezone, err := time.LoadLocation(j.Timezone)
 				if err != nil {
-					log.Printf("Job `%s` timezone `%s` error: %s\n", j.Id, j.Timezone, err)
+					slog.Error(fmt.Sprintf("Job `%s` timezone `%s` error: %s\n", j.Id, j.Timezone, err))
 					continue
 				}
 				now := now.In(timezone)
@@ -164,7 +166,7 @@ func (s *Scheduler) run() {
 
 					f := reflect.ValueOf(funcs[j.FuncName])
 					if f.IsNil() {
-						log.Printf("Job `%s` Func is nil\n", j.Id)
+						slog.Warn(fmt.Sprintf("Job `%s` Func is nil\n", j.Id))
 					} else {
 						go f.Call([]reflect.Value{reflect.ValueOf(j)})
 					}
@@ -176,7 +178,7 @@ func (s *Scheduler) run() {
 					} else {
 						err := s.UpdateJob(j)
 						if err != nil {
-							log.Println("Scheduler run error:", err)
+							slog.Error("Scheduler run error:", err)
 							continue
 						}
 					}
@@ -213,7 +215,7 @@ func (s *Scheduler) Stop() {
 func (s *Scheduler) getNextWakeupInterval() time.Duration {
 	minNextRunTime, err := s.store.GetNextRunTime()
 	if err != nil {
-		log.Printf("Get next wakeup interval error: %s\n", err)
+		slog.Error(fmt.Sprintf("Get next wakeup interval error: %s\n", err))
 		minNextRunTime = time.Now().UTC()
 	}
 
