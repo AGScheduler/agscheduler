@@ -13,19 +13,20 @@
 [English](README.md) | 简体中文
 
 ## 警示
+
 > **_该库处于实验阶段，不建议用于生产环境_**
 
 ## 特性
 
 - 支持三种调度方式
-    - [x] 一次性执行
-    - [x] 间隔执行
-    - [x] Cron 式调度
+  - [x] 一次性执行
+  - [x] 间隔执行
+  - [x] Cron 式调度
 - 支持多种任务存储方式
-    - [x] Memory
-    - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
-    - [x] [Redis](https://redis.io/)
-    - [x] [MongoDB](https://www.mongodb.com/)
+  - [x] Memory
+  - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
+  - [x] [Redis](https://redis.io/)
+  - [x] [MongoDB](https://www.mongodb.com/)
 
 ## 使用
 
@@ -72,6 +73,7 @@ func main() {
 ```
 
 ## 注册函数
+
 > **_由于 golang 无法序列化函数，所以 `scheduler.Start()` 之前需要使用 `RegisterFuncs` 注册函数_**
 
 ## 示例
