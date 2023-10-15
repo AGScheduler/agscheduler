@@ -13,7 +13,7 @@
 English | [简体中文](README.zh-CN.md)
 
 ## Warning
-> **_This library is experimental and should not be used in a production environment_**
+> **_This library is experimental and is not recommended for production use_**
 
 ## Features
 
