@@ -185,7 +185,7 @@ func TestCalcNextRunTime(t *testing.T) {
 	timezone, _ := time.LoadLocation(job.Timezone)
 
 	job.Type = agscheduler.TYPE_DATETIME
-	startAt, _ := time.ParseInLocation("2006-01-02 15:04:05", "2023-09-22 07:30:08", timezone)
+	startAt, _ := time.ParseInLocation(time.DateTime, "2023-09-22 07:30:08", timezone)
 	job.StartAt = startAt
 	nextRunTime := startAt.In(timezone)
 	nextRunTimeNew, _ := agscheduler.CalcNextRunTime(job)
@@ -206,7 +206,7 @@ func TestCalcNextRunTime(t *testing.T) {
 	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
 
 	job.Status = agscheduler.STATUS_PAUSED
-	nextRunTimeMax, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
+	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(job)
 	assert.Equal(t, time.Unix(nextRunTimeMax.Unix(), 0), nextRunTimeNew)
 

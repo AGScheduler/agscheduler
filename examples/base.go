@@ -42,7 +42,7 @@ func runExample(s *agscheduler.Scheduler) {
 	slog.Info("Scheduler start.\n\n")
 
 	timezone, _ := time.LoadLocation("America/New_York")
-	startAt, _ := time.ParseInLocation("2006-01-02 15:04:05", "2023-09-22 07:30:08", timezone)
+	startAt, _ := time.ParseInLocation(time.DateTime, "2023-09-22 07:30:08", timezone)
 	job3 := agscheduler.Job{
 		Name:     "Job3",
 		Type:     agscheduler.TYPE_DATETIME,

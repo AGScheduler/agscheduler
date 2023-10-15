@@ -43,7 +43,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	assert.Equal(t, agscheduler.TYPE_CRON, job.Type)
 
 	timezone, _ := time.LoadLocation(job.Timezone)
-	nextRunTimeMax, _ := time.ParseInLocation("2006-01-02 15:04:05", "9999-09-09 09:09:09", timezone)
+	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 
 	s.PauseJob(jobId)
 	job, _ = s.GetJob(jobId)
