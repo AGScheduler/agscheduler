@@ -13,19 +13,20 @@
 English | [简体中文](README.zh-CN.md)
 
 ## Warning
+
 > **_This library is experimental and is not recommended for production use_**
 
 ## Features
 
 - Support for three scheduling types
-    - [x] One-off execution
-    - [x] Interval execution
-    - [x] Cron-style scheduling
+  - [x] One-off execution
+  - [x] Interval execution
+  - [x] Cron-style scheduling
 - Support for multiple task storage methods
-    - [x] Memory
-    - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
-    - [x] [Redis](https://redis.io/)
-    - [x] [MongoDB](https://www.mongodb.com/)
+  - [x] Memory
+  - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
+  - [x] [Redis](https://redis.io/)
+  - [x] [MongoDB](https://www.mongodb.com/)
 
 ## Usage
 
@@ -72,6 +73,7 @@ func main() {
 ```
 
 ## Register Funcs
+
 > **_Since golang can't serialize functions, you need to register them with `RegisterFuncs` before `scheduler.Start()`_**
 
 ## Examples
