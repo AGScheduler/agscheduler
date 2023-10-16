@@ -9,5 +9,11 @@ import (
 func TestJobNotFoundError(t *testing.T) {
 	err := JobNotFoundError("1")
 
-	assert.Equal(t, "Job with id 1 not found!", err.Error())
+	assert.Equal(t, "job `1` not found!", err.Error())
+}
+
+func TestFuncUnregisteredError(t *testing.T) {
+	err := FuncUnregisteredError("func")
+
+	assert.Equal(t, "function `func` unregistered!", err.Error())
 }

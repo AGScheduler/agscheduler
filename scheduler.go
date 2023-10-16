@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
-	"runtime"
 	"strings"
 	"time"
 
@@ -72,7 +71,12 @@ func (s *Scheduler) AddJob(j Job) (id string, err error) {
 		j.NextRunTime = nextRunTime
 	}
 
-	j.FuncName = runtime.FuncForPC(reflect.ValueOf(j.Func).Pointer()).Name()
+	if j.FuncName == "" {
+		j.FuncName = getFuncName(j.Func)
+	}
+	if _, ok := funcs[j.FuncName]; !ok {
+		return id, FuncUnregisteredError(j.FuncName)
+	}
 
 	if err := s.store.AddJob(j); err != nil {
 		return id, err
@@ -98,6 +102,9 @@ func (s *Scheduler) UpdateJob(j Job) error {
 
 	lastNextWakeupInterval := s.getNextWakeupInterval()
 
+	if _, ok := funcs[j.FuncName]; !ok {
+		return FuncUnregisteredError(j.FuncName)
+	}
 	err := s.store.UpdateJob(j)
 
 	nextWakeupInterval := s.getNextWakeupInterval()
@@ -190,7 +197,7 @@ func (s *Scheduler) run() {
 
 					f := reflect.ValueOf(funcs[j.FuncName])
 					if f.IsNil() {
-						slog.Warn(fmt.Sprintf("Job `%s` Func is nil\n", j.Id))
+						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.Id, j.FuncName))
 					} else {
 						go f.Call([]reflect.Value{reflect.ValueOf(j)})
 					}
