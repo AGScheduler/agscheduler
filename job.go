@@ -76,7 +76,7 @@ func StateLoads(state []byte) (Job, error) {
 	return j, nil
 }
 
-var funcs = make(map[string]func(Job))
+var funcMap = make(map[string]func(Job))
 
 func getFuncName(f func(Job)) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
@@ -84,5 +84,5 @@ func getFuncName(f func(Job)) string {
 
 func RegisterFuncs(f func(Job)) {
 	fName := getFuncName(f)
-	funcs[fName] = f
+	funcMap[fName] = f
 }

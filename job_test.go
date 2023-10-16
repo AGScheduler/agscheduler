@@ -64,9 +64,9 @@ func TestJobStateLoadsError(t *testing.T) {
 }
 
 func TestRegisterFuncs(t *testing.T) {
-	assert.Empty(t, funcs)
+	assert.Empty(t, funcMap)
 
 	RegisterFuncs(func(j Job) {})
 
-	assert.Len(t, funcs, 1)
+	assert.Len(t, funcMap, 1)
 }
