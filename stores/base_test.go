@@ -31,32 +31,31 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	assert.Empty(t, job.FuncName)
 	assert.Empty(t, job.Status)
 
-	jobId, _ := s.AddJob(job)
-	job, _ = s.GetJob(jobId)
+	job, _ = s.AddJob(job)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, job.Status)
 	assert.NotEmpty(t, job.FuncName)
 
 	job.Type = agscheduler.TYPE_CRON
 	job.CronExpr = "*/1 * * * *"
 	s.UpdateJob(job)
-	job, _ = s.GetJob(jobId)
+	job, _ = s.GetJob(job.Id)
 	assert.Equal(t, agscheduler.TYPE_CRON, job.Type)
 
 	timezone, _ := time.LoadLocation(job.Timezone)
 	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 
-	s.PauseJob(jobId)
-	job, _ = s.GetJob(jobId)
+	s.PauseJob(job.Id)
+	job, _ = s.GetJob(job.Id)
 	assert.Equal(t, agscheduler.STATUS_PAUSED, job.Status)
 	assert.Equal(t, nextRunTimeMax.Unix(), job.NextRunTime.Unix())
 
-	s.ResumeJob(jobId)
-	job, _ = s.GetJob(jobId)
+	s.ResumeJob(job.Id)
+	job, _ = s.GetJob(job.Id)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), job.NextRunTime.Unix())
 
-	s.DeleteJob(jobId)
-	_, err := s.GetJob(jobId)
-	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(jobId))
+	s.DeleteJob(job.Id)
+	_, err := s.GetJob(job.Id)
+	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(job.Id))
 
 	s.DeleteAllJobs()
 	jobs, _ := s.GetAllJobs()

@@ -59,8 +59,7 @@ func TestSchedulerAddJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id, _ := s.AddJob(j)
-	j, _ = s.GetJob(id)
+	j, _ = s.AddJob(j)
 
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
@@ -79,8 +78,7 @@ func TestSchedulerGetJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id, _ := s.AddJob(j)
-	j2, _ := s.GetJob(id)
+	j2, _ := s.AddJob(j)
 
 	assert.NotEqual(t, j, j2)
 }
@@ -102,13 +100,11 @@ func TestSchedulerUpdateJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id, _ := s.AddJob(j)
-	j, _ = s.GetJob(id)
+	j, _ = s.AddJob(j)
 
 	interval := 2 * time.Second
 	j.Interval = interval
-	s.UpdateJob(j)
-	j, _ = s.GetJob(id)
+	j, _ = s.UpdateJob(j)
 
 	assert.Equal(t, interval, j.Interval)
 }
@@ -117,11 +113,11 @@ func TestSchedulerDeleteJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id, _ := s.AddJob(j)
-	s.DeleteJob(id)
+	j, _ = s.AddJob(j)
+	s.DeleteJob(j.Id)
 
-	_, err := s.GetJob(id)
-	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(id))
+	_, err := s.GetJob(j.Id)
+	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(j.Id))
 }
 
 func TestSchedulerDeleteAllJobs(t *testing.T) {
@@ -139,16 +135,16 @@ func TestSchedulerPauseJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id, _ := s.AddJob(j)
+	j, _ = s.AddJob(j)
 
-	s.PauseJob(id)
-	j, _ = s.GetJob(id)
+	s.PauseJob(j.Id)
+	j, _ = s.GetJob(j.Id)
 	assert.Equal(t, agscheduler.STATUS_PAUSED, j.Status)
 }
 
 func TestSchedulerPauseJobError(t *testing.T) {
 	s := getSchedulerWithStore()
-	err := s.PauseJob("1")
+	_, err := s.PauseJob("1")
 
 	assert.Error(t, err)
 }
@@ -157,20 +153,20 @@ func TestSchedulerResumeJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	id, _ := s.AddJob(j)
+	j, _ = s.AddJob(j)
 
-	s.PauseJob(id)
-	j, _ = s.GetJob(id)
+	s.PauseJob(j.Id)
+	j, _ = s.GetJob(j.Id)
 	assert.Equal(t, agscheduler.STATUS_PAUSED, j.Status)
 
-	s.ResumeJob(id)
-	j, _ = s.GetJob(id)
+	s.ResumeJob(j.Id)
+	j, _ = s.GetJob(j.Id)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 }
 
 func TestSchedulerResumeJobError(t *testing.T) {
 	s := getSchedulerWithStore()
-	err := s.ResumeJob("1")
+	_, err := s.ResumeJob("1")
 
 	assert.Error(t, err)
 }

@@ -36,11 +36,7 @@ func (s *MemoryStore) UpdateJob(j agscheduler.Job) error {
 	for i, sj := range s.jobs {
 		if sj.Id == j.Id {
 			s.jobs[i] = j
-			nextRunTime, err := agscheduler.CalcNextRunTime(j)
-			if err != nil {
-				return err
-			}
-			s.jobs[i].NextRunTime = nextRunTime
+
 			return nil
 		}
 	}
