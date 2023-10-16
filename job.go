@@ -82,7 +82,9 @@ func getFuncName(f func(Job)) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
 
-func RegisterFuncs(f func(Job)) {
-	fName := getFuncName(f)
-	funcMap[fName] = f
+func RegisterFuncs(fs ...func(Job)) {
+	for _, f := range fs {
+		fName := getFuncName(f)
+		funcMap[fName] = f
+	}
 }
