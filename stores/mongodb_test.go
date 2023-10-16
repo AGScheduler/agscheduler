@@ -19,4 +19,6 @@ func TestMongoDBStore(t *testing.T) {
 	scheduler.SetStore(store)
 
 	testAGScheduler(t, scheduler)
+
+	store.Clean()
 }

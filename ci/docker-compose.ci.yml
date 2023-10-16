@@ -3,8 +3,7 @@ services:
   mysql:
     image: mysql
     environment:
-      - MYSQL_DATABASE=test
-      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=agscheduler
       - MYSQL_ROOT_PASSWORD=123456
     ports:
       - 127.0.0.1:3306:3306

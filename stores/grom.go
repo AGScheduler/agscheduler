@@ -116,3 +116,7 @@ func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 	nextRunTimeMin := js.NextRunTime
 	return nextRunTimeMin, nil
 }
+
+func (s *GORMStore) Clean() error {
+	return s.DB.Migrator().DropTable(Jobs{}.TableName())
+}

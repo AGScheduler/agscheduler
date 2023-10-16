@@ -11,4 +11,5 @@ type Store interface {
 	DeleteJob(id string) error
 	DeleteAllJobs() error
 	GetNextRunTime() (time.Time, error)
+	Clean() error
 }

@@ -128,3 +128,7 @@ func (s *RedisStore) GetNextRunTime() (time.Time, error) {
 	nextRunTimeMin := time.Unix(int64(sliceRunTimes[0].Score), 0)
 	return nextRunTimeMin, nil
 }
+
+func (s *RedisStore) Clean() error {
+	return s.DeleteAllJobs()
+}
