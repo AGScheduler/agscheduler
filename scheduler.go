@@ -92,6 +92,10 @@ func (s *Scheduler) GetAllJobs() ([]Job, error) {
 }
 
 func (s *Scheduler) UpdateJob(j Job) error {
+	if _, err := s.GetJob(j.Id); err != nil {
+		return err
+	}
+
 	lastNextWakeupInterval := s.getNextWakeupInterval()
 
 	err := s.store.UpdateJob(j)
@@ -105,6 +109,10 @@ func (s *Scheduler) UpdateJob(j Job) error {
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
+	if _, err := s.GetJob(id); err != nil {
+		return err
+	}
+
 	return s.store.DeleteJob(id)
 }
 
@@ -120,8 +128,7 @@ func (s *Scheduler) PauseJob(id string) error {
 
 	j.Status = STATUS_PAUSED
 
-	err = s.UpdateJob(j)
-	if err != nil {
+	if err := s.UpdateJob(j); err != nil {
 		return err
 	}
 
@@ -136,8 +143,7 @@ func (s *Scheduler) ResumeJob(id string) error {
 
 	j.Status = STATUS_RUNNING
 
-	err = s.UpdateJob(j)
-	if err != nil {
+	if err := s.UpdateJob(j); err != nil {
 		return err
 	}
 
