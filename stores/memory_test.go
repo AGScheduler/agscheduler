@@ -13,4 +13,6 @@ func TestMemoryStore(t *testing.T) {
 	scheduler.SetStore(store)
 
 	testAGScheduler(t, scheduler)
+
+	store.Clean()
 }

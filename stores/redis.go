@@ -70,14 +70,6 @@ func (s *RedisStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *RedisStore) UpdateJob(j agscheduler.Job) error {
-	isExists, err := s.RDB.HExists(ctx, jobs_key, j.Id).Result()
-	if err != nil {
-		return err
-	}
-	if !isExists {
-		return agscheduler.JobNotFoundError(j.Id)
-	}
-
 	nextRunTime, err := agscheduler.CalcNextRunTime(j)
 	if err != nil {
 		return err
@@ -135,4 +127,8 @@ func (s *RedisStore) GetNextRunTime() (time.Time, error) {
 
 	nextRunTimeMin := time.Unix(int64(sliceRunTimes[0].Score), 0)
 	return nextRunTimeMin, nil
+}
+
+func (s *RedisStore) Clean() error {
+	return s.DeleteAllJobs()
 }

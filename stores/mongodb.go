@@ -141,3 +141,7 @@ func (s *MongoDBStore) GetNextRunTime() (time.Time, error) {
 	nextRunTimeMin := time.Unix(result["next_run_time"].(int64), 0)
 	return nextRunTimeMin, nil
 }
+
+func (s *MongoDBStore) Clean() error {
+	return s.Client.Database(database).Drop(ctx)
+}
