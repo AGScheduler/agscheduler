@@ -21,6 +21,7 @@ test:
 		-coverprofile=coverage.out \
 		-v . ./stores
 	go tool cover -func=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
 
 check-all: format-check lint test
 
