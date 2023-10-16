@@ -74,7 +74,7 @@ func (s *Scheduler) AddJob(j Job) (id string, err error) {
 	if j.FuncName == "" {
 		j.FuncName = getFuncName(j.Func)
 	}
-	if _, ok := funcs[j.FuncName]; !ok {
+	if _, ok := funcMap[j.FuncName]; !ok {
 		return id, FuncUnregisteredError(j.FuncName)
 	}
 
@@ -102,7 +102,7 @@ func (s *Scheduler) UpdateJob(j Job) error {
 
 	lastNextWakeupInterval := s.getNextWakeupInterval()
 
-	if _, ok := funcs[j.FuncName]; !ok {
+	if _, ok := funcMap[j.FuncName]; !ok {
 		return FuncUnregisteredError(j.FuncName)
 	}
 	err := s.store.UpdateJob(j)
@@ -195,7 +195,7 @@ func (s *Scheduler) run() {
 					}
 					j.NextRunTime = nextRunTime
 
-					f := reflect.ValueOf(funcs[j.FuncName])
+					f := reflect.ValueOf(funcMap[j.FuncName])
 					if f.IsNil() {
 						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.Id, j.FuncName))
 					} else {
