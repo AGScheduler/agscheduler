@@ -78,12 +78,6 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
-	nextRunTime, err := agscheduler.CalcNextRunTime(j)
-	if err != nil {
-		return err
-	}
-	j.NextRunTime = nextRunTime
-
 	state, err := agscheduler.StateDumps(j)
 	if err != nil {
 		return err

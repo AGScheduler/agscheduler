@@ -61,8 +61,7 @@ func main() {
 		Args:     []any{"arg1", "arg2", "arg3"},
 		Interval: 2 * time.Second,
 	}
-	jobId := scheduler.AddJob(job)
-	job, _ = scheduler.GetJob(jobId)
+	job, _ := scheduler.AddJob(job)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job.Name, job))
 
 	scheduler.Start()

@@ -23,8 +23,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Args:     []any{"arg1", "arg2", "arg3"},
 		Interval: 2 * time.Second,
 	}
-	job1Id, _ := s.AddJob(job1)
-	job1, _ = s.GetJob(job1Id)
+	job1, _ = s.AddJob(job1)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job1.Name, job1))
 
 	job2 := agscheduler.Job{
@@ -34,8 +33,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Args:     []any{"arg4", "arg5", "arg6", "arg7"},
 		CronExpr: "*/1 * * * *",
 	}
-	job2Id, _ := s.AddJob(job2)
-	job2, _ = s.GetJob(job2Id)
+	job2, _ = s.AddJob(job2)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job2.Name, job2))
 
 	s.Start()
@@ -51,33 +49,31 @@ func runExample(s *agscheduler.Scheduler) {
 		Args:     []any{"arg8", "arg9"},
 		StartAt:  startAt,
 	}
-	job3Id, _ := s.AddJob(job3)
-	job3, _ = s.GetJob(job3Id)
+	job3, _ = s.AddJob(job3)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job3.Name, job3))
 
 	slog.Info("Sleep 10s......\n\n")
 	time.Sleep(10 * time.Second)
 
-	job2, _ = s.GetJob(job2Id)
+	job2, _ = s.GetJob(job2.Id)
 	job2.Type = agscheduler.TYPE_INTERVAL
 	job2.Interval = 4 * time.Second
-	s.UpdateJob(job2)
-	job2, _ = s.GetJob(job2Id)
+	job2, _ = s.UpdateJob(job2)
 	slog.Info(fmt.Sprintf("Scheduler update %s %s.\n\n", job2.Name, job2))
 
 	slog.Info("Sleep 8s......")
 	time.Sleep(8 * time.Second)
 
-	s.PauseJob(job1Id)
+	job1, _ = s.PauseJob(job1.Id)
 	slog.Info(fmt.Sprintf("Scheduler pause %s.\n\n", job1.Name))
 
 	slog.Info("Sleep 6s......\n\n")
 	time.Sleep(6 * time.Second)
 
-	s.ResumeJob(job1Id)
+	job1, _ = s.ResumeJob(job1.Id)
 	slog.Info(fmt.Sprintf("Scheduler resume %s.\n\n", job1.Name))
 
-	s.DeleteJob(job2Id)
+	s.DeleteJob(job2.Id)
 	slog.Info(fmt.Sprintf("Scheduler delete %s.\n\n", job2.Name))
 
 	slog.Info("Sleep 6s......\n\n")

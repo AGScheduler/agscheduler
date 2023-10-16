@@ -55,7 +55,7 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 	return time.Unix(nextRunTime.Unix(), 0), nil
 }
 
-func (s *Scheduler) AddJob(j Job) (id string, err error) {
+func (s *Scheduler) AddJob(j Job) (Job, error) {
 	j.SetId()
 	j.Status = STATUS_RUNNING
 
@@ -63,28 +63,28 @@ func (s *Scheduler) AddJob(j Job) (id string, err error) {
 		j.Timezone = "UTC"
 	}
 
-	if j.NextRunTime.IsZero() {
-		nextRunTime, err := CalcNextRunTime(j)
-		if err != nil {
-			return id, err
-		}
-		j.NextRunTime = nextRunTime
-	}
-
 	if j.FuncName == "" {
 		j.FuncName = getFuncName(j.Func)
 	}
 	if _, ok := funcMap[j.FuncName]; !ok {
-		return id, FuncUnregisteredError(j.FuncName)
+		return Job{}, FuncUnregisteredError(j.FuncName)
+	}
+
+	if j.NextRunTime.IsZero() {
+		nextRunTime, err := CalcNextRunTime(j)
+		if err != nil {
+			return Job{}, err
+		}
+		j.NextRunTime = nextRunTime
 	}
 
 	if err := s.store.AddJob(j); err != nil {
-		return id, err
+		return Job{}, err
 	}
 
 	s.Start()
 
-	return j.Id, nil
+	return j, nil
 }
 
 func (s *Scheduler) GetJob(id string) (Job, error) {
@@ -95,24 +95,31 @@ func (s *Scheduler) GetAllJobs() ([]Job, error) {
 	return s.store.GetAllJobs()
 }
 
-func (s *Scheduler) UpdateJob(j Job) error {
+func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 	if _, err := s.GetJob(j.Id); err != nil {
-		return err
+		return Job{}, err
 	}
 
 	lastNextWakeupInterval := s.getNextWakeupInterval()
 
 	if _, ok := funcMap[j.FuncName]; !ok {
-		return FuncUnregisteredError(j.FuncName)
+		return Job{}, FuncUnregisteredError(j.FuncName)
 	}
-	err := s.store.UpdateJob(j)
+
+	nextRunTime, err := CalcNextRunTime(j)
+	if err != nil {
+		return Job{}, err
+	}
+	j.NextRunTime = nextRunTime
+
+	err = s.store.UpdateJob(j)
 
 	nextWakeupInterval := s.getNextWakeupInterval()
 	if nextWakeupInterval < lastNextWakeupInterval {
 		s.wakeup()
 	}
 
-	return err
+	return j, err
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
@@ -127,34 +134,34 @@ func (s *Scheduler) DeleteAllJobs() error {
 	return s.store.DeleteAllJobs()
 }
 
-func (s *Scheduler) PauseJob(id string) error {
+func (s *Scheduler) PauseJob(id string) (Job, error) {
 	j, err := s.GetJob(id)
 	if err != nil {
-		return err
+		return Job{}, err
 	}
 
 	j.Status = STATUS_PAUSED
 
-	if err := s.UpdateJob(j); err != nil {
-		return err
+	if _, err := s.UpdateJob(j); err != nil {
+		return Job{}, err
 	}
 
-	return nil
+	return j, nil
 }
 
-func (s *Scheduler) ResumeJob(id string) error {
+func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	j, err := s.GetJob(id)
 	if err != nil {
-		return err
+		return Job{}, err
 	}
 
 	j.Status = STATUS_RUNNING
 
-	if err := s.UpdateJob(j); err != nil {
-		return err
+	if _, err := s.UpdateJob(j); err != nil {
+		return Job{}, err
 	}
 
-	return nil
+	return j, nil
 }
 
 func (s *Scheduler) run() {
@@ -211,7 +218,7 @@ func (s *Scheduler) run() {
 							continue
 						}
 					} else {
-						err := s.UpdateJob(j)
+						_, err := s.UpdateJob(j)
 						if err != nil {
 							slog.Error(fmt.Sprintf("Update job `%s` error: %s\n", j.Id, err))
 							continue
