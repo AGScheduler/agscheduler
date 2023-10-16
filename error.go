@@ -3,7 +3,12 @@ package agscheduler
 import "fmt"
 
 type JobNotFoundError string
+type FuncUnregisteredError string
 
-func (j JobNotFoundError) Error() string {
-	return fmt.Sprintf("Job with id %s not found!", string(j))
+func (e JobNotFoundError) Error() string {
+	return fmt.Sprintf("job `%s` not found!", string(e))
+}
+
+func (e FuncUnregisteredError) Error() string {
+	return fmt.Sprintf("function `%s` unregistered!", string(e))
 }

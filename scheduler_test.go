@@ -1,6 +1,8 @@
 package agscheduler_test
 
 import (
+	"fmt"
+	"log/slog"
 	"testing"
 	"time"
 
@@ -11,6 +13,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func printMsg(j agscheduler.Job) {
+	slog.Info(fmt.Sprintf("Run %s %s\n", j.Name, j.Args))
+}
+
 func getSchedulerWithStore() *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
@@ -20,6 +26,17 @@ func getSchedulerWithStore() *agscheduler.Scheduler {
 }
 
 func getJob() agscheduler.Job {
+	agscheduler.RegisterFuncs(printMsg)
+
+	return agscheduler.Job{
+		Name:     "Job",
+		Type:     agscheduler.TYPE_INTERVAL,
+		Interval: 500 * time.Millisecond,
+		Func:     printMsg,
+	}
+}
+
+func getJobWithoutFunc() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
@@ -48,6 +65,14 @@ func TestSchedulerAddJob(t *testing.T) {
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
 	time.Sleep(100 * time.Millisecond)
+}
+
+func TestSchedulerAddJobError(t *testing.T) {
+	s := getSchedulerWithStore()
+	j := getJobWithoutFunc()
+
+	_, err := s.AddJob(j)
+	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError(""))
 }
 
 func TestSchedulerGetJob(t *testing.T) {
