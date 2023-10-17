@@ -21,42 +21,42 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 
 	time.Sleep(200 * time.Millisecond)
 
-	job := agscheduler.Job{
+	j := agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
 		Func:     printMsg,
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
-	assert.Empty(t, job.FuncName)
-	assert.Empty(t, job.Status)
+	assert.Empty(t, j.FuncName)
+	assert.Empty(t, j.Status)
 
-	job, _ = s.AddJob(job)
-	assert.Equal(t, agscheduler.STATUS_RUNNING, job.Status)
-	assert.NotEmpty(t, job.FuncName)
+	j, _ = s.AddJob(j)
+	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
+	assert.NotEmpty(t, j.FuncName)
 
-	job.Type = agscheduler.TYPE_CRON
-	job.CronExpr = "*/1 * * * *"
-	job, _ = s.UpdateJob(job)
-	assert.Equal(t, agscheduler.TYPE_CRON, job.Type)
+	j.Type = agscheduler.TYPE_CRON
+	j.CronExpr = "*/1 * * * *"
+	j, _ = s.UpdateJob(j)
+	assert.Equal(t, agscheduler.TYPE_CRON, j.Type)
 
-	timezone, _ := time.LoadLocation(job.Timezone)
+	timezone, _ := time.LoadLocation(j.Timezone)
 	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 
-	job, _ = s.PauseJob(job.Id)
-	assert.Equal(t, agscheduler.STATUS_PAUSED, job.Status)
-	assert.Equal(t, nextRunTimeMax.Unix(), job.NextRunTime.Unix())
+	j, _ = s.PauseJob(j.Id)
+	assert.Equal(t, agscheduler.STATUS_PAUSED, j.Status)
+	assert.Equal(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
-	job, _ = s.ResumeJob(job.Id)
-	assert.NotEqual(t, nextRunTimeMax.Unix(), job.NextRunTime.Unix())
+	j, _ = s.ResumeJob(j.Id)
+	assert.NotEqual(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
-	s.DeleteJob(job.Id)
-	_, err := s.GetJob(job.Id)
-	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(job.Id))
+	s.DeleteJob(j.Id)
+	_, err := s.GetJob(j.Id)
+	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(j.Id))
 
 	s.DeleteAllJobs()
-	jobs, _ := s.GetAllJobs()
-	assert.Len(t, jobs, 0)
+	js, _ := s.GetAllJobs()
+	assert.Len(t, js, 0)
 
 	s.Stop()
 

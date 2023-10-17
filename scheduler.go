@@ -57,7 +57,7 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 	case TYPE_CRON:
 		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
-		return time.Time{}, fmt.Errorf("unknown job type %s", j.Type)
+		return time.Time{}, fmt.Errorf("job `%s` Type `%s` unknown", j.Id, j.Type)
 	}
 
 	return time.Unix(nextRunTime.Unix(), 0), nil
@@ -182,24 +182,24 @@ func (s *Scheduler) run() {
 		case <-s.timer.C:
 			now := time.Now()
 
-			jobs, err := s.GetAllJobs()
+			js, err := s.GetAllJobs()
 			if err != nil {
 				slog.Error(fmt.Sprintf("Get all jobs error: %s\n", err))
 				continue
 			}
-			if len(jobs) == 0 {
+			if len(js) == 0 {
 				s.Stop()
 				return
 			}
 
-			for _, j := range jobs {
+			for _, j := range js {
 				if j.Status == STATUS_PAUSED {
 					continue
 				}
 
 				timezone, err := time.LoadLocation(j.Timezone)
 				if err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` timezone `%s` error: %s\n", j.Id, j.Timezone, err))
+					slog.Error(fmt.Sprintf("Job `%s` Timezone `%s` error: %s\n", j.Id, j.Timezone, err))
 					continue
 				}
 				now := now.In(timezone)
