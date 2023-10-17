@@ -53,16 +53,38 @@ func main() {
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	job := agscheduler.Job{
-		Name:     "Job",
+	job1 := agscheduler.Job{
+		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "2s",
 		Timezone: "UTC",
 		Func:     printMsg,
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
-	job, _ = scheduler.AddJob(job)
-	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job.Name, job))
+	job1, _ = scheduler.AddJob(job1)
+	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job1.Name, job1))
+
+	job2 := agscheduler.Job{
+		Name:     "Job2",
+		Type:     agscheduler.TYPE_CRON,
+		CronExpr: "*/1 * * * *",
+		Timezone: "Asia/Shanghai",
+		FuncName: "main.printMsg",
+		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
+	}
+	job2, _ = s.AddJob(job2)
+	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job2.Name, job2))
+
+	job3 := agscheduler.Job{
+		Name:     "Job3",
+		Type:     agscheduler.TYPE_DATETIME,
+		StartAt:  "2023-09-22 07:30:08",
+		Timezone: "America/New_York",
+		Func:     printMsg,
+		Args:     map[string]any{"arg8": "8", "arg9": "9"},
+	}
+	job3, _ = s.AddJob(job3)
+	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job3.Name, job3))
 
 	scheduler.Start()
 	slog.Info("Scheduler Start.\n\n")
