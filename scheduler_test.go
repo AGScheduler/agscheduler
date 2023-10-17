@@ -195,12 +195,25 @@ func TestSchedulerStopOnce(t *testing.T) {
 	s.Stop()
 }
 
+func TestCalcNextRunTimeTimezone(t *testing.T) {
+	j := agscheduler.Job{
+		Name:     "Job",
+		Type:     agscheduler.TYPE_INTERVAL,
+		Interval: "1s",
+		Timezone: "America/New_York",
+		Status:   agscheduler.STATUS_RUNNING,
+	}
+
+	nextRunTimeNew, _ := agscheduler.CalcNextRunTime(j)
+	assert.Equal(t, "UTC", nextRunTimeNew.Location().String())
+}
+
 func TestCalcNextRunTime(t *testing.T) {
 	j := agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
-		Timezone: "UTC",
+		Timezone: "America/New_York",
 		Status:   agscheduler.STATUS_RUNNING,
 	}
 	timezone, _ := time.LoadLocation(j.Timezone)
@@ -209,7 +222,7 @@ func TestCalcNextRunTime(t *testing.T) {
 	j.StartAt = "2023-09-22 07:30:08"
 	nextRunTime, _ := time.ParseInLocation(time.DateTime, j.StartAt, timezone)
 	nextRunTimeNew, _ := agscheduler.CalcNextRunTime(j)
-	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
+	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0).UTC(), nextRunTimeNew)
 
 	j.Type = agscheduler.TYPE_INTERVAL
 	interval := "1s"
@@ -217,19 +230,19 @@ func TestCalcNextRunTime(t *testing.T) {
 	i, _ := time.ParseDuration(interval)
 	nextRunTime = time.Now().In(timezone).Add(i)
 	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(j)
-	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
+	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0).UTC(), nextRunTimeNew)
 
 	j.Type = agscheduler.TYPE_CRON
 	cronExpr := "*/1 * * * *"
 	j.CronExpr = cronExpr
 	nextRunTime = cronexpr.MustParse(cronExpr).Next(time.Now().In(timezone))
 	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(j)
-	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
+	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0).UTC(), nextRunTimeNew)
 
 	j.Status = agscheduler.STATUS_PAUSED
 	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(j)
-	assert.Equal(t, time.Unix(nextRunTimeMax.Unix(), 0), nextRunTimeNew)
+	assert.Equal(t, time.Unix(nextRunTimeMax.Unix(), 0).UTC(), nextRunTimeNew)
 
 	j.Status = agscheduler.STATUS_RUNNING
 	j.Type = "unknown"

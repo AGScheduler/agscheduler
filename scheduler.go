@@ -38,7 +38,7 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 
 	if j.Status == STATUS_PAUSED {
 		nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
-		return time.Unix(nextRunTimeMax.Unix(), 0), nil
+		return time.Unix(nextRunTimeMax.Unix(), 0).UTC(), nil
 	}
 
 	var nextRunTime time.Time
@@ -60,7 +60,7 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("job `%s` Type `%s` unknown", j.Id, j.Type)
 	}
 
-	return time.Unix(nextRunTime.Unix(), 0), nil
+	return time.Unix(nextRunTime.Unix(), 0).UTC(), nil
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
@@ -186,7 +186,7 @@ func (s *Scheduler) run() {
 		case <-s.quitChan:
 			return
 		case <-s.timer.C:
-			now := time.Now()
+			now := time.Now().UTC()
 
 			js, err := s.GetAllJobs()
 			if err != nil {
@@ -202,13 +202,6 @@ func (s *Scheduler) run() {
 				if j.Status == STATUS_PAUSED {
 					continue
 				}
-
-				timezone, err := time.LoadLocation(j.Timezone)
-				if err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` Timezone `%s` error: %s\n", j.Id, j.Timezone, err))
-					continue
-				}
-				now := now.In(timezone)
 
 				if j.NextRunTime.Before(now) {
 					nextRunTime, err := CalcNextRunTime(j)
@@ -226,7 +219,7 @@ func (s *Scheduler) run() {
 						go f.Call([]reflect.Value{reflect.ValueOf(j)})
 					}
 
-					j.LastRunTime = time.Unix(now.Unix(), 0)
+					j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
 
 					if j.Type == TYPE_DATETIME {
 						err := s.DeleteJob(j.Id)
@@ -278,7 +271,7 @@ func (s *Scheduler) getNextWakeupInterval() time.Duration {
 		nextRunTimeMin = time.Now().UTC().Add(1 * time.Second)
 	}
 
-	now := time.Now().In(nextRunTimeMin.Location())
+	now := time.Now().UTC()
 	nextWakeupInterval := nextRunTimeMin.Sub(now)
 	if nextWakeupInterval < 0 {
 		nextWakeupInterval = time.Second

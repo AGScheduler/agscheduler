@@ -132,7 +132,7 @@ func (s *MongoDBStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	nextRunTimeMin := time.Unix(result["next_run_time"].(int64), 0)
+	nextRunTimeMin := time.Unix(result["next_run_time"].(int64), 0).UTC()
 	return nextRunTimeMin, nil
 }
 
