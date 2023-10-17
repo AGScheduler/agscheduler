@@ -206,7 +206,7 @@ func TestCalcNextRunTime(t *testing.T) {
 	timezone, _ := time.LoadLocation(j.Timezone)
 
 	j.Type = agscheduler.TYPE_DATETIME
-	j.StartAt = "2023-10-22 07:30:08"
+	j.StartAt = "2023-09-22 07:30:08"
 	nextRunTime, _ := time.ParseInLocation(time.DateTime, j.StartAt, timezone)
 	nextRunTimeNew, _ := agscheduler.CalcNextRunTime(j)
 	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
