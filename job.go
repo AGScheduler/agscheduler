@@ -27,7 +27,7 @@ type Job struct {
 	Type        string
 	StartAt     time.Time
 	EndAt       time.Time
-	Interval    time.Duration
+	Interval    string
 	CronExpr    string
 	Timezone    string
 	Func        func(Job)
