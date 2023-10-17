@@ -44,7 +44,10 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 	var nextRunTime time.Time
 	switch strings.ToLower(j.Type) {
 	case TYPE_DATETIME:
-		nextRunTime = j.StartAt.In(timezone)
+		nextRunTime, err = time.ParseInLocation(time.DateTime, j.StartAt, timezone)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("job `%s` StartAt `%s` error: %s", j.Id, j.Timezone, err)
+		}
 	case TYPE_INTERVAL:
 		i, err := time.ParseDuration(j.Interval)
 		if err != nil {
@@ -147,7 +150,8 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 
 	j.Status = STATUS_PAUSED
 
-	if _, err := s.UpdateJob(j); err != nil {
+	j, err = s.UpdateJob(j)
+	if err != nil {
 		return Job{}, err
 	}
 
@@ -162,7 +166,8 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 
 	j.Status = STATUS_RUNNING
 
-	if _, err := s.UpdateJob(j); err != nil {
+	j, err = s.UpdateJob(j)
+	if err != nil {
 		return Job{}, err
 	}
 

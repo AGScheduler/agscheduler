@@ -21,8 +21,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Interval: "2s",
 		Timezone: "Asia/Shanghai",
 		Func:     printMsg,
-		// FuncName: "main.printMsg",
-		Args: map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
+		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	job1, _ = s.AddJob(job1)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job1.Name, job1))
@@ -31,7 +30,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Name:     "Job2",
 		Type:     agscheduler.TYPE_CRON,
 		CronExpr: "*/1 * * * *",
-		Func:     printMsg,
+		FuncName: "main.printMsg",
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	job2, _ = s.AddJob(job2)
@@ -40,13 +39,11 @@ func runExample(s *agscheduler.Scheduler) {
 	s.Start()
 	slog.Info("Scheduler start.\n\n")
 
-	timezone, _ := time.LoadLocation("America/New_York")
-	startAt, _ := time.ParseInLocation(time.DateTime, "2023-09-22 07:30:08", timezone)
 	job3 := agscheduler.Job{
 		Name:     "Job3",
 		Type:     agscheduler.TYPE_DATETIME,
-		StartAt:  startAt,
-		Timezone: timezone.String(),
+		StartAt:  "2023-10-22 07:30:08",
+		Timezone: "America/New_York",
 		Func:     printMsg,
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 	}
@@ -56,7 +53,9 @@ func runExample(s *agscheduler.Scheduler) {
 	slog.Info("Sleep 10s......\n\n")
 	time.Sleep(10 * time.Second)
 
-	job2, _ = s.GetJob(job2.Id)
+	job1, _ = s.GetJob(job1.Id)
+	slog.Info(fmt.Sprintf("Scheduler get %s %s.\n\n", job1.Name, job1))
+
 	job2.Type = agscheduler.TYPE_INTERVAL
 	job2.Interval = "4s"
 	job2, _ = s.UpdateJob(job2)

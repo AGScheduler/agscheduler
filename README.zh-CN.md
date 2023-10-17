@@ -59,8 +59,7 @@ func main() {
 		Interval: "2s",
 		Timezone: "UTC",
 		Func:     printMsg,
-		// FuncName: "main.printMsg",
-		Args: map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
+		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	job, _ = scheduler.AddJob(job)
 	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job.Name, job))
