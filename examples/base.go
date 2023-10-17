@@ -19,7 +19,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "2s",
-		Timezone: "Asia/Shanghai",
+		Timezone: "UTC",
 		Func:     printMsg,
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
@@ -30,6 +30,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Name:     "Job2",
 		Type:     agscheduler.TYPE_CRON,
 		CronExpr: "*/1 * * * *",
+		Timezone: "Asia/Shanghai",
 		FuncName: "main.printMsg",
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
