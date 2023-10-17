@@ -20,6 +20,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Type:     agscheduler.TYPE_INTERVAL,
 		Timezone: "Asia/Shanghai",
 		Func:     printMsg,
+		// FuncName: "main.printMsg",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 		Interval: 2 * time.Second,
 	}

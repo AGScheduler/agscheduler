@@ -58,6 +58,7 @@ func main() {
 		Type:     agscheduler.TYPE_INTERVAL,
 		Timezone: "UTC",
 		Func:     printMsg,
+		// FuncName: "main.printMsg",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 		Interval: 2 * time.Second,
 	}
