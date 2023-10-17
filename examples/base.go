@@ -42,7 +42,7 @@ func runExample(s *agscheduler.Scheduler) {
 	job3 := agscheduler.Job{
 		Name:     "Job3",
 		Type:     agscheduler.TYPE_DATETIME,
-		StartAt:  "2023-10-22 07:30:08",
+		StartAt:  "2023-09-22 07:30:08",
 		Timezone: "America/New_York",
 		Func:     printMsg,
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},

@@ -42,9 +42,19 @@ func (j *Job) SetId() {
 	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)
 }
 
-func (j Job) String() string {
+func (j *Job) LastRunTimeWithTimezone() time.Time {
 	timezone, _ := time.LoadLocation(j.Timezone)
 
+	return j.LastRunTime.In(timezone)
+}
+
+func (j *Job) NextRunTimeWithTimezone() time.Time {
+	timezone, _ := time.LoadLocation(j.Timezone)
+
+	return j.NextRunTime.In(timezone)
+}
+
+func (j Job) String() string {
 	return fmt.Sprintf(
 		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
@@ -53,7 +63,7 @@ func (j Job) String() string {
 		j.Id, j.Name, j.Type, j.StartAt, j.EndAt,
 		j.Interval, j.CronExpr, j.Timezone,
 		j.FuncName, j.Args,
-		j.LastRunTime.In(timezone), j.NextRunTime.In(timezone), j.Status,
+		j.LastRunTimeWithTimezone(), j.NextRunTimeWithTimezone(), j.Status,
 	)
 }
 
