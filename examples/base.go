@@ -20,7 +20,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Type:     agscheduler.TYPE_INTERVAL,
 		Timezone: "Asia/Shanghai",
 		Func:     printMsg,
-		Args:     []any{"arg1", "arg2", "arg3"},
+		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 		Interval: 2 * time.Second,
 	}
 	job1, _ = s.AddJob(job1)
@@ -30,7 +30,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Name:     "Job2",
 		Type:     agscheduler.TYPE_CRON,
 		Func:     printMsg,
-		Args:     []any{"arg4", "arg5", "arg6", "arg7"},
+		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 		CronExpr: "*/1 * * * *",
 	}
 	job2, _ = s.AddJob(job2)
@@ -46,7 +46,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Type:     agscheduler.TYPE_DATETIME,
 		Timezone: timezone.String(),
 		Func:     printMsg,
-		Args:     []any{"arg8", "arg9"},
+		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 		StartAt:  startAt,
 	}
 	job3, _ = s.AddJob(job3)

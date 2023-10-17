@@ -25,7 +25,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Func:     printMsg,
-		Args:     []any{"arg1", "arg2", "arg3"},
+		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 		Interval: 1 * time.Second,
 	}
 	assert.Empty(t, job.FuncName)
