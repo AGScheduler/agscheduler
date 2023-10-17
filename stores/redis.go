@@ -119,7 +119,7 @@ func (s *RedisStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	nextRunTimeMin := time.Unix(int64(sliceRunTimes[0].Score), 0)
+	nextRunTimeMin := time.Unix(int64(sliceRunTimes[0].Score), 0).UTC()
 	return nextRunTimeMin, nil
 }
 
