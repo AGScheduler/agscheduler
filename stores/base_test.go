@@ -37,20 +37,17 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 
 	job.Type = agscheduler.TYPE_CRON
 	job.CronExpr = "*/1 * * * *"
-	s.UpdateJob(job)
-	job, _ = s.GetJob(job.Id)
+	job, _ = s.UpdateJob(job)
 	assert.Equal(t, agscheduler.TYPE_CRON, job.Type)
 
 	timezone, _ := time.LoadLocation(job.Timezone)
 	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 
-	s.PauseJob(job.Id)
-	job, _ = s.GetJob(job.Id)
+	job, _ = s.PauseJob(job.Id)
 	assert.Equal(t, agscheduler.STATUS_PAUSED, job.Status)
 	assert.Equal(t, nextRunTimeMax.Unix(), job.NextRunTime.Unix())
 
-	s.ResumeJob(job.Id)
-	job, _ = s.GetJob(job.Id)
+	job, _ = s.ResumeJob(job.Id)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), job.NextRunTime.Unix())
 
 	s.DeleteJob(job.Id)

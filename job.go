@@ -25,8 +25,8 @@ type Job struct {
 	Id          string
 	Name        string
 	Type        string
-	StartAt     time.Time
-	EndAt       time.Time
+	StartAt     string
+	EndAt       string
 	Interval    string
 	CronExpr    string
 	Timezone    string
@@ -43,6 +43,8 @@ func (j *Job) SetId() {
 }
 
 func (j Job) String() string {
+	timezone, _ := time.LoadLocation(j.Timezone)
+
 	return fmt.Sprintf(
 		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
@@ -51,7 +53,7 @@ func (j Job) String() string {
 		j.Id, j.Name, j.Type, j.StartAt, j.EndAt,
 		j.Interval, j.CronExpr, j.Timezone,
 		j.FuncName, j.Args,
-		j.LastRunTime, j.NextRunTime, j.Status,
+		j.LastRunTime.In(timezone), j.NextRunTime.In(timezone), j.Status,
 	)
 }
 
