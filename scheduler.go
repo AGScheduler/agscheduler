@@ -64,7 +64,13 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
-	j.SetId()
+	for {
+		j.SetId()
+		if _, err := s.GetJob(j.Id); err != nil {
+			break
+		}
+	}
+
 	j.Status = STATUS_RUNNING
 
 	if j.Timezone == "" {
