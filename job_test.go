@@ -18,27 +18,27 @@ func getJob() Job {
 }
 
 func TestJobSetId(t *testing.T) {
-	job := getJob()
-	job.SetId()
+	j := getJob()
+	j.SetId()
 
-	assert.Len(t, job.Id, 32)
+	assert.Len(t, j.Id, 32)
 }
 
 func TestJobString(t *testing.T) {
-	job := getJob()
-	typeOfJob := reflect.TypeOf(job)
+	j := getJob()
+	typeOfJob := reflect.TypeOf(j)
 	for i := 0; i < typeOfJob.NumField(); i++ {
 		fieldType := typeOfJob.Field(i)
 		if fieldType.Name == "Func" {
 			continue
 		}
-		assert.Contains(t, job.String(), "'"+fieldType.Name+"'")
+		assert.Contains(t, j.String(), "'"+fieldType.Name+"'")
 	}
 }
 
 func TestJobStateDumps(t *testing.T) {
-	job := getJob()
-	state, err := StateDumps(job)
+	j := getJob()
+	state, err := StateDumps(j)
 
 	assert.IsType(t, []byte{}, state)
 	assert.NotEmpty(t, state)
@@ -46,19 +46,19 @@ func TestJobStateDumps(t *testing.T) {
 }
 
 func TestJobStateLoads(t *testing.T) {
-	job := getJob()
-	state, _ := StateDumps(job)
-	job, err := StateLoads(state)
+	j := getJob()
+	state, _ := StateDumps(j)
+	j, err := StateLoads(state)
 
-	assert.IsType(t, Job{}, job)
-	assert.NotEmpty(t, job)
+	assert.IsType(t, Job{}, j)
+	assert.NotEmpty(t, j)
 	assert.NoError(t, err)
 }
 
 func TestJobStateLoadsError(t *testing.T) {
-	job, err := StateLoads([]byte("job"))
+	j, err := StateLoads([]byte("job"))
 
-	assert.Empty(t, job)
+	assert.Empty(t, j)
 	assert.Error(t, err)
 }
 
