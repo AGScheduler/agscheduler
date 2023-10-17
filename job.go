@@ -32,7 +32,7 @@ type Job struct {
 	Timezone    string
 	Func        func(Job)
 	FuncName    string
-	Args        []any
+	Args        map[string]any
 	LastRunTime time.Time
 	NextRunTime time.Time
 	Status      string

@@ -13,7 +13,7 @@ func getJob() Job {
 		Name:     "Job",
 		Type:     TYPE_INTERVAL,
 		Func:     func(j Job) {},
-		Args:     []any{},
+		Args:     map[string]any{},
 		Interval: 1 * time.Second,
 	}
 }
