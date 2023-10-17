@@ -3,7 +3,6 @@ package agscheduler
 import (
 	"reflect"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -12,9 +11,9 @@ func getJob() Job {
 	return Job{
 		Name:     "Job",
 		Type:     TYPE_INTERVAL,
+		Interval: "1s",
 		Func:     func(j Job) {},
 		Args:     map[string]any{},
-		Interval: 1 * time.Second,
 	}
 }
 

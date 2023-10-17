@@ -31,7 +31,7 @@ func getJob() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
-		Interval: 500 * time.Millisecond,
+		Interval: "500ms",
 		Func:     printMsg,
 	}
 }
@@ -40,7 +40,7 @@ func getJobWithoutFunc() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
-		Interval: 500 * time.Millisecond,
+		Interval: "500ms",
 	}
 }
 
@@ -102,7 +102,7 @@ func TestSchedulerUpdateJob(t *testing.T) {
 
 	j, _ = s.AddJob(j)
 
-	interval := 2 * time.Second
+	interval := "2s"
 	j.Interval = interval
 	j, _ = s.UpdateJob(j)
 
@@ -199,7 +199,7 @@ func TestCalcNextRunTime(t *testing.T) {
 	job := agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
-		Interval: 1 * time.Second,
+		Interval: "1s",
 		Timezone: "UTC",
 		Status:   agscheduler.STATUS_RUNNING,
 	}
@@ -213,9 +213,10 @@ func TestCalcNextRunTime(t *testing.T) {
 	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
 
 	job.Type = agscheduler.TYPE_INTERVAL
-	interval := 1 * time.Second
+	interval := "1s"
 	job.Interval = interval
-	nextRunTime = time.Now().In(timezone).Add(interval)
+	i, _ := time.ParseDuration(interval)
+	nextRunTime = time.Now().In(timezone).Add(i)
 	nextRunTimeNew, _ = agscheduler.CalcNextRunTime(job)
 	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0), nextRunTimeNew)
 

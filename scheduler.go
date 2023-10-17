@@ -33,8 +33,9 @@ func (s *Scheduler) Store() Store {
 func CalcNextRunTime(j Job) (time.Time, error) {
 	timezone, err := time.LoadLocation(j.Timezone)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("job `%s` timezone `%s` error: %s", j.Id, j.Timezone, err)
+		return time.Time{}, fmt.Errorf("job `%s` Timezone `%s` error: %s", j.Id, j.Timezone, err)
 	}
+
 	if j.Status == STATUS_PAUSED {
 		nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 		return time.Unix(nextRunTimeMax.Unix(), 0), nil
@@ -45,7 +46,11 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 	case TYPE_DATETIME:
 		nextRunTime = j.StartAt.In(timezone)
 	case TYPE_INTERVAL:
-		nextRunTime = time.Now().In(timezone).Add(j.Interval)
+		i, err := time.ParseDuration(j.Interval)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("job `%s` Interval `%s` error: %s", j.Id, j.Interval, err)
+		}
+		nextRunTime = time.Now().In(timezone).Add(i)
 	case TYPE_CRON:
 		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
