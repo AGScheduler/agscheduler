@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/kwkwc/agscheduler)
 [![license](https://img.shields.io/github/license/kwkwc/agscheduler)](https://github.com/kwkwc/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，动态更改和持久化任务
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，支持动态更改和持久化任务，支持远程调用
 
 [English](README.md) | 简体中文
 
@@ -27,6 +27,9 @@
   - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
+- 支持远程调用
+  - [x] gRPC
+  - [ ] HTTP
 
 ## 使用
 
@@ -98,6 +101,19 @@ func main() {
 ## 注册函数
 
 > **_由于 golang 无法序列化函数，所以 `scheduler.Start()` 之前需要使用 `RegisterFuncs` 注册函数_**
+
+## 远程调用 gRPC
+
+```golang
+# Server
+service := services.SchedulerRPCService{Scheduler: scheduler}
+service.Start("127.0.0.1:36363")
+
+# Client
+conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
+client := pb.NewSchedulerClient(conn)
+client.AddJob(ctx, job)
+```
 
 ## 示例
 

@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/kwkwc/agscheduler)
 [![license](https://img.shields.io/github/license/kwkwc/agscheduler)](https://github.com/kwkwc/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) is a task scheduler for Golang, that supports multiple scheduling types, dynamic changes and persistent tasks.
+> Advanced Golang Scheduler (AGScheduler) is a task scheduler for Golang that supports multiple scheduling types, dynamic changes and persistent tasks, and remote call
 
 English | [简体中文](README.zh-CN.md)
 
@@ -27,6 +27,9 @@ English | [简体中文](README.zh-CN.md)
   - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
+- Support for remote call
+  - [x] gRPC
+  - [ ] HTTP
 
 ## Usage
 
@@ -98,6 +101,19 @@ func main() {
 ## Register Funcs
 
 > **_Since golang can't serialize functions, you need to register them with `RegisterFuncs` before `scheduler.Start()`_**
+
+## Remote Call gRPC
+
+```golang
+# Server
+service := services.SchedulerRPCService{Scheduler: scheduler}
+service.Start("127.0.0.1:36363")
+
+# Client
+conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
+client := pb.NewSchedulerClient(conn)
+client.AddJob(ctx, job)
+```
 
 ## Examples
 
