@@ -33,3 +33,4 @@ down-ci-services:
 
 protobuf:
 	protoc -I services/proto/ --go_out=plugins=grpc:services/proto services/proto/scheduler.proto
+	protoc -I services/proto/ --python_out=./examples/rpc/python services/proto/scheduler.proto
