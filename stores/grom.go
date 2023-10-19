@@ -10,7 +10,7 @@ import (
 )
 
 type Jobs struct {
-	ID          string    `gorm:"size:255;primaryKey"`
+	ID          string    `gorm:"size:64;primaryKey"`
 	NextRunTime time.Time `gorm:"index"`
 	State       []byte    `gorm:"type:bytes;not null"`
 }

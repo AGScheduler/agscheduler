@@ -10,6 +10,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
 const (
@@ -39,7 +43,11 @@ type Job struct {
 }
 
 func (j *Job) SetId() {
-	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)
+	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
+}
+
+func (j *Job) FullName() string {
+	return j.Id + ":" + j.Name
 }
 
 func (j *Job) LastRunTimeWithTimezone() time.Time {
@@ -86,6 +94,64 @@ func StateLoads(state []byte) (Job, error) {
 		return Job{}, err
 	}
 	return j, nil
+}
+
+func JobToPbJobPtr(j Job) *pb.Job {
+	args, _ := structpb.NewStruct(j.Args)
+
+	return &pb.Job{
+		Id:          j.Id,
+		Name:        j.Name,
+		Type:        j.Type,
+		StartAt:     j.StartAt,
+		EndAt:       j.EndAt,
+		Interval:    j.Interval,
+		CronExpr:    j.CronExpr,
+		Timezone:    j.Timezone,
+		FuncName:    j.FuncName,
+		Args:        args,
+		LastRunTime: timestamppb.New(j.LastRunTime),
+		NextRunTime: timestamppb.New(j.NextRunTime),
+		Status:      j.Status,
+	}
+}
+
+func PbJobPtrToJob(pbJob *pb.Job) Job {
+	return Job{
+		Id:          pbJob.GetId(),
+		Name:        pbJob.GetName(),
+		Type:        pbJob.GetType(),
+		StartAt:     pbJob.GetStartAt(),
+		EndAt:       pbJob.GetEndAt(),
+		Interval:    pbJob.GetInterval(),
+		CronExpr:    pbJob.GetCronExpr(),
+		Timezone:    pbJob.GetTimezone(),
+		FuncName:    pbJob.GetFuncName(),
+		Args:        pbJob.GetArgs().AsMap(),
+		LastRunTime: pbJob.GetLastRunTime().AsTime(),
+		NextRunTime: pbJob.GetNextRunTime().AsTime(),
+		Status:      pbJob.GetStatus(),
+	}
+}
+
+func JobsToPbJobsPtr(js []Job) *pb.Jobs {
+	pbJs := pb.Jobs{}
+
+	for _, j := range js {
+		pbJs.Jobs = append(pbJs.Jobs, JobToPbJobPtr(j))
+	}
+
+	return &pbJs
+}
+
+func PbJobsPtrToJobs(pbJs *pb.Jobs) []Job {
+	js := make([]Job, 0)
+
+	for _, pbJ := range pbJs.Jobs {
+		js = append(js, PbJobPtrToJob(pbJ))
+	}
+
+	return js
 }
 
 var funcMap = make(map[string]func(Job))

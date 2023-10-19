@@ -215,7 +215,7 @@ func (s *Scheduler) run() {
 					if f.IsNil() {
 						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.Id, j.FuncName))
 					} else {
-						slog.Info(fmt.Sprintf("Job `%s:%s` is running, next run time: `%s`\n", j.Id, j.Name, j.NextRunTimeWithTimezone().String()))
+						slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
 						go f.Call([]reflect.Value{reflect.ValueOf(j)})
 					}
 

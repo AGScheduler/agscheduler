@@ -43,7 +43,7 @@ import (
 )
 
 func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run %s %s\n", j.Name, j.Args))
+	slog.Info(fmt.Sprintf("Run job `%s` %s\n", j.FullName(), j.Args))
 }
 
 func main() {
@@ -62,7 +62,7 @@ func main() {
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	job1, _ = scheduler.AddJob(job1)
-	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job1.Name, job1))
+	slog.Info(fmt.Sprintf("Scheduler add job `%s` %s.\n\n", job1.FullName(), job1))
 
 	job2 := agscheduler.Job{
 		Name:     "Job2",
@@ -73,7 +73,7 @@ func main() {
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	job2, _ = s.AddJob(job2)
-	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job2.Name, job2))
+	slog.Info(fmt.Sprintf("Scheduler add job `%s` %s.\n\n", job2.FullName(), job2))
 
 	job3 := agscheduler.Job{
 		Name:     "Job3",
@@ -84,7 +84,7 @@ func main() {
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 	}
 	job3, _ = s.AddJob(job3)
-	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job3.Name, job3))
+	slog.Info(fmt.Sprintf("Scheduler add job `%s` %s.\n\n", job3.FullName(), job3))
 
 	scheduler.Start()
 	slog.Info("Scheduler Start.\n\n")

@@ -21,7 +21,7 @@ func TestJobSetId(t *testing.T) {
 	j := getJob()
 	j.SetId()
 
-	assert.Len(t, j.Id, 32)
+	assert.Len(t, j.Id, 16)
 }
 
 func TestJobString(t *testing.T) {
