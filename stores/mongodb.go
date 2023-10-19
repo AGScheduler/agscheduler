@@ -39,7 +39,7 @@ func (s *MongoDBStore) Init() error {
 }
 
 func (s *MongoDBStore) AddJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDumps(j)
+	state, err := agscheduler.StateDump(j)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func (s *MongoDBStore) GetJob(id string) (agscheduler.Job, error) {
 	}
 
 	state := result["state"].(primitive.Binary).Data
-	return agscheduler.StateLoads(state)
+	return agscheduler.StateLoad(state)
 }
 
 func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -83,7 +83,7 @@ func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
 			return nil, err
 		}
 		state := result["state"].(primitive.Binary).Data
-		aj, err := agscheduler.StateLoads(state)
+		aj, err := agscheduler.StateLoad(state)
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +94,7 @@ func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *MongoDBStore) UpdateJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDumps(j)
+	state, err := agscheduler.StateDump(j)
 	if err != nil {
 		return err
 	}

@@ -84,19 +84,20 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 		return Job{}, FuncUnregisteredError(j.FuncName)
 	}
 
-	if j.NextRunTime.IsZero() {
-		nextRunTime, err := CalcNextRunTime(j)
-		if err != nil {
-			return Job{}, err
-		}
-		j.NextRunTime = nextRunTime
+	nextRunTime, err := CalcNextRunTime(j)
+	if err != nil {
+		return Job{}, err
 	}
+	j.NextRunTime = nextRunTime
 
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
 	}
+	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
 
-	s.Start()
+	if !s.isRunning {
+		s.Start()
+	}
 
 	return j, nil
 }
@@ -137,14 +138,19 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
-	if _, err := s.GetJob(id); err != nil {
+	j, err := s.GetJob(id)
+	if err != nil {
 		return err
 	}
+
+	slog.Info(fmt.Sprintf("Scheduler delete job `%s`.\n", j.FullName()))
 
 	return s.store.DeleteJob(id)
 }
 
 func (s *Scheduler) DeleteAllJobs() error {
+	slog.Info("Scheduler delete all jobs.\n")
+
 	return s.store.DeleteAllJobs()
 }
 
@@ -161,6 +167,8 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 		return Job{}, err
 	}
 
+	slog.Info(fmt.Sprintf("Scheduler pause job `%s`.\n", j.FullName()))
+
 	return j, nil
 }
 
@@ -176,6 +184,8 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	if err != nil {
 		return Job{}, err
 	}
+
+	slog.Info(fmt.Sprintf("Scheduler resume job `%s`.\n", j.FullName()))
 
 	return j, nil
 }
@@ -215,7 +225,7 @@ func (s *Scheduler) run() {
 					if f.IsNil() {
 						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.Id, j.FuncName))
 					} else {
-						slog.Info(fmt.Sprintf("Job `%s:%s` is running, next run time: `%s`\n", j.Id, j.Name, j.NextRunTimeWithTimezone().String()))
+						slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
 						go f.Call([]reflect.Value{reflect.ValueOf(j)})
 					}
 
@@ -245,6 +255,7 @@ func (s *Scheduler) run() {
 
 func (s *Scheduler) Start() {
 	if s.isRunning {
+		slog.Info("Scheduler is running.\n")
 		return
 	}
 
@@ -253,15 +264,20 @@ func (s *Scheduler) Start() {
 	s.isRunning = true
 
 	go s.run()
+
+	slog.Info("Scheduler start.\n")
 }
 
 func (s *Scheduler) Stop() {
 	if !s.isRunning {
+		slog.Info("Scheduler has stopped.\n")
 		return
 	}
 
 	s.isRunning = false
 	s.quitChan <- struct{}{}
+
+	slog.Info("Scheduler stop.\n")
 }
 
 func (s *Scheduler) getNextWakeupInterval() time.Duration {

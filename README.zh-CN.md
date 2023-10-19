@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/kwkwc/agscheduler)
 [![license](https://img.shields.io/github/license/kwkwc/agscheduler)](https://github.com/kwkwc/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，动态更改和持久化任务
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，支持动态更改和持久化任务，支持远程调用
 
 [English](README.md) | 简体中文
 
@@ -27,6 +27,9 @@
   - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
+- 支持远程调用
+  - [x] gRPC
+  - [ ] HTTP
 
 ## 使用
 
@@ -43,7 +46,7 @@ import (
 )
 
 func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run %s %s\n", j.Name, j.Args))
+	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
 }
 
 func main() {
@@ -62,7 +65,7 @@ func main() {
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	job1, _ = scheduler.AddJob(job1)
-	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job1.Name, job1))
+	slog.Info(fmt.Sprintf("%s.\n\n", job1))
 
 	job2 := agscheduler.Job{
 		Name:     "Job2",
@@ -73,7 +76,7 @@ func main() {
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	job2, _ = s.AddJob(job2)
-	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job2.Name, job2))
+	slog.Info(fmt.Sprintf("%s.\n\n", job2))
 
 	job3 := agscheduler.Job{
 		Name:     "Job3",
@@ -84,10 +87,12 @@ func main() {
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 	}
 	job3, _ = s.AddJob(job3)
-	slog.Info(fmt.Sprintf("Scheduler add %s %s.\n\n", job3.Name, job3))
+	slog.Info(fmt.Sprintf("%s.\n\n", job3))
+
+	jobs, _ := s.GetAllJobs()
+	slog.Info(fmt.Sprintf("Scheduler get all jobs %s.\n\n", jobs))
 
 	scheduler.Start()
-	slog.Info("Scheduler Start.\n\n")
 
 	select {}
 }
@@ -96,6 +101,19 @@ func main() {
 ## 注册函数
 
 > **_由于 golang 无法序列化函数，所以 `scheduler.Start()` 之前需要使用 `RegisterFuncs` 注册函数_**
+
+## 远程调用 gRPC
+
+```golang
+# Server
+service := services.SchedulerRPCService{Scheduler: scheduler}
+service.Start("127.0.0.1:36363")
+
+# Client
+conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
+client := pb.NewSchedulerClient(conn)
+client.AddJob(ctx, job)
+```
 
 ## 示例
 

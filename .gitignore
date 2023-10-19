@@ -22,3 +22,7 @@ coverage.html
 # Go workspace file
 go.work
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class

@@ -1,4 +1,4 @@
-// go run base.go memory.go
+// go run examples/stores/base.go examples/stores/memory.go
 
 package main
 

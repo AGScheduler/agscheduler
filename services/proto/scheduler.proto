@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package scheduler;
+option go_package="./;scheduler";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+message JobId {
+  string id = 1;
+}
+
+message Job {
+  string id = 1;
+  string name = 2;
+  string type = 3;
+  string start_at = 4;
+  string end_at = 5;
+  string interval = 6;
+  string cron_expr = 7;
+  string timezone = 8;
+  string func_name = 9;
+  google.protobuf.Struct args = 10;
+  google.protobuf.Timestamp  last_run_time = 11;
+  google.protobuf.Timestamp  next_run_time = 12;
+  string status = 13;
+}
+
+message Jobs {
+  repeated Job Jobs = 1;
+}
+
+service Scheduler {
+  rpc AddJob (Job) returns (Job) {}
+
+  rpc GetJob (JobId) returns (Job) {}
+
+  rpc GetAllJobs (google.protobuf.Empty) returns (Jobs) {}
+
+  rpc UpdateJob (Job) returns (Job) {}
+
+  rpc DeleteJob (JobId) returns (google.protobuf.Empty) {}
+
+  rpc DeleteAllJobs (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+
+  rpc PauseJob (JobId) returns (Job) {}
+
+  rpc ResumeJob (JobId) returns (Job) {}
+
+  rpc Start (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+
+  rpc Stop (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}

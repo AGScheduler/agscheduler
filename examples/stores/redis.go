@@ -1,4 +1,4 @@
-// go run base.go redis.go
+// go run examples/stores/base.go examples/stores/redis.go
 
 package main
 

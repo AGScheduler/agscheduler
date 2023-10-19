@@ -10,7 +10,7 @@ import (
 )
 
 type Jobs struct {
-	ID          string    `gorm:"size:255;primaryKey"`
+	ID          string    `gorm:"size:64;primaryKey"`
 	NextRunTime time.Time `gorm:"index"`
 	State       []byte    `gorm:"type:bytes;not null"`
 }
@@ -34,7 +34,7 @@ func (s *GORMStore) Init() error {
 }
 
 func (s *GORMStore) AddJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDumps(j)
+	state, err := agscheduler.StateDump(j)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
 
-	return agscheduler.StateLoads(js.State)
+	return agscheduler.StateLoad(js.State)
 }
 
 func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -67,7 +67,7 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 
 	var jobList []agscheduler.Job
 	for _, js := range jsList {
-		aj, err := agscheduler.StateLoads(js.State)
+		aj, err := agscheduler.StateLoad(js.State)
 		if err != nil {
 			return nil, err
 		}
@@ -78,7 +78,7 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDumps(j)
+	state, err := agscheduler.StateDump(j)
 	if err != nil {
 		return err
 	}
