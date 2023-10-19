@@ -22,20 +22,20 @@ const (
 )
 
 type Job struct {
-	Id          string
-	Name        string
-	Type        string
-	StartAt     string
-	EndAt       string
-	Interval    string
-	CronExpr    string
-	Timezone    string
-	Func        func(Job)
-	FuncName    string
-	Args        map[string]any
-	LastRunTime time.Time
-	NextRunTime time.Time
-	Status      string
+	Id          string         `json:"id"`
+	Name        string         `json:"name"`
+	Type        string         `json:"type"`
+	StartAt     string         `json:"start_at"`
+	EndAt       string         `json:"end_at"`
+	Interval    string         `json:"interval"`
+	CronExpr    string         `json:"cron_expr"`
+	Timezone    string         `json:"timezone"`
+	Func        func(Job)      `json:"-"`
+	FuncName    string         `json:"func_name"`
+	Args        map[string]any `json:"args"`
+	LastRunTime time.Time      `json:"last_run_time"`
+	NextRunTime time.Time      `json:"next_run_time"`
+	Status      string         `json:"status"`
 }
 
 func (j *Job) SetId() {
