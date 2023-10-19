@@ -74,7 +74,7 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	time.Sleep(100 * time.Millisecond)
 }
 
-func TestMemoryStore(t *testing.T) {
+func TestRPCService(t *testing.T) {
 	agscheduler.RegisterFuncs(printMsg)
 
 	store := &stores.MemoryStore{}

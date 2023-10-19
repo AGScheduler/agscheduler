@@ -22,8 +22,8 @@ _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'scheduler_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
-  _globals['DESCRIPTOR']._options = None
-  _globals['DESCRIPTOR']._serialized_options = b'Z\014./;scheduler'
+  DESCRIPTOR._options = None
+  DESCRIPTOR._serialized_options = b'Z\014./;scheduler'
   _globals['_JOBID']._serialized_start=122
   _globals['_JOBID']._serialized_end=141
   _globals['_JOB']._serialized_start=144
