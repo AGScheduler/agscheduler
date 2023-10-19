@@ -75,7 +75,7 @@ func (j Job) String() string {
 	)
 }
 
-func StateDumps(j Job) ([]byte, error) {
+func StateDump(j Job) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(j)
@@ -85,7 +85,7 @@ func StateDumps(j Job) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func StateLoads(state []byte) (Job, error) {
+func StateLoad(state []byte) (Job, error) {
 	var j Job
 	buf := bytes.NewBuffer(state)
 	dec := gob.NewDecoder(buf)

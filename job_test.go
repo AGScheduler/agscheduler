@@ -36,27 +36,27 @@ func TestJobString(t *testing.T) {
 	}
 }
 
-func TestJobStateDumps(t *testing.T) {
+func TestJobStateDump(t *testing.T) {
 	j := getJob()
-	state, err := StateDumps(j)
+	state, err := StateDump(j)
 
 	assert.IsType(t, []byte{}, state)
 	assert.NotEmpty(t, state)
 	assert.NoError(t, err)
 }
 
-func TestJobStateLoads(t *testing.T) {
+func TestJobStateLoad(t *testing.T) {
 	j := getJob()
-	state, _ := StateDumps(j)
-	j, err := StateLoads(state)
+	state, _ := StateDump(j)
+	j, err := StateLoad(state)
 
 	assert.IsType(t, Job{}, j)
 	assert.NotEmpty(t, j)
 	assert.NoError(t, err)
 }
 
-func TestJobStateLoadsError(t *testing.T) {
-	j, err := StateLoads([]byte("job"))
+func TestJobStateLoadError(t *testing.T) {
+	j, err := StateLoad([]byte("job"))
 
 	assert.Empty(t, j)
 	assert.Error(t, err)
