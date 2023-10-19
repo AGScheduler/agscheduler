@@ -1,4 +1,4 @@
-// go run base.go gorm.go
+// go run examples/stores/base.go examples/stores/gorm.go
 
 package main
 

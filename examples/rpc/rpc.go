@@ -1,4 +1,4 @@
-// go run rpc.go
+// go run examples/rpc/rpc.go
 
 package main
 
@@ -25,8 +25,6 @@ func printMsg(j agscheduler.Job) {
 }
 
 func runExampleRPC(c pb.SchedulerClient) {
-	agscheduler.RegisterFuncs(printMsg)
-
 	job1 := agscheduler.Job{
 		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,
@@ -120,6 +118,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 }
 
 func main() {
+	agscheduler.RegisterFuncs(printMsg)
+
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}

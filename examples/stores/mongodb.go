@@ -1,4 +1,4 @@
-// go run base.go mongodb.go
+// go run examples/stores/base.go examples/stores/mongodb.go
 
 package main
 
