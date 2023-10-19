@@ -102,14 +102,14 @@ func main() {
 
 > **_Since golang can't serialize functions, you need to register them with `RegisterFuncs` before `scheduler.Start()`_**
 
-## Remote Call gRPC
+## gRPC
 
 ```golang
-# Server
+// Server
 service := services.SchedulerRPCService{Scheduler: scheduler}
 service.Start("127.0.0.1:36363")
 
-# Client
+// Client
 conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)

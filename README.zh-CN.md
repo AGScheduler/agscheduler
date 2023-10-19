@@ -102,14 +102,14 @@ func main() {
 
 > **_由于 golang 无法序列化函数，所以 `scheduler.Start()` 之前需要使用 `RegisterFuncs` 注册函数_**
 
-## 远程调用 gRPC
+## gRPC
 
 ```golang
-# Server
+// Server
 service := services.SchedulerRPCService{Scheduler: scheduler}
 service.Start("127.0.0.1:36363")
 
-# Client
+// Client
 conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)
