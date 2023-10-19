@@ -84,13 +84,11 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 		return Job{}, FuncUnregisteredError(j.FuncName)
 	}
 
-	if j.NextRunTime.IsZero() {
-		nextRunTime, err := CalcNextRunTime(j)
-		if err != nil {
-			return Job{}, err
-		}
-		j.NextRunTime = nextRunTime
+	nextRunTime, err := CalcNextRunTime(j)
+	if err != nil {
+		return Job{}, err
 	}
+	j.NextRunTime = nextRunTime
 
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
