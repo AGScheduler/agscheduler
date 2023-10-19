@@ -119,7 +119,7 @@ func main() {
 	scheduler.SetStore(store)
 
 	service := services.SchedulerRPCService{Scheduler: scheduler}
-	service.Start("")
+	service.Start("127.0.0.1:36363")
 
 	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	client := pb.NewSchedulerClient(conn)

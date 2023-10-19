@@ -24,7 +24,7 @@ func main() {
 	scheduler.SetStore(store)
 
 	service := services.SchedulerRPCService{Scheduler: scheduler}
-	service.Start("")
+	service.Start("127.0.0.1:36363")
 
 	select {}
 }
