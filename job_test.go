@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
 func getJob() Job {
@@ -60,6 +62,44 @@ func TestJobStateLoadError(t *testing.T) {
 
 	assert.Empty(t, j)
 	assert.Error(t, err)
+}
+
+func TestJobToPbJobPtr(t *testing.T) {
+	j := getJob()
+	pbJ := JobToPbJobPtr(j)
+
+	assert.IsType(t, &pb.Job{}, pbJ)
+	assert.NotEmpty(t, pbJ)
+}
+
+func TestPbJobPtrToJob(t *testing.T) {
+	j := getJob()
+	pbJ := JobToPbJobPtr(j)
+	j = PbJobPtrToJob(pbJ)
+
+	assert.IsType(t, Job{}, j)
+	assert.NotEmpty(t, j)
+}
+
+func TestJobsToPbJobsPtr(t *testing.T) {
+	js := make([]Job, 0)
+	js = append(js, getJob())
+	js = append(js, getJob())
+	pbJs := JobsToPbJobsPtr(js)
+
+	assert.IsType(t, &pb.Jobs{}, pbJs)
+	assert.Len(t, pbJs.Jobs, 2)
+}
+
+func TestPbJobsPtrToJobs(t *testing.T) {
+	js := make([]Job, 0)
+	js = append(js, getJob())
+	js = append(js, getJob())
+	pbJs := JobsToPbJobsPtr(js)
+	js = PbJobsPtrToJobs(pbJs)
+
+	assert.IsType(t, []Job{}, js)
+	assert.Len(t, js, 2)
 }
 
 func TestRegisterFuncs(t *testing.T) {

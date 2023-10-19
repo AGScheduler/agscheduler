@@ -19,7 +19,7 @@ test:
 	go test \
 		-covermode=set \
 		-coverprofile=coverage.out \
-		-v . ./stores
+		-v . ./services ./stores
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 
