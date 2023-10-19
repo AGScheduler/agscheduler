@@ -31,7 +31,7 @@ def run():
                 args=args,
             )
         )
-        print("Scheduler add job: ", pb_job)
+        print(pb_job)
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ import (
 var ctx = context.Background()
 
 func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n", j.FullName(), j.Args))
+	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
 }
 
 func runExampleRPC(c pb.SchedulerClient) {
@@ -35,7 +35,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 	}
 	pbJob1, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job1))
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
-	slog.Info(fmt.Sprintf("Scheduler add job `%s` %s.\n\n", job1.FullName(), job1))
+	slog.Info(fmt.Sprintf("%s.\n\n", job1))
 
 	job2 := agscheduler.Job{
 		Name:     "Job2",
@@ -47,10 +47,9 @@ func runExampleRPC(c pb.SchedulerClient) {
 	}
 	pbJob2, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job2))
 	job2 = agscheduler.PbJobPtrToJob(pbJob2)
-	slog.Info(fmt.Sprintf("Scheduler add job `%s` %s.\n\n", job2.FullName(), job2))
+	slog.Info(fmt.Sprintf("%s.\n\n", job2))
 
 	c.Start(ctx, &emptypb.Empty{})
-	slog.Info("Scheduler start.\n\n")
 
 	job3 := agscheduler.Job{
 		Name:     "Job3",
@@ -62,7 +61,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 	}
 	pbJob3, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job3))
 	job3 = agscheduler.PbJobPtrToJob(pbJob3)
-	slog.Info(fmt.Sprintf("Scheduler add job `%s` %s.\n\n", job3.FullName(), job3))
+	slog.Info(fmt.Sprintf("%s.\n\n", job3))
 
 	pbJobs, _ := c.GetAllJobs(ctx, &emptypb.Empty{})
 	jobs := agscheduler.PbJobsPtrToJobs(pbJobs)
@@ -86,35 +85,29 @@ func runExampleRPC(c pb.SchedulerClient) {
 
 	pbJob1, _ = c.PauseJob(ctx, &pb.JobId{Id: job1.Id})
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
-	slog.Info(fmt.Sprintf("Scheduler pause job `%s`.\n\n", job1.FullName()))
 
 	slog.Info("Sleep 6s......\n\n")
 	time.Sleep(6 * time.Second)
 
 	pbJob1, _ = c.ResumeJob(ctx, &pb.JobId{Id: job1.Id})
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
-	slog.Info(fmt.Sprintf("Scheduler resume job `%s`.\n\n", job1.FullName()))
 
 	c.DeleteJob(ctx, &pb.JobId{Id: job2.Id})
-	slog.Info(fmt.Sprintf("Scheduler delete job `%s`.\n\n", job2.FullName()))
 
 	slog.Info("Sleep 6s......\n\n")
 	time.Sleep(6 * time.Second)
 
 	c.Stop(ctx, &emptypb.Empty{})
-	slog.Info("Scheduler stop.\n\n")
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
 	c.Start(ctx, &emptypb.Empty{})
-	slog.Info("Scheduler start.\n\n")
 
 	slog.Info("Sleep 4s......\n\n")
 	time.Sleep(4 * time.Second)
 
 	c.DeleteAllJobs(ctx, &emptypb.Empty{})
-	slog.Info("Scheduler delete all jobs.\n\n")
 }
 
 func main() {

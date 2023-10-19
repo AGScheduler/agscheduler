@@ -11,7 +11,7 @@ import (
 )
 
 func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n", j.FullName(), j.Args))
+	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
 }
 
 func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {

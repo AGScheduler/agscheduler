@@ -27,7 +27,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 	}
 	pbJob1, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job1))
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
-	slog.Info(fmt.Sprintf("Scheduler add job `%s` %s.\n\n", job1.FullName(), job1))
+	slog.Info(fmt.Sprintf("%s.\n\n", job1))
 }
 
 func main() {
