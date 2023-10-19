@@ -4,7 +4,11 @@ SHELL=/bin/bash
 	up-ci-services down-ci-services protobuf
 
 install:
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 	go mod tidy
+
+	pip3 install grpcio-tools
 
 format:
 	gofmt -l -s -w .
@@ -32,5 +36,16 @@ down-ci-services:
 	docker compose -f ci/docker-compose.ci.yml down
 
 protobuf:
-	protoc -I services/proto/ --go_out=plugins=grpc:services/proto services/proto/scheduler.proto
-	protoc -I services/proto/ --python_out=./examples/rpc/python services/proto/scheduler.proto
+	protoc \
+		-I services/proto/ \
+		--go_out=services/proto --go_opt=paths=source_relative \
+		--go-grpc_out=services/proto --go-grpc_opt=paths=source_relative \
+		services/proto/scheduler.proto
+
+	python3 \
+		-m grpc_tools.protoc \
+		-I services/proto/ \
+		--python_out=examples/rpc/python \
+		--pyi_out=examples/rpc/python \
+		--grpc_python_out=examples/rpc/python \
+		services/proto/scheduler.proto
