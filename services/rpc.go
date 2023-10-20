@@ -13,10 +13,6 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
-type SchedulerRPCService struct {
-	Scheduler *agscheduler.Scheduler
-}
-
 type RPCService struct {
 	pb.UnimplementedSchedulerServer
 
@@ -84,6 +80,10 @@ func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, 
 
 	resp, err = handler(ctx, req)
 	return resp, err
+}
+
+type SchedulerRPCService struct {
+	Scheduler *agscheduler.Scheduler
 }
 
 func (s *SchedulerRPCService) Start(address string) error {
