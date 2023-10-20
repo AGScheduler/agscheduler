@@ -2,8 +2,6 @@ package services
 
 import (
 	"context"
-	"fmt"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -19,9 +17,7 @@ import (
 
 var ctx = context.Background()
 
-func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
-}
+func dryRun(j agscheduler.Job) {}
 
 func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	c.Start(ctx, &emptypb.Empty{})
@@ -32,14 +28,13 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
-		FuncName: "github.com/kwkwc/agscheduler/services.printMsg",
+		FuncName: "github.com/kwkwc/agscheduler/services.dryRun",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	assert.Empty(t, j.Status)
 
-	pbJ, err := c.AddJob(ctx, agscheduler.JobToPbJobPtr(j))
+	pbJ, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(j))
 	j = agscheduler.PbJobPtrToJob(pbJ)
-	slog.Info(j.String(), err)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
 	j.Type = agscheduler.TYPE_CRON
@@ -61,7 +56,7 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	assert.NotEqual(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
 	c.DeleteJob(ctx, &pb.JobId{Id: j.Id})
-	_, err = c.GetJob(ctx, &pb.JobId{Id: j.Id})
+	_, err := c.GetJob(ctx, &pb.JobId{Id: j.Id})
 	assert.Contains(t, err.Error(), agscheduler.JobNotFoundError(j.Id).Error())
 
 	c.DeleteAllJobs(ctx, &emptypb.Empty{})
@@ -75,7 +70,7 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 }
 
 func TestRPCService(t *testing.T) {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(dryRun)
 
 	store := &stores.MemoryStore{}
 

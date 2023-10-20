@@ -1,8 +1,6 @@
 package stores
 
 import (
-	"fmt"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -10,12 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
-}
+func dryRun(j agscheduler.Job) {}
 
 func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(dryRun)
 
 	s.Start()
 
@@ -25,7 +21,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
-		Func:     printMsg,
+		Func:     dryRun,
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	assert.Empty(t, j.FuncName)

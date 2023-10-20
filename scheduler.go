@@ -274,8 +274,11 @@ func (s *Scheduler) Stop() {
 		return
 	}
 
+	if len(s.quitChan) != cap(s.quitChan) {
+		s.quitChan <- struct{}{}
+	}
+
 	s.isRunning = false
-	s.quitChan <- struct{}{}
 
 	slog.Info("Scheduler stop.\n")
 }
