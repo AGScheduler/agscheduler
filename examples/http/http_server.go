@@ -1,4 +1,4 @@
-// go run examples/rpc/rpc_server.go
+// go run examples/http/http_server.go
 
 package main
 
@@ -23,8 +23,8 @@ func main() {
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	rservice := services.SchedulerRPCService{Scheduler: scheduler}
-	rservice.Start("127.0.0.1:36363")
+	hservice := services.SchedulerHTTPService{Scheduler: scheduler}
+	hservice.Start("127.0.0.1:63636")
 
 	select {}
 }

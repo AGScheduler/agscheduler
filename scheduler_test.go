@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func dryRun(j agscheduler.Job) {}
+func dryRunScheduler(j agscheduler.Job) {}
 
 func getSchedulerWithStore() *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}
@@ -22,13 +22,13 @@ func getSchedulerWithStore() *agscheduler.Scheduler {
 }
 
 func getJob() agscheduler.Job {
-	agscheduler.RegisterFuncs(dryRun)
+	agscheduler.RegisterFuncs(dryRunScheduler)
 
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "500ms",
-		Func:     dryRun,
+		Func:     dryRunScheduler,
 	}
 }
 

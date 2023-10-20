@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func dryRun(j agscheduler.Job) {}
+func dryRunStores(j agscheduler.Job) {}
 
 func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
-	agscheduler.RegisterFuncs(dryRun)
+	agscheduler.RegisterFuncs(dryRunStores)
 
 	s.Start()
 
@@ -19,7 +19,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
-		Func:     dryRun,
+		Func:     dryRunStores,
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	assert.Empty(t, j.FuncName)
