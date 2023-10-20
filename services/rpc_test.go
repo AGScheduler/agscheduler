@@ -17,7 +17,7 @@ import (
 
 var ctx = context.Background()
 
-func dryRun(j agscheduler.Job) {}
+func dryRunRPC(j agscheduler.Job) {}
 
 func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	c.Start(ctx, &emptypb.Empty{})
@@ -26,7 +26,7 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
-		FuncName: "github.com/kwkwc/agscheduler/services.dryRun",
+		FuncName: "github.com/kwkwc/agscheduler/services.dryRunRPC",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	assert.Empty(t, j.Status)
@@ -66,15 +66,15 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 }
 
 func TestRPCService(t *testing.T) {
-	agscheduler.RegisterFuncs(dryRun)
+	agscheduler.RegisterFuncs(dryRunRPC)
 
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	service := SchedulerRPCService{Scheduler: scheduler}
-	service.Start("127.0.0.1:36363")
+	rservice := SchedulerRPCService{Scheduler: scheduler}
+	rservice.Start("127.0.0.1:36363")
 
 	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	client := pb.NewSchedulerClient(conn)

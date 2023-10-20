@@ -56,3 +56,4 @@ examples:
 	go run examples/stores/base.go examples/stores/redis.go
 	go run examples/stores/base.go examples/stores/mongodb.go
 	go run examples/rpc/rpc.go
+	go run examples/http/http.go

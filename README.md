@@ -12,10 +12,6 @@
 
 English | [简体中文](README.zh-CN.md)
 
-## Warning
-
-> **_This library is experimental and is not recommended for production use_**
-
 ## Features
 
 - Support for three scheduling types
@@ -29,7 +25,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [MongoDB](https://www.mongodb.com/)
 - Support for remote call
   - [x] gRPC
-  - [ ] HTTP
+  - [x] HTTP APIs
 
 ## Usage
 
@@ -106,13 +102,26 @@ func main() {
 
 ```golang
 // Server
-service := services.SchedulerRPCService{Scheduler: scheduler}
-service.Start("127.0.0.1:36363")
+rservice := services.SchedulerRPCService{Scheduler: scheduler}
+rservice.Start("127.0.0.1:36363")
 
 // Client
 conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)
+```
+
+## HTTP APIs
+
+```golang
+// Server
+hservice := services.SchedulerHTTPService{Scheduler: scheduler}
+hservice.Start("127.0.0.1:63636")
+
+// Client
+mJob := map[string]any{...}
+bJob, _ := json.Marshal(bJob)
+resp, _ := http.Post("http://127.0.0.1:63636/scheduler/job", "application/json", bytes.NewReader(bJob))
 ```
 
 ## Examples

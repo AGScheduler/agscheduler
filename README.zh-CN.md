@@ -12,10 +12,6 @@
 
 [English](README.md) | 简体中文
 
-## 警示
-
-> **_该库处于实验阶段，不建议用于生产环境_**
-
 ## 特性
 
 - 支持三种调度方式
@@ -29,7 +25,7 @@
   - [x] [MongoDB](https://www.mongodb.com/)
 - 支持远程调用
   - [x] gRPC
-  - [ ] HTTP
+  - [x] HTTP APIs
 
 ## 使用
 
@@ -106,13 +102,26 @@ func main() {
 
 ```golang
 // Server
-service := services.SchedulerRPCService{Scheduler: scheduler}
-service.Start("127.0.0.1:36363")
+rservice := services.SchedulerRPCService{Scheduler: scheduler}
+rservice.Start("127.0.0.1:36363")
 
 // Client
 conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)
+```
+
+## HTTP APIs
+
+```golang
+// Server
+hservice := services.SchedulerHTTPService{Scheduler: scheduler}
+hservice.Start("127.0.0.1:63636")
+
+// Client
+mJob := map[string]any{...}
+bJob, _ := json.Marshal(bJob)
+resp, _ := http.Post("http://127.0.0.1:63636/scheduler/job", "application/json", bytes.NewReader(bJob))
 ```
 
 ## 示例
