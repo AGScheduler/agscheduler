@@ -22,8 +22,6 @@ func dryRun(j agscheduler.Job) {}
 func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	c.Start(ctx, &emptypb.Empty{})
 
-	time.Sleep(200 * time.Millisecond)
-
 	j := agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
@@ -65,8 +63,6 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	assert.Len(t, js, 0)
 
 	c.Stop(ctx, &emptypb.Empty{})
-
-	time.Sleep(100 * time.Millisecond)
 }
 
 func TestRPCService(t *testing.T) {
