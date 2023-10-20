@@ -59,6 +59,8 @@ func TestSchedulerAddJob(t *testing.T) {
 
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
+	time.Sleep(500 * time.Millisecond)
+
 	s.Stop()
 }
 
