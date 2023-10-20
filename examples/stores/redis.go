@@ -21,6 +21,4 @@ func main() {
 	scheduler.SetStore(store)
 
 	runExample(scheduler)
-
-	select {}
 }

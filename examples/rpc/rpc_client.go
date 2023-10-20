@@ -35,6 +35,4 @@ func main() {
 	client := pb.NewSchedulerClient(conn)
 
 	runExampleRPC(client)
-
-	select {}
 }

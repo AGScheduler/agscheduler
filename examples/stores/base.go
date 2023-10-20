@@ -53,31 +53,31 @@ func runExample(s *agscheduler.Scheduler) {
 	jobs, _ := s.GetAllJobs()
 	slog.Info(fmt.Sprintf("Scheduler get all jobs %s.\n\n", jobs))
 
-	slog.Info("Sleep 10s......\n\n")
-	time.Sleep(10 * time.Second)
+	slog.Info("Sleep 5s......\n\n")
+	time.Sleep(5 * time.Second)
 
 	job1, _ = s.GetJob(job1.Id)
 	slog.Info(fmt.Sprintf("Scheduler get job `%s` %s.\n\n", job1.FullName(), job1))
 
 	job2.Type = agscheduler.TYPE_INTERVAL
-	job2.Interval = "4s"
+	job2.Interval = "3s"
 	job2, _ = s.UpdateJob(job2)
 	slog.Info(fmt.Sprintf("Scheduler update job `%s` %s.\n\n", job2.FullName(), job2))
 
-	slog.Info("Sleep 8s......")
-	time.Sleep(8 * time.Second)
+	slog.Info("Sleep 4s......")
+	time.Sleep(4 * time.Second)
 
 	job1, _ = s.PauseJob(job1.Id)
 
-	slog.Info("Sleep 6s......\n\n")
-	time.Sleep(6 * time.Second)
+	slog.Info("Sleep 3s......\n\n")
+	time.Sleep(3 * time.Second)
 
 	job1, _ = s.ResumeJob(job1.Id)
 
 	s.DeleteJob(job2.Id)
 
-	slog.Info("Sleep 6s......\n\n")
-	time.Sleep(6 * time.Second)
+	slog.Info("Sleep 4s......\n\n")
+	time.Sleep(4 * time.Second)
 
 	s.Stop()
 
@@ -86,8 +86,8 @@ func runExample(s *agscheduler.Scheduler) {
 
 	s.Start()
 
-	slog.Info("Sleep 4s......\n\n")
-	time.Sleep(4 * time.Second)
+	slog.Info("Sleep 3s......\n\n")
+	time.Sleep(3 * time.Second)
 
 	s.DeleteAllJobs()
 }

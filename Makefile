@@ -1,7 +1,7 @@
 SHELL=/bin/bash
 
 .PHONY: install format format-check lint test check-all \
-	up-ci-services down-ci-services protobuf
+	up-ci-services down-ci-services protobuf examples
 
 install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
@@ -49,3 +49,10 @@ protobuf:
 		--pyi_out=examples/rpc/python \
 		--grpc_python_out=examples/rpc/python \
 		services/proto/scheduler.proto
+
+examples:
+	go run examples/stores/base.go examples/stores/memory.go
+	go run examples/stores/base.go examples/stores/gorm.go
+	go run examples/stores/base.go examples/stores/redis.go
+	go run examples/stores/base.go examples/stores/mongodb.go
+	go run examples/rpc/rpc.go

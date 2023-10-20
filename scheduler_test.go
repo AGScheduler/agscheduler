@@ -1,8 +1,6 @@
 package agscheduler_test
 
 import (
-	"fmt"
-	"log/slog"
 	"testing"
 	"time"
 
@@ -13,9 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
-}
+func dryRun(j agscheduler.Job) {}
 
 func getSchedulerWithStore() *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}
@@ -26,13 +22,13 @@ func getSchedulerWithStore() *agscheduler.Scheduler {
 }
 
 func getJob() agscheduler.Job {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(dryRun)
 
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "500ms",
-		Func:     printMsg,
+		Func:     dryRun,
 	}
 }
 
@@ -63,7 +59,9 @@ func TestSchedulerAddJob(t *testing.T) {
 
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
+
+	s.Stop()
 }
 
 func TestSchedulerAddJobError(t *testing.T) {
@@ -72,6 +70,8 @@ func TestSchedulerAddJobError(t *testing.T) {
 
 	_, err := s.AddJob(j)
 	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError(""))
+
+	s.Stop()
 }
 
 func TestSchedulerGetJob(t *testing.T) {
@@ -81,6 +81,8 @@ func TestSchedulerGetJob(t *testing.T) {
 	j2, _ := s.AddJob(j)
 
 	assert.NotEqual(t, j, j2)
+
+	s.Stop()
 }
 
 func TestSchedulerGetAllJobs(t *testing.T) {
@@ -94,6 +96,8 @@ func TestSchedulerGetAllJobs(t *testing.T) {
 
 	js, _ = s.GetAllJobs()
 	assert.Len(t, js, 1)
+
+	s.Stop()
 }
 
 func TestSchedulerUpdateJob(t *testing.T) {
@@ -107,6 +111,8 @@ func TestSchedulerUpdateJob(t *testing.T) {
 	j, _ = s.UpdateJob(j)
 
 	assert.Equal(t, interval, j.Interval)
+
+	s.Stop()
 }
 
 func TestSchedulerDeleteJob(t *testing.T) {
@@ -118,6 +124,8 @@ func TestSchedulerDeleteJob(t *testing.T) {
 
 	_, err := s.GetJob(j.Id)
 	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(j.Id))
+
+	s.Stop()
 }
 
 func TestSchedulerDeleteAllJobs(t *testing.T) {
@@ -129,6 +137,8 @@ func TestSchedulerDeleteAllJobs(t *testing.T) {
 
 	js, _ := s.GetAllJobs()
 	assert.Len(t, js, 0)
+
+	s.Stop()
 }
 
 func TestSchedulerPauseJob(t *testing.T) {
@@ -140,6 +150,8 @@ func TestSchedulerPauseJob(t *testing.T) {
 	s.PauseJob(j.Id)
 	j, _ = s.GetJob(j.Id)
 	assert.Equal(t, agscheduler.STATUS_PAUSED, j.Status)
+
+	s.Stop()
 }
 
 func TestSchedulerPauseJobError(t *testing.T) {
@@ -162,6 +174,8 @@ func TestSchedulerResumeJob(t *testing.T) {
 	s.ResumeJob(j.Id)
 	j, _ = s.GetJob(j.Id)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
+
+	s.Stop()
 }
 
 func TestSchedulerResumeJobError(t *testing.T) {
@@ -176,7 +190,6 @@ func TestSchedulerStartAndStop(t *testing.T) {
 	s.Start()
 	time.Sleep(100 * time.Millisecond)
 	s.Stop()
-	time.Sleep(100 * time.Millisecond)
 }
 
 func TestSchedulerStartOnce(t *testing.T) {
@@ -184,6 +197,8 @@ func TestSchedulerStartOnce(t *testing.T) {
 	s.Start()
 	time.Sleep(100 * time.Millisecond)
 	s.Start()
+	time.Sleep(100 * time.Millisecond)
+	s.Stop()
 }
 
 func TestSchedulerStopOnce(t *testing.T) {

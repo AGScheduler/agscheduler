@@ -194,6 +194,7 @@ func (s *Scheduler) run() {
 	for {
 		select {
 		case <-s.quitChan:
+			slog.Info("Scheduler quit.\n")
 			return
 		case <-s.timer.C:
 			now := time.Now().UTC()
@@ -205,7 +206,7 @@ func (s *Scheduler) run() {
 			}
 			if len(js) == 0 {
 				s.Stop()
-				return
+				continue
 			}
 
 			for _, j := range js {
@@ -260,7 +261,7 @@ func (s *Scheduler) Start() {
 	}
 
 	s.timer = time.NewTimer(0)
-	s.quitChan = make(chan struct{})
+	s.quitChan = make(chan struct{}, 3)
 	s.isRunning = true
 
 	go s.run()
@@ -274,8 +275,8 @@ func (s *Scheduler) Stop() {
 		return
 	}
 
-	s.isRunning = false
 	s.quitChan <- struct{}{}
+	s.isRunning = false
 
 	slog.Info("Scheduler stop.\n")
 }
