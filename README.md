@@ -12,10 +12,6 @@
 
 English | [简体中文](README.zh-CN.md)
 
-## Warning
-
-> **_This library is experimental and is not recommended for production use_**
-
 ## Features
 
 - Support for three scheduling types
