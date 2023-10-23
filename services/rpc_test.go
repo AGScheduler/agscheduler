@@ -81,5 +81,5 @@ func TestRPCService(t *testing.T) {
 
 	testAGSchedulerRPC(t, client)
 
-	store.Clean()
+	store.Clear()
 }

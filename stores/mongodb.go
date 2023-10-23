@@ -13,17 +13,26 @@ import (
 )
 
 const (
-	database   = "agscheduler"
-	collection = "jobs"
+	DATABASE   = "agscheduler"
+	COLLECTION = "jobs"
 )
 
 type MongoDBStore struct {
-	Client *mongo.Client
-	coll   *mongo.Collection
+	Client     *mongo.Client
+	Database   string
+	Collection string
+	coll       *mongo.Collection
 }
 
 func (s *MongoDBStore) Init() error {
-	s.coll = s.Client.Database(database).Collection(collection)
+	if s.Database == "" {
+		s.Database = DATABASE
+	}
+	if s.Collection == "" {
+		s.Collection = COLLECTION
+	}
+
+	s.coll = s.Client.Database(s.Database).Collection(s.Collection)
 
 	indexModel := mongo.IndexModel{
 		Keys: bson.M{
@@ -136,6 +145,6 @@ func (s *MongoDBStore) GetNextRunTime() (time.Time, error) {
 	return nextRunTimeMin, nil
 }
 
-func (s *MongoDBStore) Clean() error {
-	return s.Client.Database(database).Drop(ctx)
+func (s *MongoDBStore) Clear() error {
+	return s.Client.Database(s.Database).Collection(s.Collection).Drop(ctx)
 }
