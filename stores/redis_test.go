@@ -9,11 +9,9 @@ import (
 )
 
 func TestRedisStore(t *testing.T) {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		DB:       0,
-		Password: "",
-	})
+	url := "redis://127.0.0.1:6379/0"
+	opt, _ := redis.ParseURL(url)
+	rdb := redis.NewClient(opt)
 	store := &RedisStore{RDB: rdb}
 
 	scheduler := &agscheduler.Scheduler{}

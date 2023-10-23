@@ -3,6 +3,10 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
+	"os"
+
 	"github.com/redis/go-redis/v9"
 
 	"github.com/kwkwc/agscheduler"
@@ -10,11 +14,13 @@ import (
 )
 
 func main() {
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "127.0.0.1:6379",
-		DB:       0,
-		Password: "",
-	})
+	url := "redis://127.0.0.1:6379/0"
+	opt, err := redis.ParseURL(url)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to parse url: %s", err))
+		os.Exit(1)
+	}
+	rdb := redis.NewClient(opt)
 	store := &stores.RedisStore{RDB: rdb}
 
 	scheduler := &agscheduler.Scheduler{}
