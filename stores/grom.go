@@ -9,14 +9,12 @@ import (
 	"github.com/kwkwc/agscheduler"
 )
 
+const TABLE_NAME = "agscheduler_jobs"
+
 type Jobs struct {
 	ID          string    `gorm:"size:64;primaryKey"`
 	NextRunTime time.Time `gorm:"index"`
 	State       []byte    `gorm:"type:bytes;not null"`
-}
-
-func (Jobs) TableName() string {
-	return "agscheduler_jobs"
 }
 
 type GORMStore struct {
@@ -24,10 +22,8 @@ type GORMStore struct {
 }
 
 func (s *GORMStore) Init() error {
-	if !s.DB.Migrator().HasTable(&Jobs{}) {
-		if err := s.DB.Migrator().CreateTable(&Jobs{}); err != nil {
-			return fmt.Errorf("failed to create table: %s", err)
-		}
+	if err := s.DB.Table(TABLE_NAME).AutoMigrate(&Jobs{}); err != nil {
+		return fmt.Errorf("failed to create table: %s", err)
 	}
 
 	return nil
@@ -41,13 +37,13 @@ func (s *GORMStore) AddJob(j agscheduler.Job) error {
 
 	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State: state}
 
-	return s.DB.Create(&js).Error
+	return s.DB.Table(TABLE_NAME).Create(&js).Error
 }
 
 func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 	var js Jobs
 
-	result := s.DB.Where("id = ?", id).Limit(1).Find(&js)
+	result := s.DB.Table(TABLE_NAME).Where("id = ?", id).Limit(1).Find(&js)
 	if result.Error != nil {
 		return agscheduler.Job{}, result.Error
 	}
@@ -60,7 +56,7 @@ func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 
 func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 	var jsList []*Jobs
-	err := s.DB.Find(&jsList).Error
+	err := s.DB.Table(TABLE_NAME).Find(&jsList).Error
 	if err != nil {
 		return nil, err
 	}
@@ -85,21 +81,21 @@ func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
 
 	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State: state}
 
-	return s.DB.Save(js).Error
+	return s.DB.Table(TABLE_NAME).Save(js).Error
 }
 
 func (s *GORMStore) DeleteJob(id string) error {
-	return s.DB.Where("id = ?", id).Delete(&Jobs{}).Error
+	return s.DB.Table(TABLE_NAME).Where("id = ?", id).Delete(&Jobs{}).Error
 }
 
 func (s *GORMStore) DeleteAllJobs() error {
-	return s.DB.Where("1 = 1").Delete(&Jobs{}).Error
+	return s.DB.Table(TABLE_NAME).Where("1 = 1").Delete(&Jobs{}).Error
 }
 
 func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 	var js Jobs
 
-	result := s.DB.Order("next_run_time").Limit(1).Find(&js)
+	result := s.DB.Table(TABLE_NAME).Order("next_run_time").Limit(1).Find(&js)
 	if result.Error != nil {
 		return time.Time{}, result.Error
 	}
@@ -112,5 +108,5 @@ func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 }
 
 func (s *GORMStore) Clear() error {
-	return s.DB.Migrator().DropTable(Jobs{}.TableName())
+	return s.DB.Migrator().DropTable(TABLE_NAME)
 }
