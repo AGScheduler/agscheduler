@@ -21,7 +21,11 @@ func main() {
 		os.Exit(1)
 	}
 	rdb := redis.NewClient(opt)
-	store := &stores.RedisStore{RDB: rdb}
+	store := &stores.RedisStore{
+		RDB:         rdb,
+		JobsKey:     "agscheduler.example_jobs",
+		RunTimesKey: "agscheduler.example_run_times",
+	}
 
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)

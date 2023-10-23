@@ -22,7 +22,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
-	store := &stores.MongoDBStore{Client: client}
+	store := &stores.MongoDBStore{Client: client, Collection: "example_jobs"}
 
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)

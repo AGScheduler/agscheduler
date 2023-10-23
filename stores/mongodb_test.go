@@ -13,7 +13,7 @@ import (
 func TestMongoDBStore(t *testing.T) {
 	uri := "mongodb://127.0.0.1:27017/"
 	client, _ := mongo.Connect(context.Background(), options.Client().ApplyURI(uri))
-	store := &MongoDBStore{Client: client}
+	store := &MongoDBStore{Client: client, Collection: "test_jobs"}
 
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)

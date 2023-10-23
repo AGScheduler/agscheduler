@@ -21,7 +21,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
-	store := &stores.GORMStore{DB: db}
+	store := &stores.GORMStore{DB: db, TableName: "example_jobs"}
 
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)

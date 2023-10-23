@@ -9,15 +9,24 @@ import (
 )
 
 const (
-	jobs_key      = "agscheduler.jobs"
-	run_times_key = "agscheduler.run_times"
+	JOBS_KEY      = "agscheduler.jobs"
+	RUN_TIMES_KEY = "agscheduler.run_times"
 )
 
 type RedisStore struct {
-	RDB *redis.Client
+	RDB         *redis.Client
+	JobsKey     string
+	RunTimesKey string
 }
 
 func (s *RedisStore) Init() error {
+	if s.JobsKey == "" {
+		s.JobsKey = JOBS_KEY
+	}
+	if s.RunTimesKey == "" {
+		s.RunTimesKey = RUN_TIMES_KEY
+	}
+
 	return nil
 }
 
@@ -28,8 +37,8 @@ func (s *RedisStore) AddJob(j agscheduler.Job) error {
 	}
 
 	_, err = s.RDB.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.HSet(ctx, jobs_key, j.Id, state)
-		pipe.ZAdd(ctx, run_times_key, redis.Z{Score: float64(j.NextRunTime.UTC().Unix()), Member: j.Id})
+		pipe.HSet(ctx, s.JobsKey, j.Id, state)
+		pipe.ZAdd(ctx, s.RunTimesKey, redis.Z{Score: float64(j.NextRunTime.UTC().Unix()), Member: j.Id})
 		return nil
 	})
 	if err != nil {
@@ -40,7 +49,7 @@ func (s *RedisStore) AddJob(j agscheduler.Job) error {
 }
 
 func (s *RedisStore) GetJob(id string) (agscheduler.Job, error) {
-	state, err := s.RDB.HGet(ctx, jobs_key, id).Bytes()
+	state, err := s.RDB.HGet(ctx, s.JobsKey, id).Bytes()
 	if err == redis.Nil {
 		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
@@ -52,7 +61,7 @@ func (s *RedisStore) GetJob(id string) (agscheduler.Job, error) {
 }
 
 func (s *RedisStore) GetAllJobs() ([]agscheduler.Job, error) {
-	mapStates, err := s.RDB.HGetAll(ctx, jobs_key).Result()
+	mapStates, err := s.RDB.HGetAll(ctx, s.JobsKey).Result()
 	if err != nil {
 		return nil, err
 	}
@@ -76,8 +85,8 @@ func (s *RedisStore) UpdateJob(j agscheduler.Job) error {
 	}
 
 	_, err = s.RDB.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.HSet(ctx, jobs_key, j.Id, state)
-		pipe.ZAdd(ctx, run_times_key, redis.Z{Score: float64(j.NextRunTime.UTC().Unix()), Member: j.Id})
+		pipe.HSet(ctx, s.JobsKey, j.Id, state)
+		pipe.ZAdd(ctx, s.RunTimesKey, redis.Z{Score: float64(j.NextRunTime.UTC().Unix()), Member: j.Id})
 		return nil
 	})
 	if err != nil {
@@ -89,8 +98,8 @@ func (s *RedisStore) UpdateJob(j agscheduler.Job) error {
 
 func (s *RedisStore) DeleteJob(id string) error {
 	_, err := s.RDB.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.HDel(ctx, jobs_key, id)
-		pipe.ZRem(ctx, run_times_key, id)
+		pipe.HDel(ctx, s.JobsKey, id)
+		pipe.ZRem(ctx, s.RunTimesKey, id)
 		return nil
 	})
 	if err != nil {
@@ -102,8 +111,8 @@ func (s *RedisStore) DeleteJob(id string) error {
 
 func (s *RedisStore) DeleteAllJobs() error {
 	_, err := s.RDB.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.Del(ctx, jobs_key)
-		pipe.Del(ctx, run_times_key)
+		pipe.Del(ctx, s.JobsKey)
+		pipe.Del(ctx, s.RunTimesKey)
 		return nil
 	})
 	if err != nil {
@@ -114,7 +123,7 @@ func (s *RedisStore) DeleteAllJobs() error {
 }
 
 func (s *RedisStore) GetNextRunTime() (time.Time, error) {
-	sliceRunTimes, err := s.RDB.ZRangeWithScores(ctx, run_times_key, 0, 0).Result()
+	sliceRunTimes, err := s.RDB.ZRangeWithScores(ctx, s.RunTimesKey, 0, 0).Result()
 	if err != nil || len(sliceRunTimes) == 0 {
 		return time.Time{}, nil
 	}
