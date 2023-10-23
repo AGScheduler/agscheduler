@@ -123,6 +123,6 @@ func (s *RedisStore) GetNextRunTime() (time.Time, error) {
 	return nextRunTimeMin, nil
 }
 
-func (s *RedisStore) Clean() error {
+func (s *RedisStore) Clear() error {
 	return s.DeleteAllJobs()
 }

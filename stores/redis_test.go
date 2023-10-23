@@ -21,5 +21,5 @@ func TestRedisStore(t *testing.T) {
 
 	testAGScheduler(t, scheduler)
 
-	store.Clean()
+	store.Clear()
 }

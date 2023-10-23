@@ -19,5 +19,5 @@ func TestGORMStore(t *testing.T) {
 
 	testAGScheduler(t, scheduler)
 
-	store.Clean()
+	store.Clear()
 }

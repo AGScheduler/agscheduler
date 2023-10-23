@@ -74,6 +74,6 @@ func (s *MemoryStore) GetNextRunTime() (time.Time, error) {
 	return nextRunTimeMin, nil
 }
 
-func (s *MemoryStore) Clean() error {
+func (s *MemoryStore) Clear() error {
 	return s.DeleteAllJobs()
 }

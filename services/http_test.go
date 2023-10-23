@@ -109,5 +109,5 @@ func TestHTTPService(t *testing.T) {
 
 	testAGSchedulerHTTP(t, baseUrl)
 
-	store.Clean()
+	store.Clear()
 }

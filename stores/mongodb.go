@@ -136,6 +136,6 @@ func (s *MongoDBStore) GetNextRunTime() (time.Time, error) {
 	return nextRunTimeMin, nil
 }
 
-func (s *MongoDBStore) Clean() error {
+func (s *MongoDBStore) Clear() error {
 	return s.Client.Database(database).Drop(ctx)
 }
