@@ -77,6 +77,7 @@ func TestRPCService(t *testing.T) {
 	rservice.Start("127.0.0.1:36363")
 
 	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 
 	testAGSchedulerRPC(t, client)
