@@ -23,6 +23,7 @@
   - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
+  - [x] [etcd](https://etcd.io/)
 - 支持远程调用
   - [x] gRPC
   - [x] HTTP APIs

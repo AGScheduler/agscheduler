@@ -23,6 +23,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
+  - [x] [etcd](https://etcd.io/)
 - Support for remote call
   - [x] gRPC
   - [x] HTTP APIs
