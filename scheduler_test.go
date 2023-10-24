@@ -13,6 +13,8 @@ import (
 
 func dryRunScheduler(j agscheduler.Job) {}
 
+func runSchedulerPanic(j agscheduler.Job) { panic(nil) }
+
 func getSchedulerWithStore() *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
@@ -22,12 +24,12 @@ func getSchedulerWithStore() *agscheduler.Scheduler {
 }
 
 func getJob() agscheduler.Job {
-	agscheduler.RegisterFuncs(dryRunScheduler)
+	agscheduler.RegisterFuncs(dryRunScheduler, runSchedulerPanic)
 
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
-		Interval: "500ms",
+		Interval: "50ms",
 		Func:     dryRunScheduler,
 	}
 }
@@ -36,7 +38,7 @@ func getJobWithoutFunc() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
-		Interval: "500ms",
+		Interval: "50ms",
 	}
 }
 
@@ -67,6 +69,22 @@ func TestSchedulerAddJob(t *testing.T) {
 	s.Stop()
 }
 
+func TestSchedulerAddJobDatetime(t *testing.T) {
+	s := getSchedulerWithStore()
+	j := getJob()
+	j.Type = agscheduler.TYPE_DATETIME
+	j.StartAt = "2023-09-22 07:30:08"
+
+	j, _ = s.AddJob(j)
+
+	time.Sleep(50 * time.Millisecond)
+
+	_, err := s.GetJob(j.Id)
+	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(j.Id))
+
+	s.Stop()
+}
+
 func TestSchedulerAddJobError(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJobWithoutFunc()
@@ -77,13 +95,28 @@ func TestSchedulerAddJobError(t *testing.T) {
 	s.Stop()
 }
 
+func TestSchedulerRunJobPanic(t *testing.T) {
+	s := getSchedulerWithStore()
+	j := getJob()
+	j.Func = runSchedulerPanic
+
+	s.AddJob(j)
+
+	time.Sleep(50 * time.Millisecond)
+
+	s.Stop()
+}
+
 func TestSchedulerGetJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
 
-	j2, _ := s.AddJob(j)
+	assert.Empty(t, j.Id)
 
-	assert.NotEqual(t, j, j2)
+	j, _ = s.AddJob(j)
+	j, _ = s.GetJob(j.Id)
+
+	assert.NotEmpty(t, j.Id)
 
 	s.Stop()
 }
@@ -191,25 +224,24 @@ func TestSchedulerResumeJobError(t *testing.T) {
 func TestSchedulerStartAndStop(t *testing.T) {
 	s := getSchedulerWithStore()
 	s.Start()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	s.Stop()
 }
 
 func TestSchedulerStartOnce(t *testing.T) {
 	s := getSchedulerWithStore()
 	s.Start()
-	time.Sleep(100 * time.Millisecond)
 	s.Start()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	s.Stop()
 }
 
 func TestSchedulerStopOnce(t *testing.T) {
 	s := getSchedulerWithStore()
 	s.Start()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	s.Stop()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 	s.Stop()
 }
 
