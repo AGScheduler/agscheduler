@@ -1,6 +1,7 @@
 package stores
 
 import (
+	"sort"
 	"time"
 
 	"github.com/kwkwc/agscheduler"
@@ -64,13 +65,9 @@ func (s *MemoryStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	nextRunTimeMin := s.jobs[0].NextRunTime
-	for _, j := range s.jobs {
-		if nextRunTimeMin.After(j.NextRunTime) {
-			nextRunTimeMin = j.NextRunTime
-		}
-	}
+	sort.Sort(agscheduler.JobSlice(s.jobs))
 
+	nextRunTimeMin := s.jobs[0].NextRunTime
 	return nextRunTimeMin, nil
 }
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"runtime/debug"
+	"sort"
 	"strings"
 	"time"
 
@@ -33,7 +35,7 @@ func (s *Scheduler) Store() Store {
 func CalcNextRunTime(j Job) (time.Time, error) {
 	timezone, err := time.LoadLocation(j.Timezone)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("job `%s` Timezone `%s` error: %s", j.Id, j.Timezone, err)
+		return time.Time{}, fmt.Errorf("job `%s` Timezone `%s` error: %s", j.FullName(), j.Timezone, err)
 	}
 
 	if j.Status == STATUS_PAUSED {
@@ -46,18 +48,18 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 	case TYPE_DATETIME:
 		nextRunTime, err = time.ParseInLocation(time.DateTime, j.StartAt, timezone)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("job `%s` StartAt `%s` error: %s", j.Id, j.Timezone, err)
+			return time.Time{}, fmt.Errorf("job `%s` StartAt `%s` error: %s", j.FullName(), j.Timezone, err)
 		}
 	case TYPE_INTERVAL:
 		i, err := time.ParseDuration(j.Interval)
 		if err != nil {
-			return time.Time{}, fmt.Errorf("job `%s` Interval `%s` error: %s", j.Id, j.Interval, err)
+			return time.Time{}, fmt.Errorf("job `%s` Interval `%s` error: %s", j.FullName(), j.Interval, err)
 		}
 		nextRunTime = time.Now().In(timezone).Add(i)
 	case TYPE_CRON:
 		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
 	default:
-		return time.Time{}, fmt.Errorf("job `%s` Type `%s` unknown", j.Id, j.Type)
+		return time.Time{}, fmt.Errorf("job `%s` Type `%s` unknown", j.FullName(), j.Type)
 	}
 
 	return time.Unix(nextRunTime.Unix(), 0).UTC(), nil
@@ -201,33 +203,39 @@ func (s *Scheduler) run() {
 
 			js, err := s.GetAllJobs()
 			if err != nil {
-				slog.Error(fmt.Sprintf("Get all jobs error: %s\n", err))
+				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s\n", err))
 				continue
 			}
 			if len(js) == 0 {
 				s.Stop()
 				continue
 			}
+			sort.Sort(JobSlice(js))
 
 			for _, j := range js {
-				if j.Status == STATUS_PAUSED {
-					continue
-				}
-
 				if j.NextRunTime.Before(now) {
 					nextRunTime, err := CalcNextRunTime(j)
 					if err != nil {
-						slog.Error(fmt.Sprintf("Calc next run time error: %s\n", err))
+						slog.Error(fmt.Sprintf("Scheduler calc next run time error: %s\n", err))
 						continue
 					}
 					j.NextRunTime = nextRunTime
 
 					f := reflect.ValueOf(funcMap[j.FuncName])
 					if f.IsNil() {
-						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.Id, j.FuncName))
+						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.FullName(), j.FuncName))
 					} else {
 						slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
-						go f.Call([]reflect.Value{reflect.ValueOf(j)})
+						go func() {
+							defer func() {
+								if err := recover(); err != nil {
+									slog.Error(fmt.Sprintf("Job `%s` panic: %s\n", j.FullName(), err))
+									slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+								}
+							}()
+
+							f.Call([]reflect.Value{reflect.ValueOf(j)})
+						}()
 					}
 
 					j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
@@ -235,20 +243,24 @@ func (s *Scheduler) run() {
 					if j.Type == TYPE_DATETIME {
 						err := s.DeleteJob(j.Id)
 						if err != nil {
-							slog.Error(fmt.Sprintf("Delete job `%s` error: %s\n", j.Id, err))
+							slog.Error(fmt.Sprintf("Scheduler delete job `%s` error: %s\n", j.FullName(), err))
 							continue
 						}
 					} else {
 						_, err := s.UpdateJob(j)
 						if err != nil {
-							slog.Error(fmt.Sprintf("Update job `%s` error: %s\n", j.Id, err))
+							slog.Error(fmt.Sprintf("Scheduler update job `%s` error: %s\n", j.FullName(), err))
 							continue
 						}
 					}
+				} else {
+					break
 				}
 			}
 
 			nextWakeupInterval := s.getNextWakeupInterval()
+			slog.Debug(fmt.Sprintf("Scheduler next wakeup interval %s\n", nextWakeupInterval))
+
 			s.timer.Reset(nextWakeupInterval)
 		}
 	}
@@ -284,7 +296,7 @@ func (s *Scheduler) Stop() {
 func (s *Scheduler) getNextWakeupInterval() time.Duration {
 	nextRunTimeMin, err := s.store.GetNextRunTime()
 	if err != nil {
-		slog.Error(fmt.Sprintf("Get next wakeup interval error: %s\n", err))
+		slog.Error(fmt.Sprintf("Scheduler get next wakeup interval error: %s\n", err))
 		nextRunTimeMin = time.Now().UTC().Add(1 * time.Second)
 	}
 
