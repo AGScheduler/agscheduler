@@ -21,6 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 	rdb := redis.NewClient(opt)
+	defer rdb.Close()
 	store := &stores.RedisStore{
 		RDB:         rdb,
 		JobsKey:     "agscheduler.example_jobs",

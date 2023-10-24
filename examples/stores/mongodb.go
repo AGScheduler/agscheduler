@@ -22,6 +22,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
+	defer client.Disconnect(context.Background())
 	store := &stores.MongoDBStore{Client: client, Collection: "example_jobs"}
 
 	scheduler := &agscheduler.Scheduler{}

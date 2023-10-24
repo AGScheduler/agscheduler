@@ -12,6 +12,7 @@ func TestRedisStore(t *testing.T) {
 	url := "redis://127.0.0.1:6379/0"
 	opt, _ := redis.ParseURL(url)
 	rdb := redis.NewClient(opt)
+	defer rdb.Close()
 	store := &RedisStore{
 		RDB:         rdb,
 		JobsKey:     "agscheduler.test_jobs",
