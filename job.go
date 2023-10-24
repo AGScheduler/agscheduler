@@ -42,6 +42,12 @@ type Job struct {
 	Status      string         `json:"status"`
 }
 
+type JobSlice []Job
+
+func (js JobSlice) Len() int           { return len(js) }
+func (js JobSlice) Less(i, j int) bool { return js[i].NextRunTime.Before(js[j].NextRunTime) }
+func (js JobSlice) Swap(i, j int)      { js[i], js[j] = js[j], js[i] }
+
 func (j *Job) SetId() {
 	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
 }

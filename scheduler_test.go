@@ -54,8 +54,11 @@ func TestSchedulerSetStore(t *testing.T) {
 func TestSchedulerAddJob(t *testing.T) {
 	s := getSchedulerWithStore()
 	j := getJob()
+	j.Interval = "1s"
+	j2 := getJob()
 
 	j, _ = s.AddJob(j)
+	s.AddJob(j2)
 
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 

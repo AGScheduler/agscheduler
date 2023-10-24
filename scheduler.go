@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
@@ -208,12 +209,9 @@ func (s *Scheduler) run() {
 				s.Stop()
 				continue
 			}
+			sort.Sort(JobSlice(js))
 
 			for _, j := range js {
-				if j.Status == STATUS_PAUSED {
-					continue
-				}
-
 				if j.NextRunTime.Before(now) {
 					nextRunTime, err := CalcNextRunTime(j)
 					if err != nil {
@@ -245,6 +243,8 @@ func (s *Scheduler) run() {
 							continue
 						}
 					}
+				} else {
+					break
 				}
 			}
 
