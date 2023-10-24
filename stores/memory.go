@@ -65,9 +65,11 @@ func (s *MemoryStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	sort.Sort(agscheduler.JobSlice(s.jobs))
+	js := make([]agscheduler.Job, len(s.jobs))
+	copy(js, s.jobs)
+	sort.Sort(agscheduler.JobSlice(js))
 
-	nextRunTimeMin := s.jobs[0].NextRunTime
+	nextRunTimeMin := js[0].NextRunTime
 	return nextRunTimeMin, nil
 }
 
