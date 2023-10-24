@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"time"
@@ -225,7 +226,16 @@ func (s *Scheduler) run() {
 						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.Id, j.FuncName))
 					} else {
 						slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
-						go f.Call([]reflect.Value{reflect.ValueOf(j)})
+						go func() {
+							defer func() {
+								if err := recover(); err != nil {
+									slog.Error(fmt.Sprintf("Job `%s` panic: %s\n", j.FullName(), err))
+									slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+								}
+							}()
+
+							f.Call([]reflect.Value{reflect.ValueOf(j)})
+						}()
 					}
 
 					j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
