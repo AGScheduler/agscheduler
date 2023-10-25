@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/stores"
-
 	"github.com/gorhill/cronexpr"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kwkwc/agscheduler"
+	"github.com/kwkwc/agscheduler/stores"
 )
 
 func dryRunScheduler(j agscheduler.Job) {}
