@@ -192,7 +192,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	return j, nil
 }
 
-func (s *Scheduler) _runJob(j Job, now time.Time) error {
+func (s *Scheduler) _runJob(j Job) {
 	f := reflect.ValueOf(funcMap[j.FuncName])
 	if f.IsNil() {
 		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.FullName(), j.FuncName))
@@ -209,7 +209,9 @@ func (s *Scheduler) _runJob(j Job, now time.Time) error {
 			f.Call([]reflect.Value{reflect.ValueOf(j)})
 		}()
 	}
+}
 
+func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
 
 	if j.Type == TYPE_DATETIME {
@@ -237,7 +239,9 @@ func (s *Scheduler) RunJob(id string) error {
 
 	now := time.Now().UTC()
 
-	err = s._runJob(j, now)
+	s._runJob(j)
+
+	err = s._flushJob(j, now)
 	if err != nil {
 		return err
 	}
@@ -274,7 +278,10 @@ func (s *Scheduler) run() {
 					}
 					j.NextRunTime = nextRunTime
 
-					if err := s._runJob(j, now); err != nil {
+					s._runJob(j)
+
+					err = s._flushJob(j, now)
+					if err != nil {
 						slog.Error(fmt.Sprintf("Scheduler %s\n", err))
 						continue
 					}
