@@ -122,6 +122,8 @@ func runExampleHTTP(baseUrl string) {
 
 	http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
 
+	http.Post(baseUrl+"/scheduler/job/"+rJob1.Data.(map[string]any)["id"].(string)+"/run", CONTENT_TYPE, nil)
+
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 

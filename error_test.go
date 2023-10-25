@@ -9,7 +9,7 @@ import (
 func TestJobNotFoundError(t *testing.T) {
 	err := JobNotFoundError("1")
 
-	assert.Equal(t, "job `1` not found!", err.Error())
+	assert.Equal(t, "jobId `1` not found!", err.Error())
 }
 
 func TestFuncUnregisteredError(t *testing.T) {

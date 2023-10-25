@@ -81,6 +81,8 @@ func runExample(s *agscheduler.Scheduler) {
 
 	s.Stop()
 
+	s.RunJob(job1.Id)
+
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 

@@ -73,13 +73,19 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	nextRunTime, _ = time.ParseInLocation(time.RFC3339, rJ.Data.(map[string]any)["next_run_time"].(string), timezone)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), nextRunTime.Unix())
 
+	resp, _ = http.Post(baseUrl+"/scheduler/job/"+id+"/run", CONTENT_TYPE, nil)
+	body, _ = io.ReadAll(resp.Body)
+	rJ = &result{}
+	json.Unmarshal(body, &rJ)
+	assert.Empty(t, rJ.Error)
+
 	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
 	client.Do(req)
 	resp, _ = http.Get(baseUrl + "/scheduler/job" + "/" + id)
 	body, _ = io.ReadAll(resp.Body)
 	rJ = &result{}
 	json.Unmarshal(body, &rJ)
-	assert.Equal(t, rJ.Error, agscheduler.JobNotFoundError(id).Error())
+	assert.Equal(t, agscheduler.JobNotFoundError(id).Error(), rJ.Error)
 
 	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/jobs", nil)
 	client.Do(req)

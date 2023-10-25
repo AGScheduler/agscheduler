@@ -221,6 +221,18 @@ func TestSchedulerResumeJobError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestSchedulerRunJob(t *testing.T) {
+	s := getSchedulerWithStore()
+	j := getJob()
+
+	j, _ = s.AddJob(j)
+
+	s.Stop()
+
+	err := s.RunJob(j.Id)
+	assert.NoError(t, err)
+}
+
 func TestSchedulerStartAndStop(t *testing.T) {
 	s := getSchedulerWithStore()
 	s.Start()

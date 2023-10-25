@@ -66,6 +66,8 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
+	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
+
 	for {
 		j.SetId()
 		if _, err := s.GetJob(j.Id); err != nil {
@@ -95,7 +97,6 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
 	}
-	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
 
 	if !s.isRunning {
 		s.Start()
@@ -140,12 +141,11 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
-	j, err := s.GetJob(id)
-	if err != nil {
+	slog.Info(fmt.Sprintf("Scheduler delete jobId `%s`.\n", id))
+
+	if _, err := s.GetJob(id); err != nil {
 		return err
 	}
-
-	slog.Info(fmt.Sprintf("Scheduler delete job `%s`.\n", j.FullName()))
 
 	return s.store.DeleteJob(id)
 }
@@ -157,6 +157,8 @@ func (s *Scheduler) DeleteAllJobs() error {
 }
 
 func (s *Scheduler) PauseJob(id string) (Job, error) {
+	slog.Info(fmt.Sprintf("Scheduler pause jobId `%s`.\n", id))
+
 	j, err := s.GetJob(id)
 	if err != nil {
 		return Job{}, err
@@ -169,12 +171,12 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 		return Job{}, err
 	}
 
-	slog.Info(fmt.Sprintf("Scheduler pause job `%s`.\n", j.FullName()))
-
 	return j, nil
 }
 
 func (s *Scheduler) ResumeJob(id string) (Job, error) {
+	slog.Info(fmt.Sprintf("Scheduler resume jobId `%s`.\n", id))
+
 	j, err := s.GetJob(id)
 	if err != nil {
 		return Job{}, err
@@ -187,9 +189,60 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 		return Job{}, err
 	}
 
-	slog.Info(fmt.Sprintf("Scheduler resume job `%s`.\n", j.FullName()))
-
 	return j, nil
+}
+
+func (s *Scheduler) _runJob(j Job, now time.Time) error {
+	f := reflect.ValueOf(funcMap[j.FuncName])
+	if f.IsNil() {
+		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.FullName(), j.FuncName))
+	} else {
+		slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					slog.Error(fmt.Sprintf("Job `%s` panic: %s\n", j.FullName(), err))
+					slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+				}
+			}()
+
+			f.Call([]reflect.Value{reflect.ValueOf(j)})
+		}()
+	}
+
+	j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
+
+	if j.Type == TYPE_DATETIME {
+		if j.NextRunTime.Before(now) {
+			if err := s.DeleteJob(j.Id); err != nil {
+				return fmt.Errorf("delete job `%s` error: %s", j.FullName(), err)
+			}
+		}
+	} else {
+		if _, err := s.UpdateJob(j); err != nil {
+			return fmt.Errorf("update job `%s` error: %s", j.FullName(), err)
+		}
+	}
+
+	return nil
+}
+
+func (s *Scheduler) RunJob(id string) error {
+	slog.Info(fmt.Sprintf("Scheduler run jobId `%s`.\n", id))
+
+	j, err := s.GetJob(id)
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().UTC()
+
+	err = s._runJob(j, now)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Scheduler) run() {
@@ -221,37 +274,9 @@ func (s *Scheduler) run() {
 					}
 					j.NextRunTime = nextRunTime
 
-					f := reflect.ValueOf(funcMap[j.FuncName])
-					if f.IsNil() {
-						slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.FullName(), j.FuncName))
-					} else {
-						slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
-						go func() {
-							defer func() {
-								if err := recover(); err != nil {
-									slog.Error(fmt.Sprintf("Job `%s` panic: %s\n", j.FullName(), err))
-									slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
-								}
-							}()
-
-							f.Call([]reflect.Value{reflect.ValueOf(j)})
-						}()
-					}
-
-					j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
-
-					if j.Type == TYPE_DATETIME {
-						err := s.DeleteJob(j.Id)
-						if err != nil {
-							slog.Error(fmt.Sprintf("Scheduler delete job `%s` error: %s\n", j.FullName(), err))
-							continue
-						}
-					} else {
-						_, err := s.UpdateJob(j)
-						if err != nil {
-							slog.Error(fmt.Sprintf("Scheduler update job `%s` error: %s\n", j.FullName(), err))
-							continue
-						}
+					if err := s._runJob(j, now); err != nil {
+						slog.Error(fmt.Sprintf("Scheduler %s\n", err))
+						continue
 					}
 				} else {
 					break
