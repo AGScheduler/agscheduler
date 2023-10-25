@@ -45,8 +45,11 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	j, _ = s.ResumeJob(j.Id)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
+	err := s.RunJob(j.Id)
+	assert.NoError(t, err)
+
 	s.DeleteJob(j.Id)
-	_, err := s.GetJob(j.Id)
+	_, err = s.GetJob(j.Id)
 	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(j.Id))
 
 	s.DeleteAllJobs()

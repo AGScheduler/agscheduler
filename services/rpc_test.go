@@ -53,8 +53,11 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
+	_, err := c.RunJob(ctx, &pb.JobId{Id: j.Id})
+	assert.NoError(t, err)
+
 	c.DeleteJob(ctx, &pb.JobId{Id: j.Id})
-	_, err := c.GetJob(ctx, &pb.JobId{Id: j.Id})
+	_, err = c.GetJob(ctx, &pb.JobId{Id: j.Id})
 	assert.Contains(t, err.Error(), agscheduler.JobNotFoundError(j.Id).Error())
 
 	c.DeleteAllJobs(ctx, &emptypb.Empty{})

@@ -61,6 +61,11 @@ func (rs *RPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, 
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
+func (rs *RPCService) RunJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
+	err := rs.scheduler.RunJob(jobId.GetId())
+	return &emptypb.Empty{}, err
+}
+
 func (rs *RPCService) Start(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
 	rs.scheduler.Start()
 	return &emptypb.Empty{}, nil
