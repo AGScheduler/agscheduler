@@ -23,8 +23,11 @@ func main() {
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	rservice := services.SchedulerRPCService{Scheduler: scheduler}
-	rservice.Start("127.0.0.1:36363")
+	rservice := services.SchedulerRPCService{
+		Scheduler: scheduler,
+		Address:   "127.0.0.1:36363",
+	}
+	rservice.Start()
 
 	select {}
 }

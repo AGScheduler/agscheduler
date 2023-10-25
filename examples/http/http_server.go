@@ -23,8 +23,11 @@ func main() {
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	hservice := services.SchedulerHTTPService{Scheduler: scheduler}
-	hservice.Start("127.0.0.1:63636")
+	hservice := services.SchedulerHTTPService{
+		Scheduler: scheduler,
+		Address:   "127.0.0.1:63636",
+	}
+	hservice.Start()
 
 	select {}
 }

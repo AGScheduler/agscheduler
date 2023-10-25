@@ -89,14 +89,15 @@ func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, 
 
 type SchedulerRPCService struct {
 	Scheduler *agscheduler.Scheduler
+	Address   string
 }
 
-func (s *SchedulerRPCService) Start(address string) error {
-	if address == "" {
-		address = "127.0.0.1:36363"
+func (s *SchedulerRPCService) Start() error {
+	if s.Address == "" {
+		s.Address = "127.0.0.1:36363"
 	}
 
-	lis, err := net.Listen("tcp", address)
+	lis, err := net.Listen("tcp", s.Address)
 	if err != nil {
 		return fmt.Errorf("scheduler RPC Service listen failure: %s", err)
 	}

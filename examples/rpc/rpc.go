@@ -120,8 +120,11 @@ func main() {
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	rservice := services.SchedulerRPCService{Scheduler: scheduler}
-	rservice.Start("127.0.0.1:36363")
+	rservice := services.SchedulerRPCService{
+		Scheduler: scheduler,
+		Address:   "127.0.0.1:36363",
+	}
+	rservice.Start()
 
 	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer conn.Close()
