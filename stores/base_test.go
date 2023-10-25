@@ -4,8 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kwkwc/agscheduler"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/kwkwc/agscheduler"
 )
 
 func dryRunStores(j agscheduler.Job) {}
