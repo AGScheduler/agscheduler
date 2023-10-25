@@ -66,14 +66,14 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
-	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
-
 	for {
 		j.SetId()
 		if _, err := s.GetJob(j.Id); err != nil {
 			break
 		}
 	}
+
+	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
 
 	j.Status = STATUS_RUNNING
 
