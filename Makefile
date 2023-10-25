@@ -23,7 +23,10 @@ test:
 	go test \
 		-covermode=set \
 		-coverprofile=coverage.out \
-		-v . ./services ./stores
+		. \
+		./services \
+		./stores \
+		-v
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 
