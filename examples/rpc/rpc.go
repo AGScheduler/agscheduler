@@ -99,7 +99,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 
 	c.Stop(ctx, &emptypb.Empty{})
 
-	c.RunJob(ctx, &pb.JobId{Id: job1.Id})
+	c.RunJob(ctx, pbJob1)
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)

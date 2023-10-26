@@ -48,7 +48,7 @@ service Scheduler {
 
   rpc ResumeJob (JobId) returns (Job) {}
 
-  rpc RunJob (JobId) returns (google.protobuf.Empty) {}
+  rpc RunJob (Job) returns (google.protobuf.Empty) {}
 
   rpc Start (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 

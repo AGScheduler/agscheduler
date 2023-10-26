@@ -85,7 +85,14 @@ func (hs *HTTPService) ResumeJob(c *gin.Context) {
 }
 
 func (hs *HTTPService) RunJob(c *gin.Context) {
-	err := hs.scheduler.RunJob(c.Param("id"))
+	j := agscheduler.Job{}
+	err := c.BindJSON(&j)
+	if err != nil {
+		c.JSON(400, hs.handleJob(j, err))
+		return
+	}
+
+	err = hs.scheduler.RunJob(j)
 	c.JSON(200, gin.H{"data": nil, "error": hs.handleErr(err)})
 }
 
@@ -113,7 +120,7 @@ func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, hs *HTTPService) {
 	r.DELETE("/scheduler/jobs", hs.DeleteAllJobs)
 	r.POST("/scheduler/job/:id/pause", hs.PauseJob)
 	r.POST("/scheduler/job/:id/resume", hs.ResumeJob)
-	r.POST("/scheduler/job/:id/run", hs.RunJob)
+	r.POST("/scheduler/job/run", hs.RunJob)
 	r.POST("/scheduler/start", hs.Start)
 	r.POST("/scheduler/stop", hs.Stop)
 }

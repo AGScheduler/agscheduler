@@ -229,22 +229,10 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	return nil
 }
 
-func (s *Scheduler) RunJob(id string) error {
-	slog.Info(fmt.Sprintf("Scheduler run jobId `%s`.\n", id))
-
-	j, err := s.GetJob(id)
-	if err != nil {
-		return err
-	}
-
-	now := time.Now().UTC()
+func (s *Scheduler) RunJob(j Job) error {
+	slog.Info(fmt.Sprintf("Scheduler run job `%s`.\n", j.FullName()))
 
 	s._runJob(j)
-
-	err = s._flushJob(j, now)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }

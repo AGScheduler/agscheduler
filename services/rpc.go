@@ -61,8 +61,9 @@ func (rs *sRPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job,
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *sRPCService) RunJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
-	err := rs.scheduler.RunJob(jobId.GetId())
+func (rs *sRPCService) RunJob(ctx context.Context, pbJob *pb.Job) (*emptypb.Empty, error) {
+	j := agscheduler.PbJobPtrToJob(pbJob)
+	err := rs.scheduler.RunJob(j)
 	return &emptypb.Empty{}, err
 }
 

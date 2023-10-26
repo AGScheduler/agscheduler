@@ -229,7 +229,7 @@ func TestSchedulerRunJob(t *testing.T) {
 
 	s.Stop()
 
-	err := s.RunJob(j.Id)
+	err := s.RunJob(j)
 	assert.NoError(t, err)
 }
 

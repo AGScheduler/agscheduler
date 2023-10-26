@@ -37,6 +37,7 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	}
 	bJ, _ := json.Marshal(mJ)
 	resp, _ := http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJ))
+	assert.Equal(t, 200, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
 	rJ := &result{}
 	json.Unmarshal(body, &rJ)
@@ -50,6 +51,7 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	req, _ := http.NewRequest(http.MethodPut, baseUrl+"/scheduler/job", bytes.NewReader(bJ))
 	req.Header.Add("content-type", CONTENT_TYPE)
 	resp, _ = client.Do(req)
+	assert.Equal(t, 200, resp.StatusCode)
 	body, _ = io.ReadAll(resp.Body)
 	rJ = &result{}
 	json.Unmarshal(body, &rJ)
@@ -59,6 +61,7 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
 
 	resp, _ = http.Post(baseUrl+"/scheduler/job/"+id+"/pause", CONTENT_TYPE, nil)
+	assert.Equal(t, 200, resp.StatusCode)
 	body, _ = io.ReadAll(resp.Body)
 	rJ = &result{}
 	json.Unmarshal(body, &rJ)
@@ -67,13 +70,16 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	assert.Equal(t, nextRunTimeMax.Unix(), nextRunTime.Unix())
 
 	resp, _ = http.Post(baseUrl+"/scheduler/job/"+id+"/resume", CONTENT_TYPE, nil)
+	assert.Equal(t, 200, resp.StatusCode)
 	body, _ = io.ReadAll(resp.Body)
 	rJ = &result{}
 	json.Unmarshal(body, &rJ)
 	nextRunTime, _ = time.ParseInLocation(time.RFC3339, rJ.Data.(map[string]any)["next_run_time"].(string), timezone)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), nextRunTime.Unix())
 
-	resp, _ = http.Post(baseUrl+"/scheduler/job/"+id+"/run", CONTENT_TYPE, nil)
+	bJ, _ = json.Marshal(rJ.Data.(map[string]any))
+	resp, _ = http.Post(baseUrl+"/scheduler/job/run", CONTENT_TYPE, bytes.NewReader(bJ))
+	assert.Equal(t, 200, resp.StatusCode)
 	body, _ = io.ReadAll(resp.Body)
 	rJ = &result{}
 	json.Unmarshal(body, &rJ)
@@ -82,6 +88,7 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
 	client.Do(req)
 	resp, _ = http.Get(baseUrl + "/scheduler/job" + "/" + id)
+	assert.Equal(t, 200, resp.StatusCode)
 	body, _ = io.ReadAll(resp.Body)
 	rJ = &result{}
 	json.Unmarshal(body, &rJ)
@@ -90,6 +97,7 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/jobs", nil)
 	client.Do(req)
 	resp, _ = http.Get(baseUrl + "/scheduler/jobs")
+	assert.Equal(t, 200, resp.StatusCode)
 	body, _ = io.ReadAll(resp.Body)
 	rJs := &result{}
 	json.Unmarshal(body, &rJs)
