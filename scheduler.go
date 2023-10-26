@@ -1,6 +1,7 @@
 package agscheduler
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -10,6 +11,10 @@ import (
 	"time"
 
 	"github.com/gorhill/cronexpr"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
 type Scheduler struct {
@@ -248,6 +253,31 @@ func (s *Scheduler) RunJob(j Job) error {
 	return nil
 }
 
+func (s *Scheduler) scheduleJob(j Job) error {
+	if s.clusterNode == nil {
+		s._runJob(j)
+	} else {
+		node, err := s.clusterNode.choiceNode()
+		if err != nil {
+			s._runJob(j)
+		} else {
+			go func() {
+				conn, _ := grpc.Dial(node.SchedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+				defer conn.Close()
+				client := pb.NewSchedulerClient(conn)
+
+				_, err := client.RunJob(context.Background(), JobToPbJobPtr(j))
+				if err != nil {
+					slog.Error(fmt.Sprintf("Scheduler node run job error %s\n", err))
+				}
+			}()
+		}
+
+	}
+
+	return nil
+}
+
 func (s *Scheduler) run() {
 	for {
 		select {
@@ -277,7 +307,10 @@ func (s *Scheduler) run() {
 					}
 					j.NextRunTime = nextRunTime
 
-					s._runJob(j)
+					err = s.scheduleJob(j)
+					if err != nil {
+						slog.Error(fmt.Sprintf("Scheduler schedule job error %s\n", err))
+					}
 
 					err = s._flushJob(j, now)
 					if err != nil {

@@ -3,8 +3,10 @@ package agscheduler
 import (
 	"fmt"
 	"log/slog"
+	"math/rand"
 	"net/rpc"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -48,8 +50,11 @@ func (cn *ClusterNode) Register(args *Node, reply *Node) error {
 		cn.queueMap[args.SchedulerQueue] = map[string]map[string]any{}
 	}
 	cn.queueMap[args.SchedulerQueue][args.Id] = map[string]any{
+		"id":                 args.Id,
+		"main_endpoint":      args.MainEndpoint,
 		"endpoint":           args.Endpoint,
 		"scheduler_endpoint": args.SchedulerEndpoint,
+		"scheduler_queue":    args.SchedulerQueue,
 		"health":             true,
 	}
 
@@ -65,8 +70,11 @@ func (cn *ClusterNode) Register(args *Node, reply *Node) error {
 func (cn *ClusterNode) registerMain() error {
 	cn.queueMap[cn.SchedulerQueue] = map[string]map[string]any{}
 	cn.queueMap[cn.SchedulerQueue][cn.Id] = map[string]any{
+		"id":                 cn.Id,
+		"main_endpoint":      cn.MainEndpoint,
 		"endpoint":           cn.Endpoint,
 		"scheduler_endpoint": cn.SchedulerEndpoint,
+		"scheduler_queue":    cn.SchedulerQueue,
 		"health":             true,
 	}
 
@@ -99,4 +107,31 @@ func (cn *ClusterNode) RegisterNode() error {
 	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service queue: `%s`", main.SchedulerQueue))
 
 	return nil
+}
+
+func (cn *ClusterNode) choiceNode() (*ClusterNode, error) {
+	cns := make([]*ClusterNode, 0)
+	for _, v := range cn.queueMap {
+		for _, v2 := range v {
+			if !v2["health"].(bool) {
+				continue
+			}
+			cns = append(cns, &ClusterNode{
+				Id:                v2["id"].(string),
+				MainEndpoint:      v2["main_endpoint"].(string),
+				Endpoint:          v2["endpoint"].(string),
+				SchedulerEndpoint: v2["scheduler_endpoint"].(string),
+				SchedulerQueue:    v2["scheduler_queue"].(string),
+			})
+		}
+	}
+
+	cns_count := len(cns)
+	if cns_count != 0 {
+		rand.New(rand.NewSource(time.Now().UnixNano()))
+		i := rand.Intn(cns_count)
+		return cns[i], nil
+	}
+
+	return &ClusterNode{}, fmt.Errorf("node not found")
 }
