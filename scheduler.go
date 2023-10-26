@@ -17,6 +17,9 @@ type Scheduler struct {
 	timer     *time.Timer
 	quitChan  chan struct{}
 	isRunning bool
+
+	clusterMain   *ClusterMain
+	clusterworker *ClusterWorker
 }
 
 func (s *Scheduler) SetStore(sto Store) error {
@@ -30,6 +33,20 @@ func (s *Scheduler) SetStore(sto Store) error {
 
 func (s *Scheduler) Store() Store {
 	return s.store
+}
+
+func (s *Scheduler) SetClusterMain(cm *ClusterMain) error {
+	s.clusterMain = cm
+	s.clusterMain.SetId()
+
+	return nil
+}
+
+func (s *Scheduler) SetClusterWorker(cw *ClusterWorker) error {
+	s.clusterworker = cw
+	s.clusterworker.SetId()
+
+	return nil
 }
 
 func CalcNextRunTime(j Job) (time.Time, error) {
