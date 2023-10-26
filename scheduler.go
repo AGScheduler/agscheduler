@@ -227,6 +227,23 @@ func (s *Scheduler) _runJob(j Job) {
 	}
 }
 
+func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
+	go func() {
+		conn, _ := grpc.Dial(node.SchedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		defer conn.Close()
+
+		client := pb.NewSchedulerClient(conn)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		_, err := client.RunJob(ctx, JobToPbJobPtr(j))
+		if err != nil {
+			slog.Error(fmt.Sprintf("Scheduler run job remote error %s\n", err))
+		}
+	}()
+}
+
 func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
 
@@ -261,20 +278,8 @@ func (s *Scheduler) scheduleJob(j Job) error {
 		if err != nil {
 			s._runJob(j)
 		} else {
-			go func() {
-				conn, _ := grpc.Dial(node.SchedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-				defer conn.Close()
-				client := pb.NewSchedulerClient(conn)
-
-				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-				defer cancel()
-				_, err := client.RunJob(ctx, JobToPbJobPtr(j))
-				if err != nil {
-					slog.Error(fmt.Sprintf("Scheduler node run job error %s\n", err))
-				}
-			}()
+			s._runJobRemote(node, j)
 		}
-
 	}
 
 	return nil
