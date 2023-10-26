@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/kwkwc/agscheduler"
@@ -140,13 +141,21 @@ func main() {
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err := scheduler.SetStore(store)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
+		os.Exit(1)
+	}
 
 	hservice := services.SchedulerHTTPService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:63636",
 	}
-	hservice.Start()
+	err = hservice.Start()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
+		os.Exit(1)
+	}
 
 	time.Sleep(time.Second)
 

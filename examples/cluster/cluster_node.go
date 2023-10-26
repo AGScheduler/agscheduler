@@ -1,4 +1,6 @@
-// go run examples/cluster/cluster_main.go
+// go run examples/cluster/cluster_node.go
+// go run examples/cluster/cluster_node.go -e 127.0.0.1:36371 -se 127.0.0.1:36370
+// go run examples/rpc/rpc_client.go
 
 package main
 
@@ -14,17 +16,20 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-var endpoint = flag.String("e", "127.0.0.1:36364", "Cluster Main endpoint")
-var schedulerEndpoint = flag.String("se", "127.0.0.1:36363", "Cluster Main Scheduler endpoint")
-var schedulerQueue = flag.String("sq", "default", "Cluster Main Scheduler queue")
+var mainEndpoint = flag.String("me", "127.0.0.1:36364", "Cluster Main endpoint")
+var endpoint = flag.String("e", "127.0.0.1:36366", "Cluster Node endpoint")
+var schedulerEndpoint = flag.String("se", "127.0.0.1:36365", "Cluster Node Scheduler endpoint")
+var schedulerQueue = flag.String("sq", "node", "Cluster Node Scheduler queue")
 
 func main() {
 	agscheduler.RegisterFuncs(examples.PrintMsg)
 
+	flag.Parse()
+
 	store := &stores.MemoryStore{}
 
 	cn := &agscheduler.ClusterNode{
-		MainEndpoint:      *endpoint,
+		MainEndpoint:      *mainEndpoint,
 		Endpoint:          *endpoint,
 		SchedulerEndpoint: *schedulerEndpoint,
 		SchedulerQueue:    *schedulerQueue,
@@ -53,6 +58,8 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
 		os.Exit(1)
 	}
+
+	cn.RegisterNode()
 
 	select {}
 }

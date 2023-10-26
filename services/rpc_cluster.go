@@ -12,12 +12,11 @@ import (
 
 type CRPCService struct {
 	srs *SchedulerRPCService
-	cm  *agscheduler.ClusterMain
-	cw  *agscheduler.ClusterWorker
+	cn  *agscheduler.ClusterNode
 }
 
-func (crs *CRPCService) Register(w *agscheduler.Worker, m *agscheduler.Main) error {
-	err := crs.cm.Register(w, m)
+func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node) error {
+	err := crs.cn.Register(args, reply)
 	if err != nil {
 		return err
 	}
@@ -27,28 +26,25 @@ func (crs *CRPCService) Register(w *agscheduler.Worker, m *agscheduler.Main) err
 
 type ClusterRPCService struct {
 	Srs *SchedulerRPCService
-	Cm  *agscheduler.ClusterMain
-	Cw  *agscheduler.ClusterWorker
+	Cn  *agscheduler.ClusterNode
 }
 
 func (s *ClusterRPCService) Start() error {
-	address := "127.0.0.1:36364"
-	if s.Cm != nil && s.Cm.Endpoint != "" {
-		address = s.Cm.Endpoint
-	}
-	if s.Cw != nil && s.Cw.Endpoint != "" {
-		address = s.Cw.Endpoint
+	if s.Cn.Endpoint == "" {
+		s.Cn.Endpoint = "127.0.0.1:36364"
 	}
 
-	crs := &CRPCService{srs: s.Srs, cm: s.Cm, cw: s.Cw}
+	crs := &CRPCService{srs: s.Srs, cn: s.Cn}
 	rpc.Register(crs)
 	rpc.HandleHTTP()
 
-	lis, err := net.Listen("tcp", address)
+	lis, err := net.Listen("tcp", s.Cn.Endpoint)
 	if err != nil {
 		return fmt.Errorf("cluster RPC Service listen failure: %s", err)
 	}
 
+	s.Srs.Address = s.Cn.SchedulerEndpoint
+	s.Srs.Queue = s.Cn.SchedulerQueue
 	err = s.Srs.Start()
 	if err != nil {
 		return err

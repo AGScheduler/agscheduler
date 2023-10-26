@@ -18,8 +18,7 @@ type Scheduler struct {
 	quitChan  chan struct{}
 	isRunning bool
 
-	clusterMain   *ClusterMain
-	clusterworker *ClusterWorker
+	clusterNode *ClusterNode
 }
 
 func (s *Scheduler) SetStore(sto Store) error {
@@ -35,16 +34,11 @@ func (s *Scheduler) Store() Store {
 	return s.store
 }
 
-func (s *Scheduler) SetClusterMain(cm *ClusterMain) error {
-	s.clusterMain = cm
-	s.clusterMain.SetId()
-
-	return nil
-}
-
-func (s *Scheduler) SetClusterWorker(cw *ClusterWorker) error {
-	s.clusterworker = cw
-	s.clusterworker.SetId()
+func (s *Scheduler) SetClusterNode(cn *ClusterNode) error {
+	s.clusterNode = cn
+	if err := s.clusterNode.init(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -84,7 +78,7 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
 	for {
-		j.SetId()
+		j.setId()
 		if _, err := s.GetJob(j.Id); err != nil {
 			break
 		}

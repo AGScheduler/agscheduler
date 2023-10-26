@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -115,13 +116,21 @@ func main() {
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err := scheduler.SetStore(store)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
+		os.Exit(1)
+	}
 
 	rservice := services.SchedulerRPCService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:36363",
 	}
-	rservice.Start()
+	err = rservice.Start()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
+		os.Exit(1)
+	}
 
 	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer conn.Close()

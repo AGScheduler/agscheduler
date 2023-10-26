@@ -31,7 +31,11 @@ func main() {
 	}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err = scheduler.SetStore(store)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
+		os.Exit(1)
+	}
 
 	runExample(scheduler)
 }
