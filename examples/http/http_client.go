@@ -1,4 +1,5 @@
-// go run examples/http/http_client.go
+// 1. go run examples/http/http_server.go
+// 2. go run examples/http/http_client.go
 
 package main
 

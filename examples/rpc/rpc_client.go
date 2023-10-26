@@ -1,4 +1,5 @@
-// go run examples/rpc/rpc_client.go
+// 1. go run examples/rpc/rpc_server.go
+// 2. go run examples/rpc/rpc_client.go
 
 package main
 

@@ -1,5 +1,5 @@
-# go run examples/rpc/rpc_server.go
-# python3 examples/rpc/python/rpc_client.py
+# 1. go run examples/rpc/rpc_server.go
+# 2. python3 examples/rpc/python/rpc_client.py
 
 import grpc
 from google.protobuf.struct_pb2 import Struct
