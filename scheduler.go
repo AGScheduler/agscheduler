@@ -266,7 +266,9 @@ func (s *Scheduler) scheduleJob(j Job) error {
 				defer conn.Close()
 				client := pb.NewSchedulerClient(conn)
 
-				_, err := client.RunJob(context.Background(), JobToPbJobPtr(j))
+				ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+				defer cancel()
+				_, err := client.RunJob(ctx, JobToPbJobPtr(j))
 				if err != nil {
 					slog.Error(fmt.Sprintf("Scheduler node run job error %s\n", err))
 				}
