@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/kwkwc/agscheduler"
+	"github.com/kwkwc/agscheduler/examples"
 	"github.com/kwkwc/agscheduler/services"
 	pb "github.com/kwkwc/agscheduler/services/proto"
 	"github.com/kwkwc/agscheduler/stores"
@@ -20,17 +21,13 @@ import (
 
 var ctx = context.Background()
 
-func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
-}
-
 func runExampleRPC(c pb.SchedulerClient) {
 	job1 := agscheduler.Job{
 		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "2s",
 		Timezone: "UTC",
-		FuncName: "main.printMsg",
+		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	pbJob1, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job1))
@@ -42,7 +39,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 		Type:     agscheduler.TYPE_CRON,
 		CronExpr: "*/1 * * * *",
 		Timezone: "Asia/Shanghai",
-		FuncName: "main.printMsg",
+		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	pbJob2, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job2))
@@ -56,7 +53,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 		Type:     agscheduler.TYPE_DATETIME,
 		StartAt:  "2023-09-22 07:30:08",
 		Timezone: "America/New_York",
-		FuncName: "main.printMsg",
+		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 	}
 	pbJob3, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job3))
@@ -113,7 +110,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 }
 
 func main() {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(examples.PrintMsg)
 
 	store := &stores.MemoryStore{}
 

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kwkwc/agscheduler"
+	"github.com/kwkwc/agscheduler/examples"
 	"github.com/kwkwc/agscheduler/services"
 	"github.com/kwkwc/agscheduler/stores"
 )
@@ -23,10 +24,6 @@ type result struct {
 	Error string `json:"error"`
 }
 
-func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
-}
-
 func runExampleHTTP(baseUrl string) {
 	client := &http.Client{}
 
@@ -35,7 +32,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "interval",
 		"interval":  "2s",
 		"timezone":  "UTC",
-		"func_name": "main.printMsg",
+		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	bJob1, _ := json.Marshal(mJob1)
@@ -50,7 +47,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "cron",
 		"cron_expr": "*/1 * * * *",
 		"timezone":  "Asia/Shanghai",
-		"func_name": "main.printMsg",
+		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	bJob2, _ := json.Marshal(mJob2)
@@ -67,7 +64,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "datetime",
 		"start_at":  "2023-09-22 07:30:08",
 		"timezone":  "America/New_York",
-		"func_name": "main.printMsg",
+		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg8": "8", "arg9": "9"},
 	}
 	bJob3, _ := json.Marshal(mJob3)
@@ -138,7 +135,7 @@ func runExampleHTTP(baseUrl string) {
 }
 
 func main() {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(examples.PrintMsg)
 
 	store := &stores.MemoryStore{}
 

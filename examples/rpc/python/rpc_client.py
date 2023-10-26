@@ -19,7 +19,7 @@ def run():
                 type="interval",
                 interval="2s",
                 timezone="UTC",
-                func_name="main.printMsg",
+                func_name="github.com/kwkwc/agscheduler/examples.PrintMsg",
                 args=args,
             )
         )
