@@ -36,7 +36,7 @@ func (cn *ClusterNode) setId() {
 func (cn *ClusterNode) init() error {
 	cn.setId()
 	cn.queueMap = make(map[string]map[string]map[string]any)
-	cn.registerMain()
+	cn.registerNode(cn)
 
 	return nil
 }
@@ -46,17 +46,13 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) error {
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service queue: `%s`", args.SchedulerQueue))
 
-	if _, ok := cn.queueMap[args.SchedulerQueue]; !ok {
-		cn.queueMap[args.SchedulerQueue] = map[string]map[string]any{}
-	}
-	cn.queueMap[args.SchedulerQueue][args.Id] = map[string]any{
-		"id":                 args.Id,
-		"main_endpoint":      args.MainEndpoint,
-		"endpoint":           args.Endpoint,
-		"scheduler_endpoint": args.SchedulerEndpoint,
-		"scheduler_queue":    args.SchedulerQueue,
-		"health":             true,
-	}
+	cn.registerNode(&ClusterNode{
+		Id:                args.Id,
+		MainEndpoint:      args.MainEndpoint,
+		Endpoint:          args.Endpoint,
+		SchedulerEndpoint: args.SchedulerEndpoint,
+		SchedulerQueue:    args.SchedulerQueue,
+	})
 
 	reply.Id = cn.Id
 	reply.Endpoint = cn.Endpoint
@@ -67,14 +63,16 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) error {
 	return nil
 }
 
-func (cn *ClusterNode) registerMain() error {
-	cn.queueMap[cn.SchedulerQueue] = map[string]map[string]any{}
-	cn.queueMap[cn.SchedulerQueue][cn.Id] = map[string]any{
-		"id":                 cn.Id,
-		"main_endpoint":      cn.MainEndpoint,
-		"endpoint":           cn.Endpoint,
-		"scheduler_endpoint": cn.SchedulerEndpoint,
-		"scheduler_queue":    cn.SchedulerQueue,
+func (cn *ClusterNode) registerNode(n *ClusterNode) error {
+	if _, ok := cn.queueMap[n.SchedulerQueue]; !ok {
+		cn.queueMap[n.SchedulerQueue] = map[string]map[string]any{}
+	}
+	cn.queueMap[n.SchedulerQueue][n.Id] = map[string]any{
+		"id":                 n.Id,
+		"main_endpoint":      n.MainEndpoint,
+		"endpoint":           n.Endpoint,
+		"scheduler_endpoint": n.SchedulerEndpoint,
+		"scheduler_queue":    n.SchedulerQueue,
 		"health":             true,
 	}
 
