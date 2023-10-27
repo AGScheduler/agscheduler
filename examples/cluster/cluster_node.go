@@ -60,7 +60,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	cn.RegisterNode()
+	err = cn.RegisterNodeRemote()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to register node remote: %s", err))
+		os.Exit(1)
+	}
 
 	select {}
 }
