@@ -16,6 +16,12 @@ type CRPCService struct {
 }
 
 func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node) error {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("registert error: %s", err))
+		}
+	}()
+
 	err := crs.cn.RPCRegister(args, reply)
 	if err != nil {
 		return err
@@ -34,6 +40,13 @@ func (s *ClusterRPCService) Start() error {
 		s.Cn.Endpoint = "127.0.0.1:36364"
 	}
 
+	s.Srs.Address = s.Cn.SchedulerEndpoint
+	s.Srs.Queue = s.Cn.SchedulerQueue
+	err := s.Srs.Start()
+	if err != nil {
+		return err
+	}
+
 	crs := &CRPCService{srs: s.Srs, cn: s.Cn}
 	rpc.Register(crs)
 	rpc.HandleHTTP()
@@ -43,15 +56,8 @@ func (s *ClusterRPCService) Start() error {
 		return fmt.Errorf("cluster RPC Service listen failure: %s", err)
 	}
 
-	s.Srs.Address = s.Cn.SchedulerEndpoint
-	s.Srs.Queue = s.Cn.SchedulerQueue
-	err = s.Srs.Start()
-	if err != nil {
-		return err
-	}
-
-	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", lis.Addr()))
 	go http.Serve(lis, nil)
+	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", lis.Addr()))
 
 	return nil
 }
