@@ -41,7 +41,7 @@ func (cn *ClusterNode) init() error {
 	return nil
 }
 
-func (cn *ClusterNode) Register(args *Node, reply *Node) error {
+func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) error {
 	slog.Info(fmt.Sprintf("Registration from the cluster node `%s:%s`:", args.Id, args.Endpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service queue: `%s`", args.SchedulerQueue))

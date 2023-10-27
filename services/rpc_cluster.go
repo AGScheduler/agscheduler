@@ -16,7 +16,7 @@ type CRPCService struct {
 }
 
 func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node) error {
-	err := crs.cn.Register(args, reply)
+	err := crs.cn.RPCRegister(args, reply)
 	if err != nil {
 		return err
 	}
