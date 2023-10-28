@@ -20,6 +20,17 @@ type Node struct {
 	queueMap          map[string]map[string]map[string]any
 }
 
+func (n *Node) toClusterNode() *ClusterNode {
+	return &ClusterNode{
+		Id:                n.Id,
+		MainEndpoint:      n.MainEndpoint,
+		Endpoint:          n.Endpoint,
+		SchedulerEndpoint: n.SchedulerEndpoint,
+		SchedulerQueue:    n.SchedulerQueue,
+		queueMap:          n.queueMap,
+	}
+}
+
 type ClusterNode struct {
 	Id                string
 	MainEndpoint      string
@@ -27,6 +38,17 @@ type ClusterNode struct {
 	SchedulerEndpoint string
 	SchedulerQueue    string
 	queueMap          map[string]map[string]map[string]any
+}
+
+func (cn *ClusterNode) toNode() *Node {
+	return &Node{
+		Id:                cn.Id,
+		MainEndpoint:      cn.MainEndpoint,
+		Endpoint:          cn.Endpoint,
+		SchedulerEndpoint: cn.SchedulerEndpoint,
+		SchedulerQueue:    cn.SchedulerQueue,
+		queueMap:          cn.queueMap,
+	}
 }
 
 func (cn *ClusterNode) setId() {
@@ -38,32 +60,12 @@ func (cn *ClusterNode) init() error {
 	cn.queueMap = make(map[string]map[string]map[string]any)
 	cn.registerNode(cn)
 
-	return nil
-}
-
-func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) error {
-	slog.Info(fmt.Sprintf("Registration from the cluster node `%s:%s`:", args.Id, args.Endpoint))
-	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service queue: `%s`", args.SchedulerQueue))
-
-	cn.registerNode(&ClusterNode{
-		Id:                args.Id,
-		MainEndpoint:      args.MainEndpoint,
-		Endpoint:          args.Endpoint,
-		SchedulerEndpoint: args.SchedulerEndpoint,
-		SchedulerQueue:    args.SchedulerQueue,
-	})
-
-	reply.Id = cn.Id
-	reply.Endpoint = cn.Endpoint
-	reply.SchedulerEndpoint = cn.SchedulerEndpoint
-	reply.SchedulerQueue = cn.SchedulerQueue
-	reply.queueMap = cn.queueMap
+	go cn.checkNode()
 
 	return nil
 }
 
-func (cn *ClusterNode) registerNode(n *ClusterNode) error {
+func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	if _, ok := cn.queueMap[n.SchedulerQueue]; !ok {
 		cn.queueMap[n.SchedulerQueue] = map[string]map[string]any{}
 	}
@@ -74,44 +76,8 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) error {
 		"scheduler_endpoint": n.SchedulerEndpoint,
 		"scheduler_queue":    n.SchedulerQueue,
 		"health":             true,
+		"last_register_time": time.Now().UTC(),
 	}
-
-	return nil
-}
-
-func (cn *ClusterNode) RegisterNodeRemote() error {
-	slog.Info(fmt.Sprintf("Register with cluster main `%s`:", cn.MainEndpoint))
-
-	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
-	if err != nil {
-		return fmt.Errorf("failed to connect to cluster main: `%s`, error: %s", cn.MainEndpoint, err)
-	}
-
-	node := Node{
-		Id:                cn.Id,
-		MainEndpoint:      cn.MainEndpoint,
-		Endpoint:          cn.Endpoint,
-		SchedulerEndpoint: cn.SchedulerEndpoint,
-		SchedulerQueue:    cn.SchedulerQueue,
-	}
-	var main Node
-	c := make(chan error, 1)
-	go func() { c <- rClient.Call("CRPCService.Register", node, &main) }()
-	select {
-	case err := <-c:
-		if err != nil {
-			return fmt.Errorf("failed to register to cluster main, error: %s", err)
-		}
-	case <-time.After(3 * time.Second):
-		return fmt.Errorf("register to cluster main timeout: %s", err)
-	}
-
-	cn.queueMap = main.queueMap
-
-	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service queue: `%s`", main.SchedulerQueue))
-
-	return nil
 }
 
 func (cn *ClusterNode) choiceNode() (*ClusterNode, error) {
@@ -139,4 +105,120 @@ func (cn *ClusterNode) choiceNode() (*ClusterNode, error) {
 	}
 
 	return &ClusterNode{}, fmt.Errorf("node not found")
+}
+
+func (cn *ClusterNode) checkNode() {
+	interval := 200 * time.Millisecond
+	timer := time.NewTimer(interval)
+
+	for {
+		<-timer.C
+		now := time.Now().UTC()
+		for _, v := range cn.queueMap {
+			for k2, v2 := range v {
+				id := v2["id"].(string)
+				if cn.Id == id {
+					continue
+				}
+				endpoint := v2["endpoint"].(string)
+				lastRegisterTime := v2["last_register_time"].(time.Time)
+				if now.Sub(lastRegisterTime) > 1*time.Second {
+					delete(v, k2)
+					slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is deleted", id, endpoint))
+				} else if now.Sub(lastRegisterTime) > 200*time.Millisecond {
+					v2["health"] = false
+					slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is unhealthy", id, endpoint))
+				}
+			}
+		}
+		timer.Reset(interval)
+
+		// slog.Info(fmt.Sprintf("%s", cn.queueMap))
+	}
+}
+
+func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
+	slog.Info(fmt.Sprintf("Registration from the cluster node `%s:%s`:", args.Id, args.Endpoint))
+	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service queue: `%s`", args.SchedulerQueue))
+
+	cn.registerNode(args.toClusterNode())
+
+	reply.Id = cn.Id
+	reply.MainEndpoint = cn.MainEndpoint
+	reply.Endpoint = cn.Endpoint
+	reply.SchedulerEndpoint = cn.SchedulerEndpoint
+	reply.SchedulerQueue = cn.SchedulerQueue
+}
+
+func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
+	// slog.Info(fmt.Sprintf("Ping from the cluster node `%s:%s`:", args.Id, args.Endpoint))
+
+	cn.registerNode(args.toClusterNode())
+}
+
+func (cn *ClusterNode) RegisterNodeRemote() error {
+	slog.Info(fmt.Sprintf("Register with cluster main `%s`:", cn.MainEndpoint))
+
+	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
+	if err != nil {
+		return fmt.Errorf("failed to connect to cluster main: `%s`, error: %s", cn.MainEndpoint, err)
+	}
+
+	var main Node
+	c := make(chan error, 1)
+	go func() { c <- rClient.Call("CRPCService.Register", cn.toNode(), &main) }()
+	select {
+	case err := <-c:
+		if err != nil {
+			return fmt.Errorf("failed to register to cluster main, error: %s", err)
+		}
+	case <-time.After(3 * time.Second):
+		return fmt.Errorf("register to cluster main timeout: %s", err)
+	}
+
+	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service queue: `%s`", main.SchedulerQueue))
+
+	go cn.heartbeatRemote()
+
+	return nil
+}
+
+func (cn *ClusterNode) heartbeatRemote() {
+	interval := 100 * time.Millisecond
+	timer := time.NewTimer(interval)
+
+	for {
+		<-timer.C
+		if err := cn.PingRemote(); err != nil {
+			slog.Info(fmt.Sprintf("Ping remote error: %s", err))
+			timer.Reset(time.Second)
+		} else {
+			timer.Reset(interval)
+		}
+	}
+}
+
+func (cn *ClusterNode) PingRemote() error {
+	// slog.Info(fmt.Sprintf("Ping with cluster main `%s`:", cn.MainEndpoint))
+
+	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
+	if err != nil {
+		return fmt.Errorf("failed to connect to cluster main: `%s`, error: %s", cn.MainEndpoint, err)
+	}
+
+	var main Node
+	c := make(chan error, 1)
+	go func() { c <- rClient.Call("CRPCService.Ping", cn.toNode(), &main) }()
+	select {
+	case err := <-c:
+		if err != nil {
+			return fmt.Errorf("failed to ping to cluster main, error: %s", err)
+		}
+	case <-time.After(200 * time.Millisecond):
+		return fmt.Errorf("ping to cluster main timeout: %s", err)
+	}
+
+	return nil
 }

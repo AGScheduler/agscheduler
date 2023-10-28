@@ -16,17 +16,12 @@ type CRPCService struct {
 }
 
 func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node) error {
-	defer func() {
-		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("registert error: %s", err))
-		}
-	}()
+	crs.cn.RPCRegister(args, reply)
+	return nil
+}
 
-	err := crs.cn.RPCRegister(args, reply)
-	if err != nil {
-		return err
-	}
-
+func (crs *CRPCService) Ping(args *agscheduler.Node, reply *agscheduler.Node) error {
+	crs.cn.RPCPing(args, reply)
 	return nil
 }
 

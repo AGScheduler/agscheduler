@@ -43,7 +43,6 @@ func main() {
 	}
 
 	rservice := &services.SchedulerRPCService{Scheduler: scheduler}
-
 	crservice := services.ClusterRPCService{
 		Srs: rservice,
 		Cn:  cn,

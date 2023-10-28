@@ -276,7 +276,7 @@ func (s *Scheduler) scheduleJob(j Job) error {
 		s._runJob(j)
 	} else {
 		node, err := s.clusterNode.choiceNode()
-		if err != nil {
+		if err != nil || node.MainEndpoint == node.Endpoint {
 			s._runJob(j)
 		} else {
 			s._runJobRemote(node, j)
