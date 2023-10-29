@@ -5,26 +5,35 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/kwkwc/agscheduler"
+	"github.com/kwkwc/agscheduler/examples"
 	"github.com/kwkwc/agscheduler/services"
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
-}
-
 func main() {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(examples.PrintMsg)
 
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err := scheduler.SetStore(store)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
+		os.Exit(1)
+	}
 
-	rservice := services.SchedulerRPCService{Scheduler: scheduler}
-	rservice.Start("127.0.0.1:36363")
+	srservice := services.SchedulerRPCService{
+		Scheduler: scheduler,
+		Address:   "127.0.0.1:36363",
+	}
+	err = srservice.Start()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
+		os.Exit(1)
+	}
 
 	select {}
 }

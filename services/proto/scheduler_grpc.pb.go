@@ -45,7 +45,7 @@ type SchedulerClient interface {
 	DeleteAllJobs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	PauseJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*Job, error)
 	ResumeJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*Job, error)
-	RunJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	RunJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Start(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -130,7 +130,7 @@ func (c *schedulerClient) ResumeJob(ctx context.Context, in *JobId, opts ...grpc
 	return out, nil
 }
 
-func (c *schedulerClient) RunJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *schedulerClient) RunJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Scheduler_RunJob_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -169,7 +169,7 @@ type SchedulerServer interface {
 	DeleteAllJobs(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	PauseJob(context.Context, *JobId) (*Job, error)
 	ResumeJob(context.Context, *JobId) (*Job, error)
-	RunJob(context.Context, *JobId) (*emptypb.Empty, error)
+	RunJob(context.Context, *Job) (*emptypb.Empty, error)
 	Start(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	Stop(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSchedulerServer()
@@ -203,7 +203,7 @@ func (UnimplementedSchedulerServer) PauseJob(context.Context, *JobId) (*Job, err
 func (UnimplementedSchedulerServer) ResumeJob(context.Context, *JobId) (*Job, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ResumeJob not implemented")
 }
-func (UnimplementedSchedulerServer) RunJob(context.Context, *JobId) (*emptypb.Empty, error) {
+func (UnimplementedSchedulerServer) RunJob(context.Context, *Job) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunJob not implemented")
 }
 func (UnimplementedSchedulerServer) Start(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -370,7 +370,7 @@ func _Scheduler_ResumeJob_Handler(srv interface{}, ctx context.Context, dec func
 }
 
 func _Scheduler_RunJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobId)
+	in := new(Job)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -382,7 +382,7 @@ func _Scheduler_RunJob_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: Scheduler_RunJob_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SchedulerServer).RunJob(ctx, req.(*JobId))
+		return srv.(SchedulerServer).RunJob(ctx, req.(*Job))
 	}
 	return interceptor(ctx, in, info, handler)
 }

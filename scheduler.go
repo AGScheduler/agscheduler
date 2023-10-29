@@ -1,6 +1,7 @@
 package agscheduler
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -10,13 +11,22 @@ import (
 	"time"
 
 	"github.com/gorhill/cronexpr"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/kwkwc/agscheduler/services/proto"
 )
+
+var GetStore = (*Scheduler).getStore
+var GetClusterNode = (*Scheduler).getClusterNode
 
 type Scheduler struct {
 	store     Store
 	timer     *time.Timer
 	quitChan  chan struct{}
 	isRunning bool
+
+	clusterNode *ClusterNode
 }
 
 func (s *Scheduler) SetStore(sto Store) error {
@@ -28,8 +38,21 @@ func (s *Scheduler) SetStore(sto Store) error {
 	return nil
 }
 
-func (s *Scheduler) Store() Store {
+func (s *Scheduler) getStore() Store {
 	return s.store
+}
+
+func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
+	s.clusterNode = cn
+	if err := s.clusterNode.init(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Scheduler) getClusterNode() *ClusterNode {
+	return s.clusterNode
 }
 
 func CalcNextRunTime(j Job) (time.Time, error) {
@@ -66,14 +89,14 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
-	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
-
 	for {
-		j.SetId()
+		j.setId()
 		if _, err := s.GetJob(j.Id); err != nil {
 			break
 		}
 	}
+
+	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
 
 	j.Status = STATUS_RUNNING
 
@@ -192,7 +215,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	return j, nil
 }
 
-func (s *Scheduler) _runJob(j Job, now time.Time) error {
+func (s *Scheduler) _runJob(j Job) {
 	f := reflect.ValueOf(funcMap[j.FuncName])
 	if f.IsNil() {
 		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.FullName(), j.FuncName))
@@ -209,7 +232,27 @@ func (s *Scheduler) _runJob(j Job, now time.Time) error {
 			f.Call([]reflect.Value{reflect.ValueOf(j)})
 		}()
 	}
+}
 
+func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
+	go func() {
+		conn, _ := grpc.Dial(node.SchedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		defer conn.Close()
+
+		client := pb.NewSchedulerClient(conn)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		_, err := client.RunJob(ctx, JobToPbJobPtr(j))
+		if err != nil {
+			slog.Error(fmt.Sprintf("Scheduler run job remote error %s\n", err))
+			s.clusterNode.queueMap[node.SchedulerQueue][node.Id]["health"] = false
+		}
+	}()
+}
+
+func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
 
 	if j.Type == TYPE_DATETIME {
@@ -227,19 +270,27 @@ func (s *Scheduler) _runJob(j Job, now time.Time) error {
 	return nil
 }
 
-func (s *Scheduler) RunJob(id string) error {
-	slog.Info(fmt.Sprintf("Scheduler run jobId `%s`.\n", id))
+func (s *Scheduler) RunJob(j Job) error {
+	slog.Info(fmt.Sprintf("Scheduler run job `%s`.\n", j.FullName()))
 
-	j, err := s.GetJob(id)
+	err := s.scheduleJob(j)
 	if err != nil {
-		return err
+		return fmt.Errorf("scheduler schedule job error: %s", err)
 	}
 
-	now := time.Now().UTC()
+	return nil
+}
 
-	err = s._runJob(j, now)
-	if err != nil {
-		return err
+func (s *Scheduler) scheduleJob(j Job) error {
+	if s.clusterNode == nil {
+		s._runJob(j)
+	} else {
+		node, err := s.clusterNode.choiceNode()
+		if err != nil || s.clusterNode.Id == node.Id {
+			s._runJob(j)
+		} else {
+			s._runJobRemote(node, j)
+		}
 	}
 
 	return nil
@@ -274,7 +325,13 @@ func (s *Scheduler) run() {
 					}
 					j.NextRunTime = nextRunTime
 
-					if err := s._runJob(j, now); err != nil {
+					err = s.scheduleJob(j)
+					if err != nil {
+						slog.Error(fmt.Sprintf("Scheduler schedule job error: %s\n", err))
+					}
+
+					err = s._flushJob(j, now)
+					if err != nil {
 						slog.Error(fmt.Sprintf("Scheduler %s\n", err))
 						continue
 					}

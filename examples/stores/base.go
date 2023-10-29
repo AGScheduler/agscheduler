@@ -6,21 +6,18 @@ import (
 	"time"
 
 	"github.com/kwkwc/agscheduler"
+	"github.com/kwkwc/agscheduler/examples"
 )
 
-func printMsg(j agscheduler.Job) {
-	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
-}
-
 func runExample(s *agscheduler.Scheduler) {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(examples.PrintMsg)
 
 	job1 := agscheduler.Job{
 		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "2s",
 		Timezone: "UTC",
-		Func:     printMsg,
+		Func:     examples.PrintMsg,
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	job1, _ = s.AddJob(job1)
@@ -31,7 +28,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Type:     agscheduler.TYPE_CRON,
 		CronExpr: "*/1 * * * *",
 		Timezone: "Asia/Shanghai",
-		FuncName: "main.printMsg",
+		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	job2, _ = s.AddJob(job2)
@@ -44,7 +41,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Type:     agscheduler.TYPE_DATETIME,
 		StartAt:  "2023-09-22 07:30:08",
 		Timezone: "America/New_York",
-		Func:     printMsg,
+		Func:     examples.PrintMsg,
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 	}
 	job3, _ = s.AddJob(job3)
@@ -81,7 +78,7 @@ func runExample(s *agscheduler.Scheduler) {
 
 	s.Stop()
 
-	s.RunJob(job1.Id)
+	s.RunJob(job1)
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)

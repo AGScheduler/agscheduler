@@ -53,7 +53,7 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
-	_, err := c.RunJob(ctx, &pb.JobId{Id: j.Id})
+	_, err := c.RunJob(ctx, pbJ)
 	assert.NoError(t, err)
 
 	c.DeleteJob(ctx, &pb.JobId{Id: j.Id})
@@ -76,10 +76,13 @@ func TestRPCService(t *testing.T) {
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	rservice := SchedulerRPCService{Scheduler: scheduler}
-	rservice.Start("127.0.0.1:36363")
+	srservice := SchedulerRPCService{
+		Scheduler: scheduler,
+		// Address:   "127.0.0.1:36363",
+	}
+	srservice.Start()
 
-	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, _ := grpc.Dial(srservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 

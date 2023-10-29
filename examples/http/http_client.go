@@ -1,4 +1,5 @@
-// go run examples/http/http_client.go
+// 1. go run examples/http/http_server.go
+// 2. go run examples/http/http_client.go
 
 package main
 
@@ -24,7 +25,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "interval",
 		"interval":  "2s",
 		"timezone":  "UTC",
-		"func_name": "main.printMsg",
+		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	bJob1, _ := json.Marshal(mJob1)

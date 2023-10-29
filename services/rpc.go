@@ -13,66 +13,67 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
-type RPCService struct {
+type sRPCService struct {
 	pb.UnimplementedSchedulerServer
 
 	scheduler *agscheduler.Scheduler
 }
 
-func (rs *RPCService) AddJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
+func (srs *sRPCService) AddJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
-	j, err := rs.scheduler.AddJob(j)
+	j, err := srs.scheduler.AddJob(j)
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *RPCService) GetJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := rs.scheduler.GetJob(jobId.GetId())
+func (srs *sRPCService) GetJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
+	j, err := srs.scheduler.GetJob(jobId.GetId())
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *RPCService) GetAllJobs(ctx context.Context, in *emptypb.Empty) (*pb.Jobs, error) {
-	js, err := rs.scheduler.GetAllJobs()
+func (srs *sRPCService) GetAllJobs(ctx context.Context, in *emptypb.Empty) (*pb.Jobs, error) {
+	js, err := srs.scheduler.GetAllJobs()
 	return agscheduler.JobsToPbJobsPtr(js), err
 }
 
-func (rs *RPCService) UpdateJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
+func (srs *sRPCService) UpdateJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
-	j, err := rs.scheduler.UpdateJob(j)
+	j, err := srs.scheduler.UpdateJob(j)
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *RPCService) DeleteJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
-	err := rs.scheduler.DeleteJob(jobId.GetId())
+func (srs *sRPCService) DeleteJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
+	err := srs.scheduler.DeleteJob(jobId.GetId())
 	return &emptypb.Empty{}, err
 }
 
-func (rs *RPCService) DeleteAllJobs(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
-	err := rs.scheduler.DeleteAllJobs()
+func (srs *sRPCService) DeleteAllJobs(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	err := srs.scheduler.DeleteAllJobs()
 	return &emptypb.Empty{}, err
 }
 
-func (rs *RPCService) PauseJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := rs.scheduler.PauseJob(jobId.GetId())
+func (srs *sRPCService) PauseJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
+	j, err := srs.scheduler.PauseJob(jobId.GetId())
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *RPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := rs.scheduler.ResumeJob(jobId.GetId())
+func (srs *sRPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
+	j, err := srs.scheduler.ResumeJob(jobId.GetId())
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *RPCService) RunJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
-	err := rs.scheduler.RunJob(jobId.GetId())
+func (srs *sRPCService) RunJob(ctx context.Context, pbJob *pb.Job) (*emptypb.Empty, error) {
+	j := agscheduler.PbJobPtrToJob(pbJob)
+	err := srs.scheduler.RunJob(j)
 	return &emptypb.Empty{}, err
 }
 
-func (rs *RPCService) Start(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
-	rs.scheduler.Start()
+func (srs *sRPCService) Start(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	srs.scheduler.Start()
 	return &emptypb.Empty{}, nil
 }
 
-func (rs *RPCService) Stop(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
-	rs.scheduler.Stop()
+func (srs *sRPCService) Stop(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	srs.scheduler.Stop()
 	return &emptypb.Empty{}, nil
 }
 
@@ -89,21 +90,27 @@ func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, 
 
 type SchedulerRPCService struct {
 	Scheduler *agscheduler.Scheduler
+	Address   string
+	Queue     string
 }
 
-func (s *SchedulerRPCService) Start(address string) error {
-	if address == "" {
-		address = "127.0.0.1:36363"
+func (s *SchedulerRPCService) Start() error {
+	if s.Address == "" {
+		s.Address = "127.0.0.1:36363"
+	}
+	if s.Queue == "" {
+		s.Queue = "default"
 	}
 
-	lis, err := net.Listen("tcp", address)
+	lis, err := net.Listen("tcp", s.Address)
 	if err != nil {
 		return fmt.Errorf("scheduler RPC Service listen failure: %s", err)
 	}
 
 	srv := grpc.NewServer(grpc.UnaryInterceptor(panicInterceptor))
-	pb.RegisterSchedulerServer(srv, &RPCService{scheduler: s.Scheduler})
+	pb.RegisterSchedulerServer(srv, &sRPCService{scheduler: s.Scheduler})
 	slog.Info(fmt.Sprintf("Scheduler RPC Service listening at: %s", lis.Addr()))
+	slog.Info(fmt.Sprintf("Scheduler RPC Service queue: `%s`", s.Queue))
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {

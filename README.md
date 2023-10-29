@@ -8,25 +8,27 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/kwkwc/agscheduler)
 [![license](https://img.shields.io/github/license/kwkwc/agscheduler)](https://github.com/kwkwc/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) is a task scheduler for Golang that supports multiple scheduling types, dynamic changes and persistent tasks, and remote call
+> Advanced Golang Scheduler (AGScheduler) is a task scheduler for Golang that supports multiple scheduling types, dynamic changes and persistent tasks, and remote call, and supports cluster
 
 English | [简体中文](README.zh-CN.md)
 
 ## Features
 
-- Support for three scheduling types
+- Supports three scheduling types
   - [x] One-off execution
   - [x] Interval execution
   - [x] Cron-style scheduling
-- Support for multiple task storage methods
+- Supports multiple task storage methods
   - [x] Memory
   - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
-- Support for remote call
+- Supports remote call
   - [x] gRPC
   - [x] HTTP APIs
+- Supports cluster
+  - [x] Remote worker nodes
 
 ## Usage
 
@@ -103,8 +105,8 @@ func main() {
 
 ```golang
 // Server
-rservice := services.SchedulerRPCService{Scheduler: scheduler}
-rservice.Start("127.0.0.1:36363")
+srservice := services.SchedulerRPCService{Scheduler: scheduler}
+srservice.Start("127.0.0.1:36363")
 
 // Client
 conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -116,14 +118,50 @@ client.AddJob(ctx, job)
 
 ```golang
 // Server
-hservice := services.SchedulerHTTPService{Scheduler: scheduler}
-hservice.Start("127.0.0.1:63636")
+shservice := services.SchedulerHTTPService{Scheduler: scheduler}
+shservice.Start("127.0.0.1:63636")
 
 // Client
 mJob := map[string]any{...}
 bJob, _ := json.Marshal(bJob)
 resp, _ := http.Post("http://127.0.0.1:63636/scheduler/job", "application/json", bytes.NewReader(bJob))
 ```
+
+## Cluster
+
+```golang
+// Main Node
+cnMain := &agscheduler.ClusterNode{...}
+schedulerMain.SetClusterNode(ctx, cnMain)
+srserviceMain := &services.SchedulerRPCService{Scheduler: schedulerMain}
+crserviceMain := services.ClusterRPCService{Srs: srserviceMain, Cn: cnMain}
+crserviceMain.Start()
+
+// Node
+cn := &agscheduler.ClusterNode{...}
+scheduler.SetClusterNode(ctx, cn)
+srservice := &services.SchedulerRPCService{Scheduler: scheduler}
+crservice := services.ClusterRPCService{Srs: srservice, Cn: cn}
+crservice.Start()
+
+cn.RegisterNodeRemote(ctx)
+```
+
+## API
+
+| gRPC Function | HTTP Method | HTTP Endpoint             |
+|---------------|-------------|---------------------------|
+| AddJob        | POST        | /scheduler/job            |
+| GetJob        | GET         | /scheduler/job/:id        |
+| GetAllJobs    | GET         | /scheduler/jobs           |
+| UpdateJob     | PUT         | /scheduler/job            |
+| DeleteJob     | DELETE      | /scheduler/job/:id        |
+| DeleteAllJobs | DELETE      | /scheduler/jobs           |
+| PauseJob      | POST        | /scheduler/job/:id/pause  |
+| ResumeJob     | POST        | /scheduler/job/:id/resume |
+| RunJob        | POST        | /scheduler/job/run        |
+| Start         | POST        | /scheduler/start          |
+| Stop          | POST        | /scheduler/stop           |
 
 ## Examples
 
