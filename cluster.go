@@ -132,8 +132,6 @@ func (cn *ClusterNode) checkNode() {
 			}
 		}
 		timer.Reset(interval)
-
-		// slog.Info(fmt.Sprintf("%s", cn.queueMap))
 	}
 }
 
@@ -152,8 +150,6 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 }
 
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
-	// slog.Info(fmt.Sprintf("Ping from the cluster node `%s:%s`:", args.Id, args.Endpoint))
-
 	cn.registerNode(args.toClusterNode())
 }
 
@@ -201,8 +197,6 @@ func (cn *ClusterNode) heartbeatRemote() {
 }
 
 func (cn *ClusterNode) PingRemote() error {
-	// slog.Info(fmt.Sprintf("Ping with cluster main `%s`:", cn.MainEndpoint))
-
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main: `%s`, error: %s", cn.MainEndpoint, err)
