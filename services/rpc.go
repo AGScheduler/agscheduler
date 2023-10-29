@@ -19,61 +19,61 @@ type sRPCService struct {
 	scheduler *agscheduler.Scheduler
 }
 
-func (rs *sRPCService) AddJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
+func (srs *sRPCService) AddJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
-	j, err := rs.scheduler.AddJob(j)
+	j, err := srs.scheduler.AddJob(j)
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *sRPCService) GetJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := rs.scheduler.GetJob(jobId.GetId())
+func (srs *sRPCService) GetJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
+	j, err := srs.scheduler.GetJob(jobId.GetId())
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *sRPCService) GetAllJobs(ctx context.Context, in *emptypb.Empty) (*pb.Jobs, error) {
-	js, err := rs.scheduler.GetAllJobs()
+func (srs *sRPCService) GetAllJobs(ctx context.Context, in *emptypb.Empty) (*pb.Jobs, error) {
+	js, err := srs.scheduler.GetAllJobs()
 	return agscheduler.JobsToPbJobsPtr(js), err
 }
 
-func (rs *sRPCService) UpdateJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
+func (srs *sRPCService) UpdateJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
-	j, err := rs.scheduler.UpdateJob(j)
+	j, err := srs.scheduler.UpdateJob(j)
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *sRPCService) DeleteJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
-	err := rs.scheduler.DeleteJob(jobId.GetId())
+func (srs *sRPCService) DeleteJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
+	err := srs.scheduler.DeleteJob(jobId.GetId())
 	return &emptypb.Empty{}, err
 }
 
-func (rs *sRPCService) DeleteAllJobs(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
-	err := rs.scheduler.DeleteAllJobs()
+func (srs *sRPCService) DeleteAllJobs(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	err := srs.scheduler.DeleteAllJobs()
 	return &emptypb.Empty{}, err
 }
 
-func (rs *sRPCService) PauseJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := rs.scheduler.PauseJob(jobId.GetId())
+func (srs *sRPCService) PauseJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
+	j, err := srs.scheduler.PauseJob(jobId.GetId())
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *sRPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := rs.scheduler.ResumeJob(jobId.GetId())
+func (srs *sRPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
+	j, err := srs.scheduler.ResumeJob(jobId.GetId())
 	return agscheduler.JobToPbJobPtr(j), err
 }
 
-func (rs *sRPCService) RunJob(ctx context.Context, pbJob *pb.Job) (*emptypb.Empty, error) {
+func (srs *sRPCService) RunJob(ctx context.Context, pbJob *pb.Job) (*emptypb.Empty, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
-	err := rs.scheduler.RunJob(j)
+	err := srs.scheduler.RunJob(j)
 	return &emptypb.Empty{}, err
 }
 
-func (rs *sRPCService) Start(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
-	rs.scheduler.Start()
+func (srs *sRPCService) Start(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	srs.scheduler.Start()
 	return &emptypb.Empty{}, nil
 }
 
-func (rs *sRPCService) Stop(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
-	rs.scheduler.Stop()
+func (srs *sRPCService) Stop(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	srs.scheduler.Stop()
 	return &emptypb.Empty{}, nil
 }
 

@@ -27,11 +27,8 @@ func TestClusterRPCService(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	scheduler.SetClusterNode(ctx, cnMain)
-	rservice := &SchedulerRPCService{Scheduler: scheduler}
-	crservice := ClusterRPCService{
-		Srs: rservice,
-		Cn:  cnMain,
-	}
+	srservice := &SchedulerRPCService{Scheduler: scheduler}
+	crservice := ClusterRPCService{Srs: srservice, Cn: cnMain}
 	crservice.Start()
 
 	assert.Len(t, cnMain.QueueMap(), 1)

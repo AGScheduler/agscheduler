@@ -147,11 +147,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	hservice := services.SchedulerHTTPService{
+	shservice := services.SchedulerHTTPService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:63636",
 	}
-	err = hservice.Start()
+	err = shservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
 		os.Exit(1)

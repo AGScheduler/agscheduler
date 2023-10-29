@@ -25,11 +25,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	rservice := services.SchedulerRPCService{
+	srservice := services.SchedulerRPCService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:36363",
 	}
-	err = rservice.Start()
+	err = srservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
 		os.Exit(1)

@@ -49,11 +49,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	rservice := &services.SchedulerRPCService{Scheduler: scheduler}
-	crservice := services.ClusterRPCService{
-		Srs: rservice,
-		Cn:  cn,
-	}
+	srservice := &services.SchedulerRPCService{Scheduler: scheduler}
+	crservice := services.ClusterRPCService{Srs: srservice, Cn: cn}
 	err = crservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))

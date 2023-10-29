@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/kwkwc/agscheduler)
 [![license](https://img.shields.io/github/license/kwkwc/agscheduler)](https://github.com/kwkwc/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，支持动态更改和持久化任务，支持远程调用
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，支持动态更改和持久化任务，支持远程调用，支持集群
 
 [English](README.md) | 简体中文
 
@@ -27,6 +27,8 @@
 - 支持远程调用
   - [x] gRPC
   - [x] HTTP APIs
+- 支持集群
+  - [x] 远程工作节点
 
 ## 使用
 
@@ -103,8 +105,8 @@ func main() {
 
 ```golang
 // Server
-rservice := services.SchedulerRPCService{Scheduler: scheduler}
-rservice.Start("127.0.0.1:36363")
+srservice := services.SchedulerRPCService{Scheduler: scheduler}
+srservice.Start("127.0.0.1:36363")
 
 // Client
 conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -116,14 +118,50 @@ client.AddJob(ctx, job)
 
 ```golang
 // Server
-hservice := services.SchedulerHTTPService{Scheduler: scheduler}
-hservice.Start("127.0.0.1:63636")
+shservice := services.SchedulerHTTPService{Scheduler: scheduler}
+shservice.Start("127.0.0.1:63636")
 
 // Client
 mJob := map[string]any{...}
 bJob, _ := json.Marshal(bJob)
 resp, _ := http.Post("http://127.0.0.1:63636/scheduler/job", "application/json", bytes.NewReader(bJob))
 ```
+
+## Cluster
+
+```golang
+// Main Node
+cnMain := &agscheduler.ClusterNode{...}
+schedulerMain.SetClusterNode(ctx, cnMain)
+srserviceMain := &services.SchedulerRPCService{Scheduler: schedulerMain}
+crserviceMain := services.ClusterRPCService{Srs: srserviceMain, Cn: cnMain}
+crserviceMain.Start()
+
+// Node
+cn := &agscheduler.ClusterNode{...}
+scheduler.SetClusterNode(ctx, cn)
+srservice := &services.SchedulerRPCService{Scheduler: scheduler}
+crservice := services.ClusterRPCService{Srs: srservice, Cn: cn}
+crservice.Start()
+
+cn.RegisterNodeRemote(ctx)
+```
+
+## API
+
+| gRPC Function | HTTP Method | HTTP Endpoint             |
+|---------------|-------------|---------------------------|
+| AddJob        | POST        | /scheduler/job            |
+| GetJob        | GET         | /scheduler/job/:id        |
+| GetAllJobs    | GET         | /scheduler/jobs           |
+| UpdateJob     | PUT         | /scheduler/job            |
+| DeleteJob     | DELETE      | /scheduler/job/:id        |
+| DeleteAllJobs | DELETE      | /scheduler/jobs           |
+| PauseJob      | POST        | /scheduler/job/:id/pause  |
+| ResumeJob     | POST        | /scheduler/job/:id/resume |
+| RunJob        | POST        | /scheduler/job/run        |
+| Start         | POST        | /scheduler/start          |
+| Stop          | POST        | /scheduler/stop           |
 
 ## 示例
 

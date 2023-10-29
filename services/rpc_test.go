@@ -76,13 +76,13 @@ func TestRPCService(t *testing.T) {
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 
-	rservice := SchedulerRPCService{
+	srservice := SchedulerRPCService{
 		Scheduler: scheduler,
 		// Address:   "127.0.0.1:36363",
 	}
-	rservice.Start()
+	srservice.Start()
 
-	conn, _ := grpc.Dial(rservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, _ := grpc.Dial(srservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 
