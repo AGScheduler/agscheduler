@@ -17,6 +17,9 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
+var GetStore = (*Scheduler).getStore
+var GetClusterNode = (*Scheduler).getClusterNode
+
 type Scheduler struct {
 	store     Store
 	timer     *time.Timer
@@ -35,17 +38,21 @@ func (s *Scheduler) SetStore(sto Store) error {
 	return nil
 }
 
-func (s *Scheduler) Store() Store {
+func (s *Scheduler) getStore() Store {
 	return s.store
 }
 
-func (s *Scheduler) SetClusterNode(cn *ClusterNode) error {
+func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
 	s.clusterNode = cn
-	if err := s.clusterNode.init(); err != nil {
+	if err := s.clusterNode.init(ctx); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Scheduler) getClusterNode() *ClusterNode {
+	return s.clusterNode
 }
 
 func CalcNextRunTime(j Job) (time.Time, error) {
@@ -266,7 +273,10 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 func (s *Scheduler) RunJob(j Job) error {
 	slog.Info(fmt.Sprintf("Scheduler run job `%s`.\n", j.FullName()))
 
-	s._runJob(j)
+	err := s.scheduleJob(j)
+	if err != nil {
+		return fmt.Errorf("scheduler schedule job error: %s", err)
+	}
 
 	return nil
 }
@@ -276,7 +286,7 @@ func (s *Scheduler) scheduleJob(j Job) error {
 		s._runJob(j)
 	} else {
 		node, err := s.clusterNode.choiceNode()
-		if err != nil || node.MainEndpoint == node.Endpoint {
+		if err != nil || s.clusterNode.Id == node.Id {
 			s._runJob(j)
 		} else {
 			s._runJobRemote(node, j)
@@ -317,7 +327,7 @@ func (s *Scheduler) run() {
 
 					err = s.scheduleJob(j)
 					if err != nil {
-						slog.Error(fmt.Sprintf("Scheduler schedule job error %s\n", err))
+						slog.Error(fmt.Sprintf("Scheduler schedule job error: %s\n", err))
 					}
 
 					err = s._flushJob(j, now)

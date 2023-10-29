@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -42,7 +43,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
 		os.Exit(1)
 	}
-	err = scheduler.SetClusterNode(cn)
+	err = scheduler.SetClusterNode(context.TODO(), cn)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set cluster node: %s", err))
 		os.Exit(1)
@@ -59,7 +60,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = cn.RegisterNodeRemote()
+	err = cn.RegisterNodeRemote(context.TODO())
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to register node remote: %s", err))
 		os.Exit(1)

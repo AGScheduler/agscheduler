@@ -116,13 +116,13 @@ func TestHTTPService(t *testing.T) {
 
 	hservice := SchedulerHTTPService{
 		Scheduler: scheduler,
-		Address:   "127.0.0.1:63636",
+		// Address:   "127.0.0.1:63636",
 	}
 	hservice.Start()
 
 	time.Sleep(time.Second)
 
-	baseUrl := "http://127.0.0.1:63636"
+	baseUrl := "http://" + hservice.Address
 
 	testAGSchedulerHTTP(t, baseUrl)
 

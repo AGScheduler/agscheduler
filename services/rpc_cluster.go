@@ -34,6 +34,15 @@ func (s *ClusterRPCService) Start() error {
 	if s.Cn.Endpoint == "" {
 		s.Cn.Endpoint = "127.0.0.1:36364"
 	}
+	if s.Cn.MainEndpoint == "" {
+		s.Cn.MainEndpoint = s.Cn.Endpoint
+	}
+	if s.Cn.SchedulerEndpoint == "" {
+		s.Cn.SchedulerEndpoint = "127.0.0.1:36363"
+	}
+	if s.Cn.SchedulerQueue == "" {
+		s.Cn.SchedulerQueue = "default"
+	}
 
 	s.Srs.Address = s.Cn.SchedulerEndpoint
 	s.Srs.Queue = s.Cn.SchedulerQueue

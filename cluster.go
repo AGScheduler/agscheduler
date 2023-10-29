@@ -1,6 +1,7 @@
 package agscheduler
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -51,21 +52,27 @@ func (cn *ClusterNode) toNode() *Node {
 	}
 }
 
+func (cn *ClusterNode) QueueMap() map[string]map[string]map[string]any {
+	return cn.queueMap
+}
+
 func (cn *ClusterNode) setId() {
 	cn.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
 }
 
-func (cn *ClusterNode) init() error {
+func (cn *ClusterNode) init(ctx context.Context) error {
 	cn.setId()
-	cn.queueMap = make(map[string]map[string]map[string]any)
 	cn.registerNode(cn)
 
-	go cn.checkNode()
+	go cn.checkNode(ctx)
 
 	return nil
 }
 
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
+	if cn.queueMap == nil {
+		cn.queueMap = make(map[string]map[string]map[string]any)
+	}
 	if _, ok := cn.queueMap[n.SchedulerQueue]; !ok {
 		cn.queueMap[n.SchedulerQueue] = map[string]map[string]any{}
 	}
@@ -107,31 +114,35 @@ func (cn *ClusterNode) choiceNode() (*ClusterNode, error) {
 	return &ClusterNode{}, fmt.Errorf("node not found")
 }
 
-func (cn *ClusterNode) checkNode() {
+func (cn *ClusterNode) checkNode(ctx context.Context) {
 	interval := 200 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
-		<-timer.C
-		now := time.Now().UTC()
-		for _, v := range cn.queueMap {
-			for k2, v2 := range v {
-				id := v2["id"].(string)
-				if cn.Id == id {
-					continue
-				}
-				endpoint := v2["endpoint"].(string)
-				lastRegisterTime := v2["last_register_time"].(time.Time)
-				if now.Sub(lastRegisterTime) > 1*time.Second {
-					delete(v, k2)
-					slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is deleted", id, endpoint))
-				} else if now.Sub(lastRegisterTime) > 200*time.Millisecond {
-					v2["health"] = false
-					slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is unhealthy", id, endpoint))
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			now := time.Now().UTC()
+			for _, v := range cn.queueMap {
+				for k2, v2 := range v {
+					id := v2["id"].(string)
+					if cn.Id == id {
+						continue
+					}
+					endpoint := v2["endpoint"].(string)
+					lastRegisterTime := v2["last_register_time"].(time.Time)
+					if now.Sub(lastRegisterTime) > 1*time.Second {
+						delete(v, k2)
+						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is deleted", id, endpoint))
+					} else if now.Sub(lastRegisterTime) > 200*time.Millisecond {
+						v2["health"] = false
+						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is unhealthy", id, endpoint))
+					}
 				}
 			}
+			timer.Reset(interval)
 		}
-		timer.Reset(interval)
 	}
 }
 
@@ -153,7 +164,7 @@ func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 }
 
-func (cn *ClusterNode) RegisterNodeRemote() error {
+func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	slog.Info(fmt.Sprintf("Register with cluster main `%s`:", cn.MainEndpoint))
 
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
@@ -176,27 +187,31 @@ func (cn *ClusterNode) RegisterNodeRemote() error {
 	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
 	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service queue: `%s`", main.SchedulerQueue))
 
-	go cn.heartbeatRemote()
+	go cn.heartbeatRemote(ctx)
 
 	return nil
 }
 
-func (cn *ClusterNode) heartbeatRemote() {
+func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	interval := 100 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
-		<-timer.C
-		if err := cn.PingRemote(); err != nil {
-			slog.Info(fmt.Sprintf("Ping remote error: %s", err))
-			timer.Reset(time.Second)
-		} else {
-			timer.Reset(interval)
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			if err := cn.pingRemote(); err != nil {
+				slog.Info(fmt.Sprintf("Ping remote error: %s", err))
+				timer.Reset(time.Second)
+			} else {
+				timer.Reset(interval)
+			}
 		}
 	}
 }
 
-func (cn *ClusterNode) PingRemote() error {
+func (cn *ClusterNode) pingRemote() error {
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main: `%s`, error: %s", cn.MainEndpoint, err)

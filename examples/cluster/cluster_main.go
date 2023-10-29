@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -21,6 +22,8 @@ var schedulerQueue = flag.String("sq", "default", "Cluster Main Scheduler queue"
 func main() {
 	agscheduler.RegisterFuncs(examples.PrintMsg)
 
+	flag.Parse()
+
 	store := &stores.MemoryStore{}
 
 	cn := &agscheduler.ClusterNode{
@@ -36,7 +39,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
 		os.Exit(1)
 	}
-	err = scheduler.SetClusterNode(cn)
+	err = scheduler.SetClusterNode(context.TODO(), cn)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set cluster node: %s", err))
 		os.Exit(1)

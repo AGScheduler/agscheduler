@@ -1,7 +1,9 @@
 SHELL=/bin/bash
 
 .PHONY: install format format-check lint test check-all \
-	up-ci-services down-ci-services protobuf examples
+	up-ci-services down-ci-services protobuf examples \
+	up-cluster-rpc-service down-cluster-rpc-service \
+	down-cluster-rpc-service_second
 
 install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
@@ -19,7 +21,18 @@ format-check:
 lint:
 	go vet .
 
-test:
+up-cluster-rpc-service:
+	go run examples/cluster/cluster_main.go -e 127.0.0.1:36664 -se 127.0.0.1:36663 &
+
+down-cluster-rpc-service:
+	ps -ef | grep "-e 127.0.0.1:36664 -se 127.0.0.1:36663" \
+	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-rpc-service"
+
+down-cluster-rpc-service_second:
+	ps -ef | grep "-e 127.0.0.1:36664 -se 127.0.0.1:36663" \
+	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-rpc-service"
+
+test: down-cluster-rpc-service up-cluster-rpc-service
 	go test \
 		-covermode=set \
 		-coverprofile=coverage.out \
@@ -30,7 +43,7 @@ test:
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 
-check-all: format-check lint test
+check-all: format-check lint test down-cluster-rpc-service_second
 
 up-ci-services:
 	docker compose -f ci/docker-compose.ci.yml up -d

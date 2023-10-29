@@ -99,7 +99,7 @@ func (s *SchedulerRPCService) Start() error {
 		s.Address = "127.0.0.1:36363"
 	}
 	if s.Queue == "" {
-		s.Queue = s.Address
+		s.Queue = "default"
 	}
 
 	lis, err := net.Listen("tcp", s.Address)
