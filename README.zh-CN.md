@@ -105,8 +105,11 @@ func main() {
 
 ```golang
 // Server
-srservice := services.SchedulerRPCService{Scheduler: scheduler}
-srservice.Start("127.0.0.1:36363")
+srservice := services.SchedulerRPCService{
+	Scheduler: scheduler,
+	Address:   "127.0.0.1:36363",
+}
+srservice.Start()
 
 // Client
 conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -118,8 +121,11 @@ client.AddJob(ctx, job)
 
 ```golang
 // Server
-shservice := services.SchedulerHTTPService{Scheduler: scheduler}
-shservice.Start("127.0.0.1:63636")
+shservice := services.SchedulerHTTPService{
+	Scheduler: scheduler,
+	Address:   "127.0.0.1:63636",
+}
+shservice.Start()
 
 // Client
 mJob := map[string]any{...}
@@ -131,14 +137,23 @@ resp, _ := http.Post("http://127.0.0.1:63636/scheduler/job", "application/json",
 
 ```golang
 // Main Node
-cnMain := &agscheduler.ClusterNode{...}
+cnMain := &agscheduler.ClusterNodeClusterNode{
+	Endpoint:          "127.0.0.1:36364",
+	SchedulerEndpoint: "127.0.0.1:36363",
+	SchedulerQueue:    "default",
+}
 schedulerMain.SetClusterNode(ctx, cnMain)
 srserviceMain := &services.SchedulerRPCService{Scheduler: schedulerMain}
 crserviceMain := services.ClusterRPCService{Srs: srserviceMain, Cn: cnMain}
 crserviceMain.Start()
 
 // Node
-cn := &agscheduler.ClusterNode{...}
+cn := &agscheduler.ClusterNode{
+	MainEndpoint:      "127.0.0.1:36364",
+	Endpoint:          "127.0.0.1:36366",
+	SchedulerEndpoint: "127.0.0.1:36365",
+	SchedulerQueue:    "node",
+}
 scheduler.SetClusterNode(ctx, cn)
 srservice := &services.SchedulerRPCService{Scheduler: scheduler}
 crservice := services.ClusterRPCService{Srs: srservice, Cn: cn}
