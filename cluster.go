@@ -87,15 +87,18 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	}
 }
 
-func (cn *ClusterNode) choiceNode() (*ClusterNode, error) {
+func (cn *ClusterNode) choiceNode(queue string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
-	for _, v := range cn.queueMap {
-		for _, v2 := range v {
+	for q, v := range cn.queueMap {
+		if queue != "" && q != queue {
+			continue
+		}
+		for id, v2 := range v {
 			if !v2["health"].(bool) {
 				continue
 			}
 			cns = append(cns, &ClusterNode{
-				Id:                v2["id"].(string),
+				Id:                id,
 				MainEndpoint:      v2["main_endpoint"].(string),
 				Endpoint:          v2["endpoint"].(string),
 				SchedulerEndpoint: v2["scheduler_endpoint"].(string),
@@ -111,7 +114,7 @@ func (cn *ClusterNode) choiceNode() (*ClusterNode, error) {
 		return cns[i], nil
 	}
 
-	return &ClusterNode{}, fmt.Errorf("node not found")
+	return &ClusterNode{}, fmt.Errorf("cluster node not found")
 }
 
 func (cn *ClusterNode) checkNode(ctx context.Context) {
@@ -125,15 +128,14 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 		case <-timer.C:
 			now := time.Now().UTC()
 			for _, v := range cn.queueMap {
-				for k2, v2 := range v {
-					id := v2["id"].(string)
+				for id, v2 := range v {
 					if cn.Id == id {
 						continue
 					}
 					endpoint := v2["endpoint"].(string)
 					lastRegisterTime := v2["last_register_time"].(time.Time)
 					if now.Sub(lastRegisterTime) > 1*time.Second {
-						delete(v, k2)
+						delete(v, id)
 						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is deleted", id, endpoint))
 					} else if now.Sub(lastRegisterTime) > 200*time.Millisecond {
 						v2["health"] = false

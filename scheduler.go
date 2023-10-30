@@ -275,21 +275,32 @@ func (s *Scheduler) RunJob(j Job) error {
 
 	err := s.scheduleJob(j)
 	if err != nil {
-		return fmt.Errorf("scheduler schedule job error: %s", err)
+		return fmt.Errorf("scheduler schedule job `%s` error: %s", j.FullName(), err)
 	}
 
 	return nil
 }
 
 func (s *Scheduler) scheduleJob(j Job) error {
+	isRunJobLocal := false
+
 	if s.clusterNode == nil {
-		s._runJob(j)
+		isRunJobLocal = true
 	} else {
-		node, err := s.clusterNode.choiceNode()
+		node, err := s.clusterNode.choiceNode(j.Queue)
 		if err != nil || s.clusterNode.Id == node.Id {
-			s._runJob(j)
+			isRunJobLocal = true
 		} else {
 			s._runJobRemote(node, j)
+			return nil
+		}
+	}
+
+	if isRunJobLocal {
+		if j.Queue == "" || j.Queue == s.clusterNode.SchedulerQueue {
+			s._runJob(j)
+		} else {
+			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queue)
 		}
 	}
 
@@ -327,7 +338,7 @@ func (s *Scheduler) run() {
 
 					err = s.scheduleJob(j)
 					if err != nil {
-						slog.Error(fmt.Sprintf("Scheduler schedule job error: %s\n", err))
+						slog.Error(fmt.Sprintf("Scheduler schedule job `%s` error: %s\n", j.FullName(), err))
 					}
 
 					err = s._flushJob(j, now)
