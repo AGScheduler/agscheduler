@@ -247,7 +247,7 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		_, err := client.RunJob(ctx, JobToPbJobPtr(j))
 		if err != nil {
 			slog.Error(fmt.Sprintf("Scheduler run job remote error %s\n", err))
-			s.clusterNode.queueMap[node.SchedulerQueue][node.Id]["health"] = false
+			s.clusterNode.queueMap[node.Queue][node.Id]["health"] = false
 		}
 	}()
 }
@@ -297,7 +297,7 @@ func (s *Scheduler) scheduleJob(j Job) error {
 	}
 
 	if isRunJobLocal {
-		if j.Queue == "" || j.Queue == s.clusterNode.SchedulerQueue {
+		if j.Queue == "" || j.Queue == s.clusterNode.Queue {
 			s._runJob(j)
 		} else {
 			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queue)

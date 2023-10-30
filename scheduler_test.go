@@ -49,7 +49,7 @@ func getClusterNode() *agscheduler.ClusterNode {
 		MainEndpoint:      "127.0.0.1:36364",
 		Endpoint:          "127.0.0.1:36364",
 		SchedulerEndpoint: "127.0.0.1:36363",
-		SchedulerQueue:    "default",
+		Queue:             "default",
 	}
 }
 

@@ -19,7 +19,7 @@ func TestClusterRPCService(t *testing.T) {
 		// MainEndpoint:      "127.0.0.1:36364",
 		// Endpoint:          "127.0.0.1:36364",
 		// SchedulerEndpoint: "127.0.0.1:36363",
-		// SchedulerQueue:    "default",
+		// Queue:             "default",
 	}
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
@@ -37,7 +37,7 @@ func TestClusterRPCService(t *testing.T) {
 		MainEndpoint: cnMain.Endpoint,
 		// Endpoint:          "127.0.0.1:36366",
 		SchedulerEndpoint: "127.0.0.1:36365",
-		SchedulerQueue:    "node",
+		Queue:             "node",
 	}
 	cn.RegisterNodeRemote(context.TODO())
 

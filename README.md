@@ -140,7 +140,7 @@ resp, _ := http.Post("http://127.0.0.1:63636/scheduler/job", "application/json",
 cnMain := &agscheduler.ClusterNodeClusterNode{
 	Endpoint:          "127.0.0.1:36364",
 	SchedulerEndpoint: "127.0.0.1:36363",
-	SchedulerQueue:    "default",
+	Queue:             "default",
 }
 schedulerMain.SetClusterNode(ctx, cnMain)
 srserviceMain := &services.SchedulerRPCService{Scheduler: schedulerMain}
@@ -152,7 +152,7 @@ cn := &agscheduler.ClusterNode{
 	MainEndpoint:      "127.0.0.1:36364",
 	Endpoint:          "127.0.0.1:36366",
 	SchedulerEndpoint: "127.0.0.1:36365",
-	SchedulerQueue:    "node",
+	Queue:             "node",
 }
 scheduler.SetClusterNode(ctx, cn)
 srservice := &services.SchedulerRPCService{Scheduler: scheduler}

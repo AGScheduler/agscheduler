@@ -15,7 +15,7 @@ func getClusterNode() *ClusterNode {
 		MainEndpoint:      "127.0.0.1:36364",
 		Endpoint:          "127.0.0.1:36364",
 		SchedulerEndpoint: "127.0.0.1:36363",
-		SchedulerQueue:    "default",
+		Queue:             "default",
 	}
 }
 
@@ -25,7 +25,7 @@ func TestClusterToClusterNode(t *testing.T) {
 		MainEndpoint:      "127.0.0.1:36364",
 		Endpoint:          "127.0.0.1:36364",
 		SchedulerEndpoint: "127.0.0.1:36363",
-		SchedulerQueue:    "default",
+		Queue:             "default",
 	}
 	cn := n.toClusterNode()
 
@@ -75,7 +75,7 @@ func TestClusterChoiceNode(t *testing.T) {
 func TestClusterChoiceNodeUnhealthy(t *testing.T) {
 	cn := getClusterNode()
 	cn.registerNode(cn)
-	cn.queueMap[cn.SchedulerQueue][cn.Id]["health"] = false
+	cn.queueMap[cn.Queue][cn.Id]["health"] = false
 
 	_, err := cn.choiceNode("")
 	assert.Error(t, err)
@@ -95,19 +95,19 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.Id = id
 	cn.registerNode(cn)
 	cn.Id = "1"
-	cn.queueMap[cn.SchedulerQueue][id]["last_register_time"] = time.Now().UTC().Add(-400 * time.Millisecond)
-	assert.Equal(t, true, cn.queueMap[cn.SchedulerQueue][id]["health"].(bool))
+	cn.queueMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-400 * time.Millisecond)
+	assert.Equal(t, true, cn.queueMap[cn.Queue][id]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go cn.checkNode(ctx)
 	time.Sleep(300 * time.Millisecond)
 
-	assert.Equal(t, false, cn.queueMap[cn.SchedulerQueue][id]["health"].(bool))
+	assert.Equal(t, false, cn.queueMap[cn.Queue][id]["health"].(bool))
 
 	time.Sleep(800 * time.Millisecond)
 
-	_, ok := cn.queueMap[cn.SchedulerQueue][id]
+	_, ok := cn.queueMap[cn.Queue][id]
 	assert.Equal(t, false, ok)
 }
 
