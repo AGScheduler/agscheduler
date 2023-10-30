@@ -8,17 +8,17 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/kwkwc/agscheduler)
 [![license](https://img.shields.io/github/license/kwkwc/agscheduler)](https://github.com/kwkwc/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度程序，支持多种调度方式，支持动态更改和持久化任务，支持远程调用，支持集群
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度库，支持多种调度类型，支持动态更改和持久化作业，支持远程调用，支持集群
 
 [English](README.md) | 简体中文
 
 ## 特性
 
-- 支持三种调度方式
+- 支持三种调度类型
   - [x] 一次性执行
   - [x] 间隔执行
   - [x] Cron 式调度
-- 支持多种任务存储方式
+- 支持多种作业存储方式
   - [x] Memory
   - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
   - [x] [Redis](https://redis.io/)
