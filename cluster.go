@@ -17,7 +17,7 @@ type Node struct {
 	MainEndpoint      string
 	Endpoint          string
 	SchedulerEndpoint string
-	SchedulerQueue    string
+	Queue             string
 	queueMap          map[string]map[string]map[string]any
 }
 
@@ -27,7 +27,7 @@ func (n *Node) toClusterNode() *ClusterNode {
 		MainEndpoint:      n.MainEndpoint,
 		Endpoint:          n.Endpoint,
 		SchedulerEndpoint: n.SchedulerEndpoint,
-		SchedulerQueue:    n.SchedulerQueue,
+		Queue:             n.Queue,
 		queueMap:          n.queueMap,
 	}
 }
@@ -37,7 +37,7 @@ type ClusterNode struct {
 	MainEndpoint      string
 	Endpoint          string
 	SchedulerEndpoint string
-	SchedulerQueue    string
+	Queue             string
 	queueMap          map[string]map[string]map[string]any
 }
 
@@ -47,7 +47,7 @@ func (cn *ClusterNode) toNode() *Node {
 		MainEndpoint:      cn.MainEndpoint,
 		Endpoint:          cn.Endpoint,
 		SchedulerEndpoint: cn.SchedulerEndpoint,
-		SchedulerQueue:    cn.SchedulerQueue,
+		Queue:             cn.Queue,
 		queueMap:          cn.queueMap,
 	}
 }
@@ -73,15 +73,15 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	if cn.queueMap == nil {
 		cn.queueMap = make(map[string]map[string]map[string]any)
 	}
-	if _, ok := cn.queueMap[n.SchedulerQueue]; !ok {
-		cn.queueMap[n.SchedulerQueue] = map[string]map[string]any{}
+	if _, ok := cn.queueMap[n.Queue]; !ok {
+		cn.queueMap[n.Queue] = map[string]map[string]any{}
 	}
-	cn.queueMap[n.SchedulerQueue][n.Id] = map[string]any{
+	cn.queueMap[n.Queue][n.Id] = map[string]any{
 		"id":                 n.Id,
 		"main_endpoint":      n.MainEndpoint,
 		"endpoint":           n.Endpoint,
 		"scheduler_endpoint": n.SchedulerEndpoint,
-		"scheduler_queue":    n.SchedulerQueue,
+		"queue":              n.Queue,
 		"health":             true,
 		"last_register_time": time.Now().UTC(),
 	}
@@ -102,7 +102,7 @@ func (cn *ClusterNode) choiceNode(queue string) (*ClusterNode, error) {
 				MainEndpoint:      v2["main_endpoint"].(string),
 				Endpoint:          v2["endpoint"].(string),
 				SchedulerEndpoint: v2["scheduler_endpoint"].(string),
-				SchedulerQueue:    v2["scheduler_queue"].(string),
+				Queue:             v2["queue"].(string),
 			})
 		}
 	}
@@ -151,7 +151,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	slog.Info(fmt.Sprintf("Registration from the cluster node `%s:%s`:", args.Id, args.Endpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service queue: `%s`", args.SchedulerQueue))
+	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service queue: `%s`", args.Queue))
 
 	cn.registerNode(args.toClusterNode())
 
@@ -159,7 +159,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.MainEndpoint = cn.MainEndpoint
 	reply.Endpoint = cn.Endpoint
 	reply.SchedulerEndpoint = cn.SchedulerEndpoint
-	reply.SchedulerQueue = cn.SchedulerQueue
+	reply.Queue = cn.Queue
 }
 
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
@@ -167,11 +167,11 @@ func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 }
 
 func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
-	slog.Info(fmt.Sprintf("Register with cluster main `%s`:", cn.MainEndpoint))
+	slog.Info(fmt.Sprintf("Register with cluster main node `%s`:", cn.MainEndpoint))
 
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
-		return fmt.Errorf("failed to connect to cluster main: `%s`, error: %s", cn.MainEndpoint, err)
+		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.MainEndpoint, err)
 	}
 
 	var main Node
@@ -180,14 +180,14 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	select {
 	case err := <-c:
 		if err != nil {
-			return fmt.Errorf("failed to register to cluster main, error: %s", err)
+			return fmt.Errorf("failed to register to cluster main node, error: %s", err)
 		}
 	case <-time.After(3 * time.Second):
-		return fmt.Errorf("register to cluster main timeout: %s", err)
+		return fmt.Errorf("register to cluster main node timeout: %s", err)
 	}
 
-	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Main Scheduler RPC Service queue: `%s`", main.SchedulerQueue))
+	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service queue: `%s`", main.Queue))
 
 	go cn.heartbeatRemote(ctx)
 
@@ -216,7 +216,7 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 func (cn *ClusterNode) pingRemote() error {
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
-		return fmt.Errorf("failed to connect to cluster main: `%s`, error: %s", cn.MainEndpoint, err)
+		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.MainEndpoint, err)
 	}
 
 	var main Node
@@ -225,10 +225,10 @@ func (cn *ClusterNode) pingRemote() error {
 	select {
 	case err := <-c:
 		if err != nil {
-			return fmt.Errorf("failed to ping to cluster main, error: %s", err)
+			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
 	case <-time.After(200 * time.Millisecond):
-		return fmt.Errorf("ping to cluster main timeout: %s", err)
+		return fmt.Errorf("ping to cluster main node timeout: %s", err)
 	}
 
 	return nil

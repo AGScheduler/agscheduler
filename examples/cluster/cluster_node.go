@@ -18,10 +18,10 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-var mainEndpoint = flag.String("me", "127.0.0.1:36364", "Cluster Main endpoint")
+var mainEndpoint = flag.String("me", "127.0.0.1:36364", "Cluster Main Node endpoint")
 var endpoint = flag.String("e", "127.0.0.1:36366", "Cluster Node endpoint")
 var schedulerEndpoint = flag.String("se", "127.0.0.1:36365", "Cluster Node Scheduler endpoint")
-var schedulerQueue = flag.String("sq", "node", "Cluster Node Scheduler queue")
+var Queue = flag.String("q", "node", "Cluster Node queue")
 
 func main() {
 	agscheduler.RegisterFuncs(examples.PrintMsg)
@@ -34,7 +34,7 @@ func main() {
 		MainEndpoint:      *mainEndpoint,
 		Endpoint:          *endpoint,
 		SchedulerEndpoint: *schedulerEndpoint,
-		SchedulerQueue:    *schedulerQueue,
+		Queue:             *Queue,
 	}
 
 	scheduler := &agscheduler.Scheduler{}
