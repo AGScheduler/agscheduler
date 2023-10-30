@@ -68,7 +68,7 @@ func TestClusterChoiceNode(t *testing.T) {
 	cn := getClusterNode()
 	cn.registerNode(cn)
 
-	_, err := cn.choiceNode()
+	_, err := cn.choiceNode("")
 	assert.NoError(t, err)
 }
 
@@ -77,7 +77,15 @@ func TestClusterChoiceNodeUnhealthy(t *testing.T) {
 	cn.registerNode(cn)
 	cn.queueMap[cn.SchedulerQueue][cn.Id]["health"] = false
 
-	_, err := cn.choiceNode()
+	_, err := cn.choiceNode("")
+	assert.Error(t, err)
+}
+
+func TestClusterChoiceNodeQueueNotExist(t *testing.T) {
+	cn := getClusterNode()
+	cn.registerNode(cn)
+
+	_, err := cn.choiceNode("other")
 	assert.Error(t, err)
 }
 

@@ -40,6 +40,7 @@ type Job struct {
 	LastRunTime time.Time      `json:"last_run_time"`
 	NextRunTime time.Time      `json:"next_run_time"`
 	Status      string         `json:"status"`
+	Queue       string         `json:"queue"`
 }
 
 type JobSlice []Job
@@ -73,11 +74,12 @@ func (j Job) String() string {
 		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
 			"'FuncName':'%s', 'Args':'%s', "+
-			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s'}",
+			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s', 'Queue':'%s'}",
 		j.Id, j.Name, j.Type, j.StartAt, j.EndAt,
 		j.Interval, j.CronExpr, j.Timezone,
 		j.FuncName, j.Args,
-		j.LastRunTimeWithTimezone(), j.NextRunTimeWithTimezone(), j.Status,
+		j.LastRunTimeWithTimezone(), j.NextRunTimeWithTimezone(),
+		j.Status, j.Queue,
 	)
 }
 
@@ -119,6 +121,7 @@ func JobToPbJobPtr(j Job) *pb.Job {
 		LastRunTime: timestamppb.New(j.LastRunTime),
 		NextRunTime: timestamppb.New(j.NextRunTime),
 		Status:      j.Status,
+		Queue:       j.Queue,
 	}
 }
 
@@ -137,6 +140,7 @@ func PbJobPtrToJob(pbJob *pb.Job) Job {
 		LastRunTime: pbJob.GetLastRunTime().AsTime(),
 		NextRunTime: pbJob.GetNextRunTime().AsTime(),
 		Status:      pbJob.GetStatus(),
+		Queue:       pbJob.GetQueue(),
 	}
 }
 

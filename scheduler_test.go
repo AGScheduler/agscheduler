@@ -246,6 +246,23 @@ func TestSchedulerRunJob(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSchedulerScheduleJobLocal(t *testing.T) {
+	cn := getClusterNode()
+	s := getSchedulerWithStore()
+	defer s.Stop()
+	j := getJob()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.SetClusterNode(ctx, cn)
+	s.AddJob(j)
+
+	time.Sleep(500 * time.Millisecond)
+
+	err := s.RunJob(j)
+	assert.NoError(t, err)
+}
+
 func TestSchedulerScheduleJobRemote(t *testing.T) {
 	cn := getClusterNode()
 	s := getSchedulerWithStore()
@@ -259,6 +276,27 @@ func TestSchedulerScheduleJobRemote(t *testing.T) {
 	s.AddJob(j)
 
 	time.Sleep(500 * time.Millisecond)
+
+	err := s.RunJob(j)
+	assert.NoError(t, err)
+}
+
+func TestSchedulerScheduleJobQueueNotExist(t *testing.T) {
+	cn := getClusterNode()
+	s := getSchedulerWithStore()
+	defer s.Stop()
+	j := getJob()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.SetClusterNode(ctx, cn)
+	j.Queue = "other"
+	s.AddJob(j)
+
+	time.Sleep(500 * time.Millisecond)
+
+	err := s.RunJob(j)
+	assert.Error(t, err)
 }
 
 func TestSchedulerStartAndStop(t *testing.T) {

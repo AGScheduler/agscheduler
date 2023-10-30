@@ -25,6 +25,7 @@ message Job {
   google.protobuf.Timestamp  last_run_time = 11;
   google.protobuf.Timestamp  next_run_time = 12;
   string status = 13;
+  string queue = 14;
 }
 
 message Jobs {
