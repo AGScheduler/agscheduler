@@ -105,7 +105,8 @@ func TestClusterCheckNode(t *testing.T) {
 
 	assert.Equal(t, false, cn.queueMap[cn.Queue][id]["health"].(bool))
 
-	time.Sleep(800 * time.Millisecond)
+	cn.queueMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-6 * time.Minute)
+	time.Sleep(300 * time.Millisecond)
 
 	_, ok := cn.queueMap[cn.Queue][id]
 	assert.Equal(t, false, ok)

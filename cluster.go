@@ -134,12 +134,11 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 					}
 					endpoint := v2["endpoint"].(string)
 					lastRegisterTime := v2["last_register_time"].(time.Time)
-					if now.Sub(lastRegisterTime) > 1*time.Second {
+					if now.Sub(lastRegisterTime) > 5*time.Minute {
 						delete(v, id)
-						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is deleted", id, endpoint))
+						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` have been deleted because unhealthy", id, endpoint))
 					} else if now.Sub(lastRegisterTime) > 200*time.Millisecond {
 						v2["health"] = false
-						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` is unhealthy", id, endpoint))
 					}
 				}
 			}
