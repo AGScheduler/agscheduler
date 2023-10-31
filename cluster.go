@@ -174,10 +174,10 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	}
 
 	var main Node
-	c := make(chan error, 1)
-	go func() { c <- rClient.Call("CRPCService.Register", cn.toNode(), &main) }()
+	ch := make(chan error, 1)
+	go func() { ch <- rClient.Call("CRPCService.Register", cn.toNode(), &main) }()
 	select {
-	case err := <-c:
+	case err := <-ch:
 		if err != nil {
 			return fmt.Errorf("failed to register to cluster main node, error: %s", err)
 		}
@@ -219,10 +219,10 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	}
 
 	var main Node
-	c := make(chan error, 1)
-	go func() { c <- rClient.Call("CRPCService.Ping", cn.toNode(), &main) }()
+	ch := make(chan error, 1)
+	go func() { ch <- rClient.Call("CRPCService.Ping", cn.toNode(), &main) }()
 	select {
-	case err := <-c:
+	case err := <-ch:
 		if err != nil {
 			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
