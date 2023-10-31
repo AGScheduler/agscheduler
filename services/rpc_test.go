@@ -17,7 +17,7 @@ import (
 
 var ctx = context.Background()
 
-func dryRunRPC(j agscheduler.Job) {}
+func dryRunRPC(ctx context.Context, j agscheduler.Job) {}
 
 func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	c.Start(ctx, &emptypb.Empty{})

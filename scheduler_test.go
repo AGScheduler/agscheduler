@@ -12,9 +12,9 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-func dryRunScheduler(j agscheduler.Job) {}
+func dryRunScheduler(ctx context.Context, j agscheduler.Job) {}
 
-func runSchedulerPanic(j agscheduler.Job) { panic(nil) }
+func runSchedulerPanic(ctx context.Context, j agscheduler.Job) { panic(nil) }
 
 func getSchedulerWithStore() *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}

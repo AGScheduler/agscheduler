@@ -229,7 +229,7 @@ func (s *Scheduler) _runJob(j Job) {
 				}
 			}()
 
-			f.Call([]reflect.Value{reflect.ValueOf(j)})
+			f.Call([]reflect.Value{reflect.ValueOf(context.TODO()), reflect.ValueOf(j)})
 		}()
 	}
 }

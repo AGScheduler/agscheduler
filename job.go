@@ -2,6 +2,7 @@ package agscheduler
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 	"reflect"
@@ -26,21 +27,21 @@ const (
 )
 
 type Job struct {
-	Id          string         `json:"id"`
-	Name        string         `json:"name"`
-	Type        string         `json:"type"`
-	StartAt     string         `json:"start_at"`
-	EndAt       string         `json:"end_at"`
-	Interval    string         `json:"interval"`
-	CronExpr    string         `json:"cron_expr"`
-	Timezone    string         `json:"timezone"`
-	Func        func(Job)      `json:"-"`
-	FuncName    string         `json:"func_name"`
-	Args        map[string]any `json:"args"`
-	LastRunTime time.Time      `json:"last_run_time"`
-	NextRunTime time.Time      `json:"next_run_time"`
-	Status      string         `json:"status"`
-	Queue       string         `json:"queue"`
+	Id          string                     `json:"id"`
+	Name        string                     `json:"name"`
+	Type        string                     `json:"type"`
+	StartAt     string                     `json:"start_at"`
+	EndAt       string                     `json:"end_at"`
+	Interval    string                     `json:"interval"`
+	CronExpr    string                     `json:"cron_expr"`
+	Timezone    string                     `json:"timezone"`
+	Func        func(context.Context, Job) `json:"-"`
+	FuncName    string                     `json:"func_name"`
+	Args        map[string]any             `json:"args"`
+	LastRunTime time.Time                  `json:"last_run_time"`
+	NextRunTime time.Time                  `json:"next_run_time"`
+	Status      string                     `json:"status"`
+	Queue       string                     `json:"queue"`
 }
 
 type JobSlice []Job
@@ -164,13 +165,13 @@ func PbJobsPtrToJobs(pbJs *pb.Jobs) []Job {
 	return js
 }
 
-var funcMap = make(map[string]func(Job))
+var funcMap = make(map[string]func(context.Context, Job))
 
-func getFuncName(f func(Job)) string {
+func getFuncName(f func(context.Context, Job)) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
 
-func RegisterFuncs(fs ...func(Job)) {
+func RegisterFuncs(fs ...func(context.Context, Job)) {
 	for _, f := range fs {
 		fName := getFuncName(f)
 		funcMap[fName] = f

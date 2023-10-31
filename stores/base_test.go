@@ -1,6 +1,7 @@
 package stores
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/kwkwc/agscheduler"
 )
 
-func dryRunStores(j agscheduler.Job) {}
+func dryRunStores(ctx context.Context, j agscheduler.Job) {}
 
 func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	agscheduler.RegisterFuncs(dryRunStores)
