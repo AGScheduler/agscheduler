@@ -158,5 +158,5 @@ func TestClusterPingRemote(t *testing.T) {
 	cn := getClusterNode()
 	cn.MainEndpoint = "127.0.0.1:36664"
 
-	cn.pingRemote()
+	cn.pingRemote(context.TODO())
 }

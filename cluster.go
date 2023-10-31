@@ -202,7 +202,7 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
-			if err := cn.pingRemote(); err != nil {
+			if err := cn.pingRemote(ctx); err != nil {
 				slog.Info(fmt.Sprintf("Ping remote error: %s", err))
 				timer.Reset(time.Second)
 			} else {
@@ -212,7 +212,7 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	}
 }
 
-func (cn *ClusterNode) pingRemote() error {
+func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.MainEndpoint, err)
