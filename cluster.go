@@ -8,6 +8,7 @@ import (
 	"net/rpc"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -71,6 +72,10 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 }
 
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
+	var mutex sync.Mutex
+
+	mutex.Lock()
+
 	if cn.queueMap == nil {
 		cn.queueMap = make(map[string]map[string]map[string]any)
 	}
@@ -86,6 +91,8 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		"health":             true,
 		"last_register_time": time.Now().UTC(),
 	}
+
+	mutex.Unlock()
 }
 
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
