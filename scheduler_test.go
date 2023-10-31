@@ -300,7 +300,7 @@ func TestSchedulerScheduleJobQueueNotExist(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.SetClusterNode(ctx, cn)
-	j.Queue = "other"
+	j.Queues = []string{"other"}
 	s.AddJob(j)
 
 	time.Sleep(500 * time.Millisecond)

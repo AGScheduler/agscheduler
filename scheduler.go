@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"reflect"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -321,7 +322,7 @@ func (s *Scheduler) scheduleJob(j Job) error {
 	if s.clusterNode == nil {
 		isRunJobLocal = true
 	} else {
-		node, err := s.clusterNode.choiceNode(j.Queue)
+		node, err := s.clusterNode.choiceNode(j.Queues)
 		if err != nil || s.clusterNode.Id == node.Id {
 			isRunJobLocal = true
 		} else {
@@ -331,10 +332,10 @@ func (s *Scheduler) scheduleJob(j Job) error {
 	}
 
 	if isRunJobLocal {
-		if j.Queue == "" || j.Queue == s.clusterNode.Queue {
+		if len(j.Queues) == 0 || slices.Contains(j.Queues, s.clusterNode.Queue) {
 			s._runJob(j)
 		} else {
-			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queue)
+			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 		}
 	}
 

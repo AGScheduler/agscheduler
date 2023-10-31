@@ -23,7 +23,7 @@ message Job {
   string func_name = 9;
   google.protobuf.Struct args = 10;
   string timeout = 11;
-  string queue = 12;
+  repeated string queues = 12;
 
   google.protobuf.Timestamp  last_run_time = 13;
   google.protobuf.Timestamp  next_run_time = 14;

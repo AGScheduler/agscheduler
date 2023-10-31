@@ -15,7 +15,7 @@ class JobId(_message.Message):
     def __init__(self, id: _Optional[str] = ...) -> None: ...
 
 class Job(_message.Message):
-    __slots__ = ["id", "name", "type", "start_at", "end_at", "interval", "cron_expr", "timezone", "func_name", "args", "timeout", "queue", "last_run_time", "next_run_time", "status"]
+    __slots__ = ["id", "name", "type", "start_at", "end_at", "interval", "cron_expr", "timezone", "func_name", "args", "timeout", "queues", "last_run_time", "next_run_time", "status"]
     ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -27,7 +27,7 @@ class Job(_message.Message):
     FUNC_NAME_FIELD_NUMBER: _ClassVar[int]
     ARGS_FIELD_NUMBER: _ClassVar[int]
     TIMEOUT_FIELD_NUMBER: _ClassVar[int]
-    QUEUE_FIELD_NUMBER: _ClassVar[int]
+    QUEUES_FIELD_NUMBER: _ClassVar[int]
     LAST_RUN_TIME_FIELD_NUMBER: _ClassVar[int]
     NEXT_RUN_TIME_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
@@ -42,11 +42,11 @@ class Job(_message.Message):
     func_name: str
     args: _struct_pb2.Struct
     timeout: str
-    queue: str
+    queues: _containers.RepeatedScalarFieldContainer[str]
     last_run_time: _timestamp_pb2.Timestamp
     next_run_time: _timestamp_pb2.Timestamp
     status: str
-    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., start_at: _Optional[str] = ..., end_at: _Optional[str] = ..., interval: _Optional[str] = ..., cron_expr: _Optional[str] = ..., timezone: _Optional[str] = ..., func_name: _Optional[str] = ..., args: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., timeout: _Optional[str] = ..., queue: _Optional[str] = ..., last_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., next_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., status: _Optional[str] = ...) -> None: ...
+    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., start_at: _Optional[str] = ..., end_at: _Optional[str] = ..., interval: _Optional[str] = ..., cron_expr: _Optional[str] = ..., timezone: _Optional[str] = ..., func_name: _Optional[str] = ..., args: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., timeout: _Optional[str] = ..., queues: _Optional[_Iterable[str]] = ..., last_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., next_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., status: _Optional[str] = ...) -> None: ...
 
 class Jobs(_message.Message):
     __slots__ = ["Jobs"]

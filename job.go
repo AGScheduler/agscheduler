@@ -39,7 +39,7 @@ type Job struct {
 	FuncName string                     `json:"func_name"`
 	Args     map[string]any             `json:"args"`
 	Timeout  string                     `json:"timeout"`
-	Queue    string                     `json:"queue"`
+	Queues   []string                   `json:"queues"`
 
 	LastRunTime time.Time `json:"last_run_time"`
 	NextRunTime time.Time `json:"next_run_time"`
@@ -76,11 +76,11 @@ func (j Job) String() string {
 	return fmt.Sprintf(
 		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
-			"'FuncName':'%s', 'Args':'%s', 'Timeout':'%s', 'Queue':'%s', "+
+			"'FuncName':'%s', 'Args':'%s', 'Timeout':'%s', 'Queues':'%s', "+
 			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s'}",
 		j.Id, j.Name, j.Type, j.StartAt, j.EndAt,
 		j.Interval, j.CronExpr, j.Timezone,
-		j.FuncName, j.Args, j.Timeout, j.Queue,
+		j.FuncName, j.Args, j.Timeout, j.Queues,
 		j.LastRunTimeWithTimezone(), j.NextRunTimeWithTimezone(), j.Status,
 	)
 }
@@ -121,7 +121,7 @@ func JobToPbJobPtr(j Job) *pb.Job {
 		FuncName: j.FuncName,
 		Args:     args,
 		Timeout:  j.Timeout,
-		Queue:    j.Queue,
+		Queues:   j.Queues,
 
 		LastRunTime: timestamppb.New(j.LastRunTime),
 		NextRunTime: timestamppb.New(j.NextRunTime),
@@ -142,7 +142,7 @@ func PbJobPtrToJob(pbJob *pb.Job) Job {
 		FuncName: pbJob.GetFuncName(),
 		Args:     pbJob.GetArgs().AsMap(),
 		Timeout:  pbJob.GetTimeout(),
-		Queue:    pbJob.GetQueue(),
+		Queues:   pbJob.GetQueues(),
 
 		LastRunTime: pbJob.GetLastRunTime().AsTime(),
 		NextRunTime: pbJob.GetNextRunTime().AsTime(),

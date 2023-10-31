@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"net/rpc"
+	"slices"
 	"strings"
 	"time"
 
@@ -87,10 +88,10 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	}
 }
 
-func (cn *ClusterNode) choiceNode(queue string) (*ClusterNode, error) {
+func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
 	for q, v := range cn.queueMap {
-		if queue != "" && q != queue {
+		if len(queues) != 0 && !slices.Contains(queues, q) {
 			continue
 		}
 		for id, v2 := range v {
@@ -182,7 +183,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 			return fmt.Errorf("failed to register to cluster main node, error: %s", err)
 		}
 	case <-time.After(3 * time.Second):
-		return fmt.Errorf("register to cluster main node timeout: %s", err)
+		return fmt.Errorf("register to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
@@ -227,7 +228,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
 	case <-time.After(200 * time.Millisecond):
-		return fmt.Errorf("ping to cluster main node timeout: %s", err)
+		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
 
 	return nil
