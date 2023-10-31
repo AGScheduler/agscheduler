@@ -12,9 +12,9 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-func dryRunScheduler(j agscheduler.Job) {}
+func dryRunScheduler(ctx context.Context, j agscheduler.Job) {}
 
-func runSchedulerPanic(j agscheduler.Job) { panic(nil) }
+func runSchedulerPanic(ctx context.Context, j agscheduler.Job) { panic(nil) }
 
 func getSchedulerWithStore() *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}
@@ -107,13 +107,23 @@ func TestSchedulerAddJobDatetime(t *testing.T) {
 	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(j.Id))
 }
 
-func TestSchedulerAddJobError(t *testing.T) {
+func TestSchedulerAddJobUnregisteredError(t *testing.T) {
 	s := getSchedulerWithStore()
 	defer s.Stop()
 	j := getJobWithoutFunc()
 
 	_, err := s.AddJob(j)
 	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError(""))
+}
+
+func TestSchedulerAddJobTimeoutError(t *testing.T) {
+	s := getSchedulerWithStore()
+	defer s.Stop()
+	j := getJob()
+	j.Timeout = "errorTimeout"
+
+	_, err := s.AddJob(j)
+	assert.Contains(t, err.Error(), "Timeout `"+j.Timeout+"` error")
 }
 
 func TestSchedulerRunJobPanic(t *testing.T) {
@@ -290,7 +300,7 @@ func TestSchedulerScheduleJobQueueNotExist(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	s.SetClusterNode(ctx, cn)
-	j.Queue = "other"
+	j.Queues = []string{"other"}
 	s.AddJob(j)
 
 	time.Sleep(500 * time.Millisecond)

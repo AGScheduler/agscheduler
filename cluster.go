@@ -6,7 +6,9 @@ import (
 	"log/slog"
 	"math/rand"
 	"net/rpc"
+	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -70,6 +72,10 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 }
 
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
+	var mutex sync.Mutex
+
+	mutex.Lock()
+
 	if cn.queueMap == nil {
 		cn.queueMap = make(map[string]map[string]map[string]any)
 	}
@@ -85,12 +91,14 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		"health":             true,
 		"last_register_time": time.Now().UTC(),
 	}
+
+	mutex.Unlock()
 }
 
-func (cn *ClusterNode) choiceNode(queue string) (*ClusterNode, error) {
+func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
 	for q, v := range cn.queueMap {
-		if queue != "" && q != queue {
+		if len(queues) != 0 && !slices.Contains(queues, q) {
 			continue
 		}
 		for id, v2 := range v {
@@ -174,15 +182,15 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	}
 
 	var main Node
-	c := make(chan error, 1)
-	go func() { c <- rClient.Call("CRPCService.Register", cn.toNode(), &main) }()
+	ch := make(chan error, 1)
+	go func() { ch <- rClient.Call("CRPCService.Register", cn.toNode(), &main) }()
 	select {
-	case err := <-c:
+	case err := <-ch:
 		if err != nil {
 			return fmt.Errorf("failed to register to cluster main node, error: %s", err)
 		}
 	case <-time.After(3 * time.Second):
-		return fmt.Errorf("register to cluster main node timeout: %s", err)
+		return fmt.Errorf("register to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
@@ -202,7 +210,7 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
-			if err := cn.pingRemote(); err != nil {
+			if err := cn.pingRemote(ctx); err != nil {
 				slog.Info(fmt.Sprintf("Ping remote error: %s", err))
 				timer.Reset(time.Second)
 			} else {
@@ -212,22 +220,22 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	}
 }
 
-func (cn *ClusterNode) pingRemote() error {
+func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.MainEndpoint, err)
 	}
 
 	var main Node
-	c := make(chan error, 1)
-	go func() { c <- rClient.Call("CRPCService.Ping", cn.toNode(), &main) }()
+	ch := make(chan error, 1)
+	go func() { ch <- rClient.Call("CRPCService.Ping", cn.toNode(), &main) }()
 	select {
-	case err := <-c:
+	case err := <-ch:
 		if err != nil {
 			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
 	case <-time.After(200 * time.Millisecond):
-		return fmt.Errorf("ping to cluster main node timeout: %s", err)
+		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package agscheduler
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
@@ -14,7 +15,7 @@ func getJob() Job {
 		Name:     "Job",
 		Type:     TYPE_INTERVAL,
 		Interval: "1s",
-		Func:     func(j Job) {},
+		Func:     func(ctx context.Context, j Job) {},
 		Args:     map[string]any{},
 	}
 }
@@ -105,7 +106,7 @@ func TestPbJobsPtrToJobs(t *testing.T) {
 func TestRegisterFuncs(t *testing.T) {
 	assert.Empty(t, funcMap)
 
-	RegisterFuncs(func(j Job) {})
+	RegisterFuncs(func(ctx context.Context, j Job) {})
 
 	assert.Len(t, funcMap, 1)
 }

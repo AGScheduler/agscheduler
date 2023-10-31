@@ -91,6 +91,7 @@ func runExampleHTTP(baseUrl string) {
 	slog.Info(fmt.Sprintf("Scheduler get job `%s:%s` %s.\n\n", rJob1.Data.(map[string]any)["id"].(string), rJob1.Data.(map[string]any)["name"].(string), rJob1.Data))
 
 	mJob2["id"] = rJob2.Data.(map[string]any)["id"].(string)
+	mJob2["timeout"] = rJob2.Data.(map[string]any)["timeout"].(string)
 	mJob2["type"] = "interval"
 	mJob2["interval"] = "3s"
 	bJob2, _ = json.Marshal(mJob2)

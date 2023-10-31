@@ -2,6 +2,7 @@ package services
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -21,7 +22,7 @@ type result struct {
 	Error string `json:"error"`
 }
 
-func dryRunHTTP(j agscheduler.Job) {}
+func dryRunHTTP(ctx context.Context, j agscheduler.Job) {}
 
 func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	client := &http.Client{}
@@ -45,6 +46,7 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 
 	id := rJ.Data.(map[string]any)["id"].(string)
 	mJ["id"] = id
+	mJ["timeout"] = rJ.Data.(map[string]any)["timeout"].(string)
 	mJ["type"] = "cron"
 	mJ["cron_expr"] = "*/1 * * * *"
 	bJ, _ = json.Marshal(mJ)

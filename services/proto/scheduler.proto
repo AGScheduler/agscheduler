@@ -22,10 +22,12 @@ message Job {
   string timezone = 8;
   string func_name = 9;
   google.protobuf.Struct args = 10;
-  google.protobuf.Timestamp  last_run_time = 11;
-  google.protobuf.Timestamp  next_run_time = 12;
-  string status = 13;
-  string queue = 14;
+  string timeout = 11;
+  repeated string queues = 12;
+
+  google.protobuf.Timestamp  last_run_time = 13;
+  google.protobuf.Timestamp  next_run_time = 14;
+  string status = 15;
 }
 
 message Jobs {

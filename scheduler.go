@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"reflect"
 	"runtime/debug"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -111,6 +112,14 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 		return Job{}, FuncUnregisteredError(j.FuncName)
 	}
 
+	if j.Timeout == "" {
+		j.Timeout = "1h"
+	}
+	_, err := time.ParseDuration(j.Timeout)
+	if err != nil {
+		return Job{}, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	}
+
 	nextRunTime, err := CalcNextRunTime(j)
 	if err != nil {
 		return Job{}, err
@@ -145,6 +154,11 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 
 	if _, ok := funcMap[j.FuncName]; !ok {
 		return Job{}, FuncUnregisteredError(j.FuncName)
+	}
+
+	_, err := time.ParseDuration(j.Timeout)
+	if err != nil {
+		return Job{}, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
 	}
 
 	nextRunTime, err := CalcNextRunTime(j)
@@ -222,14 +236,35 @@ func (s *Scheduler) _runJob(j Job) {
 	} else {
 		slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
 		go func() {
-			defer func() {
-				if err := recover(); err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` panic: %s\n", j.FullName(), err))
-					slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
-				}
+			timeout, err := time.ParseDuration(j.Timeout)
+			if err != nil {
+				e := &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+				slog.Error(e.Error())
+				return
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+			ch := make(chan error, 1)
+			go func() {
+				defer close(ch)
+				defer func() {
+					if err := recover(); err != nil {
+						slog.Error(fmt.Sprintf("Job `%s` run error: %s\n", j.FullName(), err))
+						slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+					}
+				}()
+
+				f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
 			}()
 
-			f.Call([]reflect.Value{reflect.ValueOf(j)})
+			select {
+			case <-ch:
+				return
+			case <-ctx.Done():
+				slog.Warn(fmt.Sprintf("Job `%s` run timeout\n", j.FullName()))
+			}
 		}()
 	}
 }
@@ -246,7 +281,7 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 
 		_, err := client.RunJob(ctx, JobToPbJobPtr(j))
 		if err != nil {
-			slog.Error(fmt.Sprintf("Scheduler run job remote error %s\n", err))
+			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
 			s.clusterNode.queueMap[node.Queue][node.Id]["health"] = false
 		}
 	}()
@@ -287,7 +322,7 @@ func (s *Scheduler) scheduleJob(j Job) error {
 	if s.clusterNode == nil {
 		isRunJobLocal = true
 	} else {
-		node, err := s.clusterNode.choiceNode(j.Queue)
+		node, err := s.clusterNode.choiceNode(j.Queues)
 		if err != nil || s.clusterNode.Id == node.Id {
 			isRunJobLocal = true
 		} else {
@@ -297,10 +332,10 @@ func (s *Scheduler) scheduleJob(j Job) error {
 	}
 
 	if isRunJobLocal {
-		if j.Queue == "" || j.Queue == s.clusterNode.Queue {
+		if len(j.Queues) == 0 || slices.Contains(j.Queues, s.clusterNode.Queue) {
 			s._runJob(j)
 		} else {
-			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queue)
+			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 		}
 	}
 

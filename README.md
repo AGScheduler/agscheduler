@@ -36,6 +36,7 @@ English | [简体中文](README.zh-CN.md)
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -44,7 +45,7 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-func printMsg(j agscheduler.Job) {
+func printMsg(ctx context.Context, j agscheduler.Job) {
 	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
 }
 
