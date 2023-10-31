@@ -107,13 +107,23 @@ func TestSchedulerAddJobDatetime(t *testing.T) {
 	assert.ErrorIs(t, err, agscheduler.JobNotFoundError(j.Id))
 }
 
-func TestSchedulerAddJobError(t *testing.T) {
+func TestSchedulerAddJobUnregisteredError(t *testing.T) {
 	s := getSchedulerWithStore()
 	defer s.Stop()
 	j := getJobWithoutFunc()
 
 	_, err := s.AddJob(j)
 	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError(""))
+}
+
+func TestSchedulerAddJobTimeoutError(t *testing.T) {
+	s := getSchedulerWithStore()
+	defer s.Stop()
+	j := getJob()
+	j.Timeout = "errorTimeout"
+
+	_, err := s.AddJob(j)
+	assert.Contains(t, err.Error(), "Timeout `"+j.Timeout+"` error")
 }
 
 func TestSchedulerRunJobPanic(t *testing.T) {

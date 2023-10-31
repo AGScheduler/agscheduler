@@ -27,21 +27,23 @@ const (
 )
 
 type Job struct {
-	Id          string                     `json:"id"`
-	Name        string                     `json:"name"`
-	Type        string                     `json:"type"`
-	StartAt     string                     `json:"start_at"`
-	EndAt       string                     `json:"end_at"`
-	Interval    string                     `json:"interval"`
-	CronExpr    string                     `json:"cron_expr"`
-	Timezone    string                     `json:"timezone"`
-	Func        func(context.Context, Job) `json:"-"`
-	FuncName    string                     `json:"func_name"`
-	Args        map[string]any             `json:"args"`
-	LastRunTime time.Time                  `json:"last_run_time"`
-	NextRunTime time.Time                  `json:"next_run_time"`
-	Status      string                     `json:"status"`
-	Queue       string                     `json:"queue"`
+	Id       string                     `json:"id"`
+	Name     string                     `json:"name"`
+	Type     string                     `json:"type"`
+	StartAt  string                     `json:"start_at"`
+	EndAt    string                     `json:"end_at"`
+	Interval string                     `json:"interval"`
+	CronExpr string                     `json:"cron_expr"`
+	Timezone string                     `json:"timezone"`
+	Func     func(context.Context, Job) `json:"-"`
+	FuncName string                     `json:"func_name"`
+	Args     map[string]any             `json:"args"`
+	Timeout  string                     `json:"timeout"`
+	Queue    string                     `json:"queue"`
+
+	LastRunTime time.Time `json:"last_run_time"`
+	NextRunTime time.Time `json:"next_run_time"`
+	Status      string    `json:"status"`
 }
 
 type JobSlice []Job
@@ -74,13 +76,12 @@ func (j Job) String() string {
 	return fmt.Sprintf(
 		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
-			"'FuncName':'%s', 'Args':'%s', "+
-			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s', 'Queue':'%s'}",
+			"'FuncName':'%s', 'Args':'%s', 'Timeout':'%s', 'Queue':'%s', "+
+			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s'}",
 		j.Id, j.Name, j.Type, j.StartAt, j.EndAt,
 		j.Interval, j.CronExpr, j.Timezone,
-		j.FuncName, j.Args,
-		j.LastRunTimeWithTimezone(), j.NextRunTimeWithTimezone(),
-		j.Status, j.Queue,
+		j.FuncName, j.Args, j.Timeout, j.Queue,
+		j.LastRunTimeWithTimezone(), j.NextRunTimeWithTimezone(), j.Status,
 	)
 }
 
@@ -109,39 +110,43 @@ func JobToPbJobPtr(j Job) *pb.Job {
 	args, _ := structpb.NewStruct(j.Args)
 
 	return &pb.Job{
-		Id:          j.Id,
-		Name:        j.Name,
-		Type:        j.Type,
-		StartAt:     j.StartAt,
-		EndAt:       j.EndAt,
-		Interval:    j.Interval,
-		CronExpr:    j.CronExpr,
-		Timezone:    j.Timezone,
-		FuncName:    j.FuncName,
-		Args:        args,
+		Id:       j.Id,
+		Name:     j.Name,
+		Type:     j.Type,
+		StartAt:  j.StartAt,
+		EndAt:    j.EndAt,
+		Interval: j.Interval,
+		CronExpr: j.CronExpr,
+		Timezone: j.Timezone,
+		FuncName: j.FuncName,
+		Args:     args,
+		Timeout:  j.Timeout,
+		Queue:    j.Queue,
+
 		LastRunTime: timestamppb.New(j.LastRunTime),
 		NextRunTime: timestamppb.New(j.NextRunTime),
 		Status:      j.Status,
-		Queue:       j.Queue,
 	}
 }
 
 func PbJobPtrToJob(pbJob *pb.Job) Job {
 	return Job{
-		Id:          pbJob.GetId(),
-		Name:        pbJob.GetName(),
-		Type:        pbJob.GetType(),
-		StartAt:     pbJob.GetStartAt(),
-		EndAt:       pbJob.GetEndAt(),
-		Interval:    pbJob.GetInterval(),
-		CronExpr:    pbJob.GetCronExpr(),
-		Timezone:    pbJob.GetTimezone(),
-		FuncName:    pbJob.GetFuncName(),
-		Args:        pbJob.GetArgs().AsMap(),
+		Id:       pbJob.GetId(),
+		Name:     pbJob.GetName(),
+		Type:     pbJob.GetType(),
+		StartAt:  pbJob.GetStartAt(),
+		EndAt:    pbJob.GetEndAt(),
+		Interval: pbJob.GetInterval(),
+		CronExpr: pbJob.GetCronExpr(),
+		Timezone: pbJob.GetTimezone(),
+		FuncName: pbJob.GetFuncName(),
+		Args:     pbJob.GetArgs().AsMap(),
+		Timeout:  pbJob.GetTimeout(),
+		Queue:    pbJob.GetQueue(),
+
 		LastRunTime: pbJob.GetLastRunTime().AsTime(),
 		NextRunTime: pbJob.GetNextRunTime().AsTime(),
 		Status:      pbJob.GetStatus(),
-		Queue:       pbJob.GetQueue(),
 	}
 }
 

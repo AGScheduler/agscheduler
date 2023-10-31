@@ -46,6 +46,7 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 
 	id := rJ.Data.(map[string]any)["id"].(string)
 	mJ["id"] = id
+	mJ["timeout"] = rJ.Data.(map[string]any)["timeout"].(string)
 	mJ["type"] = "cron"
 	mJ["cron_expr"] = "*/1 * * * *"
 	bJ, _ = json.Marshal(mJ)
