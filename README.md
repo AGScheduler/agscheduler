@@ -163,7 +163,7 @@ cservice.Start()
 cn.RegisterNodeRemote(ctx)
 ```
 
-## API
+## Scheduler API
 
 | gRPC Function | HTTP Method | HTTP Endpoint             |
 |---------------|-------------|---------------------------|
@@ -178,6 +178,12 @@ cn.RegisterNodeRemote(ctx)
 | RunJob        | POST        | /scheduler/job/run        |
 | Start         | POST        | /scheduler/start          |
 | Stop          | POST        | /scheduler/stop           |
+
+## Cluster API
+
+| gRPC Function | HTTP Method | HTTP Endpoint             |
+|---------------|-------------|---------------------------|
+|               | GET         | /cluster/nodes            |
 
 ## Examples
 
