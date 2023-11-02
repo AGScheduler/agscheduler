@@ -11,7 +11,7 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-func TestClusterRPCService(t *testing.T) {
+func TestClusterService(t *testing.T) {
 	agscheduler.RegisterFuncs(dryRunRPC)
 
 	store := &stores.MemoryStore{}
@@ -27,9 +27,8 @@ func TestClusterRPCService(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	scheduler.SetClusterNode(ctx, cnMain)
-	srservice := &SchedulerRPCService{Scheduler: scheduler}
-	crservice := ClusterRPCService{Srs: srservice, Cn: cnMain}
-	crservice.Start()
+	cservice := ClusterService{Scheduler: scheduler, Cn: cnMain}
+	cservice.Start()
 
 	assert.Len(t, cnMain.QueueMap(), 1)
 

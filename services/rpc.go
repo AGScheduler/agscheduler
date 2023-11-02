@@ -91,15 +91,11 @@ func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, 
 type SchedulerRPCService struct {
 	Scheduler *agscheduler.Scheduler
 	Address   string
-	Queue     string
 }
 
 func (s *SchedulerRPCService) Start() error {
 	if s.Address == "" {
 		s.Address = "127.0.0.1:36363"
-	}
-	if s.Queue == "" {
-		s.Queue = "default"
 	}
 
 	lis, err := net.Listen("tcp", s.Address)
@@ -110,7 +106,6 @@ func (s *SchedulerRPCService) Start() error {
 	srv := grpc.NewServer(grpc.UnaryInterceptor(panicInterceptor))
 	pb.RegisterSchedulerServer(srv, &sRPCService{scheduler: s.Scheduler})
 	slog.Info(fmt.Sprintf("Scheduler RPC Service listening at: %s", lis.Addr()))
-	slog.Info(fmt.Sprintf("Scheduler RPC Service queue: `%s`", s.Queue))
 
 	go func() {
 		if err := srv.Serve(lis); err != nil {
