@@ -21,7 +21,7 @@ func TestClusterService(t *testing.T) {
 	cnMain := &agscheduler.ClusterNode{
 		// MainEndpoint:      "127.0.0.1:36364",
 		// Endpoint:          "127.0.0.1:36364",
-		// EndpointHTTP:      "127.0.0.1:63637",
+		EndpointHTTP: "127.0.0.1:63637",
 		// SchedulerEndpoint: "127.0.0.1:36363",
 		// Queue:             "default",
 	}
@@ -41,10 +41,10 @@ func TestClusterService(t *testing.T) {
 		SchedulerEndpoint: "127.0.0.1:36365",
 		Queue:             "node",
 	}
-	cn.RegisterNodeRemote(context.TODO())
+	cn.RegisterNodeRemote(ctx)
 	assert.Len(t, cnMain.QueueMap(), 2)
 
-	resp, _ := http.Get("http://127.0.0.1:63637/cluster/nodes")
+	resp, _ := http.Get("http://" + cnMain.EndpointHTTP + "/cluster/nodes")
 	assert.Equal(t, 200, resp.StatusCode)
 	body, _ := io.ReadAll(resp.Body)
 	rJ := &result{}
