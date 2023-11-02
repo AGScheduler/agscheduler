@@ -144,7 +144,7 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 }
 
 func (cn *ClusterNode) checkNode(ctx context.Context) {
-	interval := 200 * time.Millisecond
+	interval := 400 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
@@ -163,7 +163,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 					if now.Sub(lastRegisterTime) > 5*time.Minute {
 						delete(v, id)
 						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` have been deleted because unhealthy", id, endpoint))
-					} else if now.Sub(lastRegisterTime) > 200*time.Millisecond {
+					} else if now.Sub(lastRegisterTime) > 400*time.Millisecond {
 						v2["health"] = false
 					}
 				}
@@ -228,7 +228,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 }
 
 func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
-	interval := 100 * time.Millisecond
+	interval := 200 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
@@ -260,7 +260,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(400 * time.Millisecond):
 		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
 	cn.setQueueMap(main.QueueMap)
