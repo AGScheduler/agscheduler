@@ -27,13 +27,17 @@ func TestClusterService(t *testing.T) {
 		// Queue:             "default",
 	}
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	scheduler.SetClusterNode(ctx, cnMain)
+	err = scheduler.SetClusterNode(ctx, cnMain)
+	assert.NoError(t, err)
+
 	cservice := ClusterService{Scheduler: scheduler, Cn: cnMain}
-	cservice.Start()
+	err = cservice.Start()
+	assert.NoError(t, err)
 
 	assert.Len(t, cnMain.QueueMap(), 1)
 	cn := &agscheduler.ClusterNode{
@@ -42,20 +46,26 @@ func TestClusterService(t *testing.T) {
 		SchedulerEndpoint: "127.0.0.1:36365",
 		Queue:             "node",
 	}
-	cn.RegisterNodeRemote(ctx)
+	err = cn.RegisterNodeRemote(ctx)
+	assert.NoError(t, err)
 	assert.Len(t, cnMain.QueueMap(), 2)
 
-	resp, _ := http.Get("http://" + cnMain.EndpointHTTP + "/cluster/nodes")
+	resp, err := http.Get("http://" + cnMain.EndpointHTTP + "/cluster/nodes")
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJ := &result{}
-	json.Unmarshal(body, &rJ)
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
 	assert.Len(t, rJ.Data.(map[string]any), 2)
 
 	var queueMap map[string]map[string]map[string]any
-	rClient, _ := rpc.DialHTTP("tcp", cnMain.Endpoint)
+	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)
+	assert.NoError(t, err)
 	filters := make(map[string]any)
-	rClient.Call("CRPCService.Nodes", filters, &queueMap)
+	err = rClient.Call("CRPCService.Nodes", filters, &queueMap)
+	assert.NoError(t, err)
 	assert.Len(t, queueMap, 2)
 
 	time.Sleep(200 * time.Millisecond)

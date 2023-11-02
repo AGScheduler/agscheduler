@@ -27,7 +27,8 @@ func dryRunHTTP(ctx context.Context, j agscheduler.Job) {}
 func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	client := &http.Client{}
 
-	http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
+	_, err := http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
+	assert.NoError(t, err)
 
 	mJ := map[string]any{
 		"name":      "Job",
@@ -36,12 +37,16 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 		"func_name": "github.com/kwkwc/agscheduler/services.dryRunHTTP",
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
-	bJ, _ := json.Marshal(mJ)
-	resp, _ := http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJ))
+	bJ, err := json.Marshal(mJ)
+	assert.NoError(t, err)
+	resp, err := http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJ))
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJ := &result{}
-	json.Unmarshal(body, &rJ)
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, rJ.Data.(map[string]any)["status"].(string))
 
 	id := rJ.Data.(map[string]any)["id"].(string)
@@ -49,63 +54,91 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	mJ["timeout"] = rJ.Data.(map[string]any)["timeout"].(string)
 	mJ["type"] = "cron"
 	mJ["cron_expr"] = "*/1 * * * *"
-	bJ, _ = json.Marshal(mJ)
-	req, _ := http.NewRequest(http.MethodPut, baseUrl+"/scheduler/job", bytes.NewReader(bJ))
+	bJ, err = json.Marshal(mJ)
+	assert.NoError(t, err)
+	req, err := http.NewRequest(http.MethodPut, baseUrl+"/scheduler/job", bytes.NewReader(bJ))
+	assert.NoError(t, err)
 	req.Header.Add("content-type", CONTENT_TYPE)
-	resp, _ = client.Do(req)
+	resp, err = client.Do(req)
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJ = &result{}
-	json.Unmarshal(body, &rJ)
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
 	assert.Equal(t, agscheduler.TYPE_CRON, rJ.Data.(map[string]any)["type"].(string))
 
-	timezone, _ := time.LoadLocation(rJ.Data.(map[string]any)["timezone"].(string))
-	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	timezone, err := time.LoadLocation(rJ.Data.(map[string]any)["timezone"].(string))
+	assert.NoError(t, err)
+	nextRunTimeMax, err := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	assert.NoError(t, err)
 
-	resp, _ = http.Post(baseUrl+"/scheduler/job/"+id+"/pause", CONTENT_TYPE, nil)
+	resp, err = http.Post(baseUrl+"/scheduler/job/"+id+"/pause", CONTENT_TYPE, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJ = &result{}
-	json.Unmarshal(body, &rJ)
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
 	assert.Equal(t, agscheduler.STATUS_PAUSED, rJ.Data.(map[string]any)["status"].(string))
-	nextRunTime, _ := time.ParseInLocation(time.RFC3339, rJ.Data.(map[string]any)["next_run_time"].(string), timezone)
+	nextRunTime, err := time.ParseInLocation(time.RFC3339, rJ.Data.(map[string]any)["next_run_time"].(string), timezone)
+	assert.NoError(t, err)
 	assert.Equal(t, nextRunTimeMax.Unix(), nextRunTime.Unix())
 
-	resp, _ = http.Post(baseUrl+"/scheduler/job/"+id+"/resume", CONTENT_TYPE, nil)
+	resp, err = http.Post(baseUrl+"/scheduler/job/"+id+"/resume", CONTENT_TYPE, nil)
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJ = &result{}
-	json.Unmarshal(body, &rJ)
-	nextRunTime, _ = time.ParseInLocation(time.RFC3339, rJ.Data.(map[string]any)["next_run_time"].(string), timezone)
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
+	nextRunTime, err = time.ParseInLocation(time.RFC3339, rJ.Data.(map[string]any)["next_run_time"].(string), timezone)
+	assert.NoError(t, err)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), nextRunTime.Unix())
 
-	bJ, _ = json.Marshal(rJ.Data.(map[string]any))
-	resp, _ = http.Post(baseUrl+"/scheduler/job/run", CONTENT_TYPE, bytes.NewReader(bJ))
+	bJ, err = json.Marshal(rJ.Data.(map[string]any))
+	assert.NoError(t, err)
+	resp, err = http.Post(baseUrl+"/scheduler/job/run", CONTENT_TYPE, bytes.NewReader(bJ))
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJ = &result{}
-	json.Unmarshal(body, &rJ)
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
 	assert.Empty(t, rJ.Error)
 
-	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
+	req, err = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
+	assert.NoError(t, err)
 	client.Do(req)
-	resp, _ = http.Get(baseUrl + "/scheduler/job" + "/" + id)
+	resp, err = http.Get(baseUrl + "/scheduler/job" + "/" + id)
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJ = &result{}
-	json.Unmarshal(body, &rJ)
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
 	assert.Equal(t, agscheduler.JobNotFoundError(id).Error(), rJ.Error)
 
-	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/jobs", nil)
+	req, err = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/jobs", nil)
+	assert.NoError(t, err)
 	client.Do(req)
-	resp, _ = http.Get(baseUrl + "/scheduler/jobs")
+	resp, err = http.Get(baseUrl + "/scheduler/jobs")
+	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
-	body, _ = io.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
 	rJs := &result{}
-	json.Unmarshal(body, &rJs)
+	err = json.Unmarshal(body, &rJs)
+	assert.NoError(t, err)
 	assert.Empty(t, rJs.Data)
 
-	http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
+	_, err = http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
+	assert.NoError(t, err)
 }
 
 func TestHTTPService(t *testing.T) {

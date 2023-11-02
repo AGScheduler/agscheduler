@@ -20,7 +20,8 @@ var ctx = context.Background()
 func dryRunRPC(ctx context.Context, j agscheduler.Job) {}
 
 func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
-	c.Start(ctx, &emptypb.Empty{})
+	_, err := c.Start(ctx, &emptypb.Empty{})
+	assert.NoError(t, err)
 
 	j := agscheduler.Job{
 		Name:     "Job",
@@ -31,41 +32,51 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	}
 	assert.Empty(t, j.Status)
 
-	pbJ, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(j))
+	pbJ, err := c.AddJob(ctx, agscheduler.JobToPbJobPtr(j))
+	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
 	j.Type = agscheduler.TYPE_CRON
 	j.CronExpr = "*/1 * * * *"
-	pbJ, _ = c.UpdateJob(ctx, agscheduler.JobToPbJobPtr(j))
+	pbJ, err = c.UpdateJob(ctx, agscheduler.JobToPbJobPtr(j))
+	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.Equal(t, agscheduler.TYPE_CRON, j.Type)
 
-	timezone, _ := time.LoadLocation(j.Timezone)
-	nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	timezone, err := time.LoadLocation(j.Timezone)
+	assert.NoError(t, err)
+	nextRunTimeMax, err := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	assert.NoError(t, err)
 
-	pbJ, _ = c.PauseJob(ctx, &pb.JobId{Id: j.Id})
+	pbJ, err = c.PauseJob(ctx, &pb.JobId{Id: j.Id})
+	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.Equal(t, agscheduler.STATUS_PAUSED, j.Status)
 	assert.Equal(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
-	pbJ, _ = c.ResumeJob(ctx, &pb.JobId{Id: j.Id})
+	pbJ, err = c.ResumeJob(ctx, &pb.JobId{Id: j.Id})
+	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
-	_, err := c.RunJob(ctx, pbJ)
+	_, err = c.RunJob(ctx, pbJ)
 	assert.NoError(t, err)
 
-	c.DeleteJob(ctx, &pb.JobId{Id: j.Id})
+	_, err = c.DeleteJob(ctx, &pb.JobId{Id: j.Id})
+	assert.NoError(t, err)
 	_, err = c.GetJob(ctx, &pb.JobId{Id: j.Id})
 	assert.Contains(t, err.Error(), agscheduler.JobNotFoundError(j.Id).Error())
 
-	c.DeleteAllJobs(ctx, &emptypb.Empty{})
-	pbJs, _ := c.GetAllJobs(ctx, &emptypb.Empty{})
+	_, err = c.DeleteAllJobs(ctx, &emptypb.Empty{})
+	assert.NoError(t, err)
+	pbJs, err := c.GetAllJobs(ctx, &emptypb.Empty{})
+	assert.NoError(t, err)
 	js := agscheduler.PbJobsPtrToJobs(pbJs)
 	assert.Len(t, js, 0)
 
-	c.Stop(ctx, &emptypb.Empty{})
+	_, err = c.Stop(ctx, &emptypb.Empty{})
+	assert.NoError(t, err)
 }
 
 func TestRPCService(t *testing.T) {
@@ -74,7 +85,8 @@ func TestRPCService(t *testing.T) {
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
 
 	srservice := SchedulerRPCService{
 		Scheduler: scheduler,
@@ -82,11 +94,13 @@ func TestRPCService(t *testing.T) {
 	}
 	srservice.Start()
 
-	conn, _ := grpc.Dial(srservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(srservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	assert.NoError(t, err)
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 
 	testAGSchedulerRPC(t, client)
 
-	store.Clear()
+	err = store.Clear()
+	assert.NoError(t, err)
 }
