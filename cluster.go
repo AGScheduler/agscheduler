@@ -219,7 +219,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	cn.setQueueMap(main.QueueMap)
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler http Service listening at: %s", main.EndpointHTTP))
+	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler HTTP Service listening at: %s", main.EndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Main Node Queue: `%s`", main.Queue))
 
 	go cn.heartbeatRemote(ctx)
