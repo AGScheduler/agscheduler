@@ -156,9 +156,9 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 }
 
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
-	slog.Info(fmt.Sprintf("Registration from the cluster node `%s:%s`:", args.Id, args.Endpoint))
+	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s:%s`", args.Id, args.Endpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service queue: `%s`", args.Queue))
+	slog.Info(fmt.Sprintf("Cluster Node Queue: `%s`", args.Queue))
 
 	cn.registerNode(args.toClusterNode())
 
@@ -174,7 +174,7 @@ func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 }
 
 func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
-	slog.Info(fmt.Sprintf("Register with cluster main node `%s`:", cn.MainEndpoint))
+	slog.Info(fmt.Sprintf("Register to Cluster Main Node: `%s`", cn.MainEndpoint))
 
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
@@ -194,7 +194,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	}
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service queue: `%s`", main.Queue))
+	slog.Info(fmt.Sprintf("Cluster Main Node Queue: `%s`", main.Queue))
 
 	go cn.heartbeatRemote(ctx)
 
