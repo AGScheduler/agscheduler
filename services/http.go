@@ -10,19 +10,19 @@ import (
 	"github.com/kwkwc/agscheduler"
 )
 
-type HTTPService struct {
+type sHTTPService struct {
 	scheduler *agscheduler.Scheduler
 }
 
-func (hs *HTTPService) handleJob(j agscheduler.Job, err error) gin.H {
+func (shs *sHTTPService) handleJob(j agscheduler.Job, err error) gin.H {
 	if j.Id == "" {
-		return gin.H{"data": nil, "error": hs.handleErr(err)}
+		return gin.H{"data": nil, "error": shs.handleErr(err)}
 	} else {
-		return gin.H{"data": j, "error": hs.handleErr(err)}
+		return gin.H{"data": j, "error": shs.handleErr(err)}
 	}
 }
 
-func (hs *HTTPService) handleErr(err error) string {
+func (shs *sHTTPService) handleErr(err error) string {
 	if err != nil {
 		return err.Error()
 	} else {
@@ -30,79 +30,79 @@ func (hs *HTTPService) handleErr(err error) string {
 	}
 }
 
-func (hs *HTTPService) AddJob(c *gin.Context) {
+func (shs *sHTTPService) AddJob(c *gin.Context) {
 	j := agscheduler.Job{}
 	err := c.BindJSON(&j)
 	if err != nil {
-		c.JSON(400, hs.handleJob(j, err))
+		c.JSON(400, shs.handleJob(j, err))
 		return
 	}
 
-	j, err = hs.scheduler.AddJob(j)
-	c.JSON(200, hs.handleJob(j, err))
+	j, err = shs.scheduler.AddJob(j)
+	c.JSON(200, shs.handleJob(j, err))
 }
 
-func (hs *HTTPService) GetJob(c *gin.Context) {
-	j, err := hs.scheduler.GetJob(c.Param("id"))
-	c.JSON(200, hs.handleJob(j, err))
+func (shs *sHTTPService) GetJob(c *gin.Context) {
+	j, err := shs.scheduler.GetJob(c.Param("id"))
+	c.JSON(200, shs.handleJob(j, err))
 }
 
-func (hs *HTTPService) GetAllJobs(c *gin.Context) {
-	js, err := hs.scheduler.GetAllJobs()
-	c.JSON(200, gin.H{"data": js, "error": hs.handleErr(err)})
+func (shs *sHTTPService) GetAllJobs(c *gin.Context) {
+	js, err := shs.scheduler.GetAllJobs()
+	c.JSON(200, gin.H{"data": js, "error": shs.handleErr(err)})
 }
 
-func (hs *HTTPService) UpdateJob(c *gin.Context) {
+func (shs *sHTTPService) UpdateJob(c *gin.Context) {
 	j := agscheduler.Job{}
 	err := c.BindJSON(&j)
 	if err != nil {
-		c.JSON(400, hs.handleJob(j, err))
+		c.JSON(400, shs.handleJob(j, err))
 		return
 	}
 
-	j, err = hs.scheduler.UpdateJob(j)
-	c.JSON(200, hs.handleJob(j, err))
+	j, err = shs.scheduler.UpdateJob(j)
+	c.JSON(200, shs.handleJob(j, err))
 }
 
-func (hs *HTTPService) DeleteJob(c *gin.Context) {
-	err := hs.scheduler.DeleteJob(c.Param("id"))
-	c.JSON(200, gin.H{"data": nil, "error": hs.handleErr(err)})
+func (shs *sHTTPService) DeleteJob(c *gin.Context) {
+	err := shs.scheduler.DeleteJob(c.Param("id"))
+	c.JSON(200, gin.H{"data": nil, "error": shs.handleErr(err)})
 }
 
-func (hs *HTTPService) DeleteAllJobs(c *gin.Context) {
-	hs.scheduler.DeleteAllJobs()
+func (shs *sHTTPService) DeleteAllJobs(c *gin.Context) {
+	shs.scheduler.DeleteAllJobs()
 	c.JSON(200, gin.H{"data": nil, "error": ""})
 }
 
-func (hs *HTTPService) PauseJob(c *gin.Context) {
-	j, err := hs.scheduler.PauseJob(c.Param("id"))
-	c.JSON(200, hs.handleJob(j, err))
+func (shs *sHTTPService) PauseJob(c *gin.Context) {
+	j, err := shs.scheduler.PauseJob(c.Param("id"))
+	c.JSON(200, shs.handleJob(j, err))
 }
 
-func (hs *HTTPService) ResumeJob(c *gin.Context) {
-	j, err := hs.scheduler.ResumeJob(c.Param("id"))
-	c.JSON(200, hs.handleJob(j, err))
+func (shs *sHTTPService) ResumeJob(c *gin.Context) {
+	j, err := shs.scheduler.ResumeJob(c.Param("id"))
+	c.JSON(200, shs.handleJob(j, err))
 }
 
-func (hs *HTTPService) RunJob(c *gin.Context) {
+func (shs *sHTTPService) RunJob(c *gin.Context) {
 	j := agscheduler.Job{}
 	err := c.BindJSON(&j)
 	if err != nil {
-		c.JSON(400, hs.handleJob(j, err))
+		c.JSON(400, shs.handleJob(j, err))
 		return
 	}
 
-	err = hs.scheduler.RunJob(j)
-	c.JSON(200, gin.H{"data": nil, "error": hs.handleErr(err)})
+	err = shs.scheduler.RunJob(j)
+	c.JSON(200, gin.H{"data": nil, "error": shs.handleErr(err)})
 }
 
-func (hs *HTTPService) Start(c *gin.Context) {
-	hs.scheduler.Start()
+func (shs *sHTTPService) Start(c *gin.Context) {
+	shs.scheduler.Start()
 	c.JSON(200, gin.H{"data": nil, "error": ""})
 }
 
-func (hs *HTTPService) Stop(c *gin.Context) {
-	hs.scheduler.Stop()
+func (shs *sHTTPService) Stop(c *gin.Context) {
+	shs.scheduler.Stop()
 	c.JSON(200, gin.H{"data": nil, "error": ""})
 }
 
@@ -111,18 +111,18 @@ type SchedulerHTTPService struct {
 	Address   string
 }
 
-func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, hs *HTTPService) {
-	r.POST("/scheduler/job", hs.AddJob)
-	r.GET("/scheduler/job/:id", hs.GetJob)
-	r.GET("/scheduler/jobs", hs.GetAllJobs)
-	r.PUT("/scheduler/job", hs.UpdateJob)
-	r.DELETE("/scheduler/job/:id", hs.DeleteJob)
-	r.DELETE("/scheduler/jobs", hs.DeleteAllJobs)
-	r.POST("/scheduler/job/:id/pause", hs.PauseJob)
-	r.POST("/scheduler/job/:id/resume", hs.ResumeJob)
-	r.POST("/scheduler/job/run", hs.RunJob)
-	r.POST("/scheduler/start", hs.Start)
-	r.POST("/scheduler/stop", hs.Stop)
+func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) {
+	r.POST("/scheduler/job", shs.AddJob)
+	r.GET("/scheduler/job/:id", shs.GetJob)
+	r.GET("/scheduler/jobs", shs.GetAllJobs)
+	r.PUT("/scheduler/job", shs.UpdateJob)
+	r.DELETE("/scheduler/job/:id", shs.DeleteJob)
+	r.DELETE("/scheduler/jobs", shs.DeleteAllJobs)
+	r.POST("/scheduler/job/:id/pause", shs.PauseJob)
+	r.POST("/scheduler/job/:id/resume", shs.ResumeJob)
+	r.POST("/scheduler/job/run", shs.RunJob)
+	r.POST("/scheduler/start", shs.Start)
+	r.POST("/scheduler/stop", shs.Stop)
 }
 
 func (s *SchedulerHTTPService) Start() error {
@@ -134,7 +134,7 @@ func (s *SchedulerHTTPService) Start() error {
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	s.registerRoutes(r, &HTTPService{scheduler: s.Scheduler})
+	s.registerRoutes(r, &sHTTPService{scheduler: s.Scheduler})
 
 	slog.Info(fmt.Sprintf("Scheduler HTTP Service listening at: %s", s.Address))
 
