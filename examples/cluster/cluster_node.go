@@ -1,6 +1,6 @@
 // 1. go run examples/cluster/cluster_main.go
 // 2. go run examples/cluster/cluster_node.go
-// 3. go run examples/cluster/cluster_node.go -e 127.0.0.1:36371 -se 127.0.0.1:36370
+// 3. go run examples/cluster/cluster_node.go -e 127.0.0.1:36371 -eh 127.0.0.1:63639 -se 127.0.0.1:36370
 // 4. go run examples/rpc/rpc_client.go
 
 package main

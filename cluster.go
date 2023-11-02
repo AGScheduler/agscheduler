@@ -21,7 +21,7 @@ type Node struct {
 	EndpointHTTP      string
 	SchedulerEndpoint string
 	Queue             string
-	queueMap          map[string]map[string]map[string]any
+	QueueMap          map[string]map[string]map[string]any
 }
 
 func (n *Node) toClusterNode() *ClusterNode {
@@ -32,7 +32,8 @@ func (n *Node) toClusterNode() *ClusterNode {
 		EndpointHTTP:      n.EndpointHTTP,
 		SchedulerEndpoint: n.SchedulerEndpoint,
 		Queue:             n.Queue,
-		queueMap:          n.queueMap,
+
+		queueMap: n.QueueMap,
 	}
 }
 
@@ -43,7 +44,8 @@ type ClusterNode struct {
 	EndpointHTTP      string
 	SchedulerEndpoint string
 	Queue             string
-	queueMap          map[string]map[string]map[string]any
+
+	queueMap map[string]map[string]map[string]any
 }
 
 func (cn *ClusterNode) toNode() *Node {
@@ -54,8 +56,16 @@ func (cn *ClusterNode) toNode() *Node {
 		EndpointHTTP:      cn.EndpointHTTP,
 		SchedulerEndpoint: cn.SchedulerEndpoint,
 		Queue:             cn.Queue,
-		queueMap:          cn.queueMap,
+		QueueMap:          cn.queueMap,
 	}
+}
+
+func (cn *ClusterNode) setQueueMap(qmap map[string]map[string]map[string]any) {
+	var mutex sync.Mutex
+
+	mutex.Lock()
+	cn.queueMap = qmap
+	mutex.Unlock()
 }
 
 func (cn *ClusterNode) QueueMap() map[string]map[string]map[string]any {
@@ -70,7 +80,9 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	cn.setId()
 	cn.registerNode(cn)
 
-	go cn.checkNode(ctx)
+	if cn.MainEndpoint == cn.Endpoint {
+		go cn.checkNode(ctx)
+	}
 
 	return nil
 }
@@ -132,7 +144,7 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 }
 
 func (cn *ClusterNode) checkNode(ctx context.Context) {
-	interval := 200 * time.Millisecond
+	interval := 400 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
@@ -151,7 +163,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 					if now.Sub(lastRegisterTime) > 5*time.Minute {
 						delete(v, id)
 						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` have been deleted because unhealthy", id, endpoint))
-					} else if now.Sub(lastRegisterTime) > 200*time.Millisecond {
+					} else if now.Sub(lastRegisterTime) > 400*time.Millisecond {
 						v2["health"] = false
 					}
 				}
@@ -164,6 +176,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s:%s`", args.Id, args.Endpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Node Scheduler HTTP Service listening at: %s", args.EndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Node Queue: `%s`", args.Queue))
 
 	cn.registerNode(args.toClusterNode())
@@ -171,12 +184,17 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.Id = cn.Id
 	reply.MainEndpoint = cn.MainEndpoint
 	reply.Endpoint = cn.Endpoint
+	reply.EndpointHTTP = cn.EndpointHTTP
 	reply.SchedulerEndpoint = cn.SchedulerEndpoint
 	reply.Queue = cn.Queue
+
+	reply.QueueMap = cn.queueMap
 }
 
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
+
+	reply.QueueMap = cn.queueMap
 }
 
 func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
@@ -198,8 +216,10 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	case <-time.After(3 * time.Second):
 		return fmt.Errorf("register to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
+	cn.setQueueMap(main.QueueMap)
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler HTTP Service listening at: %s", main.EndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Main Node Queue: `%s`", main.Queue))
 
 	go cn.heartbeatRemote(ctx)
@@ -208,7 +228,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 }
 
 func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
-	interval := 100 * time.Millisecond
+	interval := 200 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
@@ -240,9 +260,10 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
-	case <-time.After(200 * time.Millisecond):
+	case <-time.After(400 * time.Millisecond):
 		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
+	cn.setQueueMap(main.QueueMap)
 
 	return nil
 }

@@ -279,7 +279,9 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 
-		_, err := client.RunJob(ctx, JobToPbJobPtr(j))
+		pbJ := JobToPbJobPtr(j)
+		pbJ.Scheduled = true
+		_, err := client.RunJob(ctx, pbJ)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
 			s.clusterNode.queueMap[node.Queue][node.Id]["health"] = false
@@ -305,18 +307,7 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	return nil
 }
 
-func (s *Scheduler) RunJob(j Job) error {
-	slog.Info(fmt.Sprintf("Scheduler run job `%s`.\n", j.FullName()))
-
-	err := s.scheduleJob(j)
-	if err != nil {
-		return fmt.Errorf("scheduler schedule job `%s` error: %s", j.FullName(), err)
-	}
-
-	return nil
-}
-
-func (s *Scheduler) scheduleJob(j Job) error {
+func (s *Scheduler) _scheduleJob(j Job) error {
 	isRunJobLocal := false
 
 	if s.clusterNode == nil {
@@ -337,6 +328,25 @@ func (s *Scheduler) scheduleJob(j Job) error {
 		} else {
 			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 		}
+	}
+
+	return nil
+}
+
+func (s *Scheduler) RunJob(j Job) error {
+	slog.Info(fmt.Sprintf("Scheduler run job `%s`.\n", j.FullName()))
+
+	s._runJob(j)
+
+	return nil
+}
+
+func (s *Scheduler) ScheduleJob(j Job) error {
+	slog.Info(fmt.Sprintf("Scheduler schedule job `%s`.\n", j.FullName()))
+
+	err := s._scheduleJob(j)
+	if err != nil {
+		return fmt.Errorf("scheduler schedule job `%s` error: %s", j.FullName(), err)
 	}
 
 	return nil
@@ -371,7 +381,7 @@ func (s *Scheduler) run() {
 					}
 					j.NextRunTime = nextRunTime
 
-					err = s.scheduleJob(j)
+					err = s._scheduleJob(j)
 					if err != nil {
 						slog.Error(fmt.Sprintf("Scheduler schedule job `%s` error: %s\n", j.FullName(), err))
 					}

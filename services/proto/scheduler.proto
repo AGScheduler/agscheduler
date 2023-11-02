@@ -28,6 +28,10 @@ message Job {
   google.protobuf.Timestamp  last_run_time = 13;
   google.protobuf.Timestamp  next_run_time = 14;
   string status = 15;
+
+  // In standalone mode, `scheduled` will always be `false`, 
+  // in cluster mode, internal node calls will be set to `true` to prevent round-robin scheduling
+  bool scheduled = 16;
 }
 
 message Jobs {

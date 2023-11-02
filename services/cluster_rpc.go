@@ -1,11 +1,13 @@
 package services
 
 import (
+	"encoding/gob"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/rpc"
+	"time"
 
 	"github.com/kwkwc/agscheduler"
 )
@@ -31,6 +33,8 @@ type clusterRPCService struct {
 }
 
 func (s *clusterRPCService) Start() error {
+	gob.Register(time.Time{})
+
 	crs := &CRPCService{scheduler: s.Scheduler, cn: s.Cn}
 	rpc.Register(crs)
 	rpc.HandleHTTP()
