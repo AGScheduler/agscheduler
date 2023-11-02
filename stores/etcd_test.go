@@ -4,16 +4,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	"github.com/kwkwc/agscheduler"
 )
 
 func TestEtcdStore(t *testing.T) {
-	cli, _ := clientv3.New(clientv3.Config{
+	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{"127.0.0.1:2379"},
 		DialTimeout: 5 * time.Second,
 	})
+	assert.NoError(t, err)
 	defer cli.Close()
 	store := &EtcdStore{
 		Cli:          cli,
@@ -22,9 +24,11 @@ func TestEtcdStore(t *testing.T) {
 	}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err = scheduler.SetStore(store)
+	assert.NoError(t, err)
 
 	testAGScheduler(t, scheduler)
 
-	store.Clear()
+	err = store.Clear()
+	assert.NoError(t, err)
 }

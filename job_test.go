@@ -50,19 +50,20 @@ func TestJobStateDump(t *testing.T) {
 
 func TestJobStateLoad(t *testing.T) {
 	j := getJob()
-	state, _ := StateDump(j)
-	j, err := StateLoad(state)
+	state, err := StateDump(j)
+	assert.NoError(t, err)
+	j, err = StateLoad(state)
+	assert.NoError(t, err)
 
 	assert.IsType(t, Job{}, j)
 	assert.NotEmpty(t, j)
-	assert.NoError(t, err)
 }
 
 func TestJobStateLoadError(t *testing.T) {
 	j, err := StateLoad([]byte("job"))
+	assert.Error(t, err)
 
 	assert.Empty(t, j)
-	assert.Error(t, err)
 }
 
 func TestJobToPbJobPtr(t *testing.T) {

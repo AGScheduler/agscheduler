@@ -4,13 +4,15 @@ import (
 	"testing"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/kwkwc/agscheduler"
 )
 
 func TestRedisStore(t *testing.T) {
 	url := "redis://127.0.0.1:6379/0"
-	opt, _ := redis.ParseURL(url)
+	opt, err := redis.ParseURL(url)
+	assert.NoError(t, err)
 	rdb := redis.NewClient(opt)
 	defer rdb.Close()
 	store := &RedisStore{
@@ -20,9 +22,11 @@ func TestRedisStore(t *testing.T) {
 	}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err = scheduler.SetStore(store)
+	assert.NoError(t, err)
 
 	testAGScheduler(t, scheduler)
 
-	store.Clear()
+	err = store.Clear()
+	assert.NoError(t, err)
 }

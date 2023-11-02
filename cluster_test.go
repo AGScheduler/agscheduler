@@ -2,6 +2,7 @@ package agscheduler
 
 import (
 	"context"
+	"encoding/gob"
 	"reflect"
 	"testing"
 	"time"
@@ -133,17 +134,22 @@ func TestClusterRPCPing(t *testing.T) {
 }
 
 func TestClusterRegisterNodeRemote(t *testing.T) {
+	gob.Register(time.Time{})
+
 	cn := getClusterNode()
 	cn.MainEndpoint = "127.0.0.1:36664"
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	cn.RegisterNodeRemote(ctx)
+	err := cn.RegisterNodeRemote(ctx)
+	assert.NoError(t, err)
 
 	time.Sleep(300 * time.Millisecond)
 }
 
 func TestClusterHeartbeatRemote(t *testing.T) {
+	gob.Register(time.Time{})
+
 	cn := getClusterNode()
 	cn.MainEndpoint = "127.0.0.1:36664"
 
@@ -155,8 +161,11 @@ func TestClusterHeartbeatRemote(t *testing.T) {
 }
 
 func TestClusterPingRemote(t *testing.T) {
+	gob.Register(time.Time{})
+
 	cn := getClusterNode()
 	cn.MainEndpoint = "127.0.0.1:36664"
 
-	cn.pingRemote(context.TODO())
+	err := cn.pingRemote(context.TODO())
+	assert.NoError(t, err)
 }
