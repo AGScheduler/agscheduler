@@ -269,7 +269,7 @@ func TestSchedulerScheduleJobLocal(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 
-	err := s.RunJob(j)
+	err := s.ScheduleJob(j)
 	assert.NoError(t, err)
 }
 
@@ -287,7 +287,7 @@ func TestSchedulerScheduleJobRemote(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 
-	err := s.RunJob(j)
+	err := s.ScheduleJob(j)
 	assert.NoError(t, err)
 }
 
@@ -305,7 +305,7 @@ func TestSchedulerScheduleJobQueueNotExist(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 
-	err := s.RunJob(j)
+	err := s.ScheduleJob(j)
 	assert.Error(t, err)
 }
 
