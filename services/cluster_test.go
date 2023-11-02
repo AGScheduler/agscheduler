@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/rpc"
 	"testing"
 	"time"
 
@@ -50,6 +51,12 @@ func TestClusterService(t *testing.T) {
 	rJ := &result{}
 	json.Unmarshal(body, &rJ)
 	assert.Len(t, rJ.Data.(map[string]any), 2)
+
+	var queueMap map[string]map[string]map[string]any
+	rClient, _ := rpc.DialHTTP("tcp", cnMain.Endpoint)
+	filters := make(map[string]any)
+	rClient.Call("CRPCService.Nodes", filters, &queueMap)
+	assert.Len(t, queueMap, 2)
 
 	time.Sleep(200 * time.Millisecond)
 }

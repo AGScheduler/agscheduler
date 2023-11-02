@@ -183,7 +183,7 @@ cn.RegisterNodeRemote(ctx)
 
 | gRPC Function | HTTP Method | HTTP Endpoint             |
 |---------------|-------------|---------------------------|
-|               | GET         | /cluster/nodes            |
+| Nodes         | GET         | /cluster/nodes            |
 
 ## Examples
 
