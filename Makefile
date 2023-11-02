@@ -22,14 +22,14 @@ lint:
 	go vet .
 
 up-cluster-rpc-service:
-	go run examples/cluster/cluster_main.go -e 127.0.0.1:36664 -se 127.0.0.1:36663 &
+	go run examples/cluster/cluster_main.go -e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663 &
 
 down-cluster-rpc-service:
-	ps -ef | grep "-e 127.0.0.1:36664 -se 127.0.0.1:36663" \
+	ps -ef | grep "-e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-rpc-service"
 
 down-cluster-rpc-service_second:
-	ps -ef | grep "-e 127.0.0.1:36664 -se 127.0.0.1:36663" \
+	ps -ef | grep "-e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-rpc-service"
 
 test: down-cluster-rpc-service up-cluster-rpc-service

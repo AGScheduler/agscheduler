@@ -20,8 +20,9 @@ import (
 
 var mainEndpoint = flag.String("me", "127.0.0.1:36364", "Cluster Main Node endpoint")
 var endpoint = flag.String("e", "127.0.0.1:36366", "Cluster Node endpoint")
+var endpointHTTP = flag.String("eh", "127.0.0.1:63638", "Cluster Node endpoint HTTP")
 var schedulerEndpoint = flag.String("se", "127.0.0.1:36365", "Cluster Node Scheduler endpoint")
-var Queue = flag.String("q", "node", "Cluster Node queue")
+var queue = flag.String("q", "node", "Cluster Node queue")
 
 func main() {
 	agscheduler.RegisterFuncs(examples.PrintMsg)
@@ -33,8 +34,9 @@ func main() {
 	cn := &agscheduler.ClusterNode{
 		MainEndpoint:      *mainEndpoint,
 		Endpoint:          *endpoint,
+		EndpointHTTP:      *endpointHTTP,
 		SchedulerEndpoint: *schedulerEndpoint,
-		Queue:             *Queue,
+		Queue:             *queue,
 	}
 
 	scheduler := &agscheduler.Scheduler{}
@@ -49,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cservice := services.ClusterService{Scheduler: scheduler, Cn: cn}
+	cservice := &services.ClusterService{Scheduler: scheduler, Cn: cn}
 	err = cservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start cluster service: %s", err))
