@@ -18,6 +18,7 @@ type Node struct {
 	Id                string
 	MainEndpoint      string
 	Endpoint          string
+	EndpointHTTP      string
 	SchedulerEndpoint string
 	Queue             string
 	queueMap          map[string]map[string]map[string]any
@@ -28,6 +29,7 @@ func (n *Node) toClusterNode() *ClusterNode {
 		Id:                n.Id,
 		MainEndpoint:      n.MainEndpoint,
 		Endpoint:          n.Endpoint,
+		EndpointHTTP:      n.EndpointHTTP,
 		SchedulerEndpoint: n.SchedulerEndpoint,
 		Queue:             n.Queue,
 		queueMap:          n.queueMap,
@@ -38,6 +40,7 @@ type ClusterNode struct {
 	Id                string
 	MainEndpoint      string
 	Endpoint          string
+	EndpointHTTP      string
 	SchedulerEndpoint string
 	Queue             string
 	queueMap          map[string]map[string]map[string]any
@@ -48,6 +51,7 @@ func (cn *ClusterNode) toNode() *Node {
 		Id:                cn.Id,
 		MainEndpoint:      cn.MainEndpoint,
 		Endpoint:          cn.Endpoint,
+		EndpointHTTP:      cn.EndpointHTTP,
 		SchedulerEndpoint: cn.SchedulerEndpoint,
 		Queue:             cn.Queue,
 		queueMap:          cn.queueMap,
@@ -86,6 +90,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		"id":                 n.Id,
 		"main_endpoint":      n.MainEndpoint,
 		"endpoint":           n.Endpoint,
+		"endpoint_http":      n.EndpointHTTP,
 		"scheduler_endpoint": n.SchedulerEndpoint,
 		"queue":              n.Queue,
 		"health":             true,
@@ -109,6 +114,7 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 				Id:                id,
 				MainEndpoint:      v2["main_endpoint"].(string),
 				Endpoint:          v2["endpoint"].(string),
+				EndpointHTTP:      v2["endpoint_http"].(string),
 				SchedulerEndpoint: v2["scheduler_endpoint"].(string),
 				Queue:             v2["queue"].(string),
 			})

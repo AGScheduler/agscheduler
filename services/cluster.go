@@ -19,6 +19,9 @@ func (s *ClusterService) Start() error {
 	if s.Cn.MainEndpoint == "" {
 		s.Cn.MainEndpoint = s.Cn.Endpoint
 	}
+	if s.Cn.EndpointHTTP == "" {
+		s.Cn.EndpointHTTP = "127.0.0.1:63637"
+	}
 	if s.Cn.SchedulerEndpoint == "" {
 		s.Cn.SchedulerEndpoint = "127.0.0.1:36363"
 	}
@@ -35,6 +38,12 @@ func (s *ClusterService) Start() error {
 
 	crservice := &clusterRPCService{Scheduler: s.Scheduler, Cn: s.Cn}
 	err = crservice.Start()
+	if err != nil {
+		return err
+	}
+
+	chservice := &clusterHTTPService{Scheduler: s.Scheduler, Cn: s.Cn}
+	err = chservice.Start()
 	if err != nil {
 		return err
 	}
