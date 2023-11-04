@@ -21,15 +21,23 @@ import (
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 
+// In standalone mode, the scheduler only needs to run jobs on a regular basis.
+// In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
 type Scheduler struct {
-	store     Store
-	timer     *time.Timer
-	quitChan  chan struct{}
+	// Job store
+	store Store
+	// When the time is up, the scheduler will wake up.
+	timer *time.Timer
+	// Input is received when `stop` is called or no job in store.
+	quitChan chan struct{}
+	// It should not be set manually.
 	isRunning bool
 
+	// Used in cluster mode, bind to the scheduler.
 	clusterNode *ClusterNode
 }
 
+// Bind the store
 func (s *Scheduler) SetStore(sto Store) error {
 	s.store = sto
 	if err := s.store.Init(); err != nil {
@@ -43,6 +51,7 @@ func (s *Scheduler) getStore() Store {
 	return s.store
 }
 
+// Bind the cluster node
 func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
 	s.clusterNode = cn
 	if err := s.clusterNode.init(ctx); err != nil {
@@ -56,6 +65,8 @@ func (s *Scheduler) getClusterNode() *ClusterNode {
 	return s.clusterNode
 }
 
+// Calculate the next run time, different job type will be calculated in different ways,
+// when the job is paused, will return `9999-09-09 09:09:09`.
 func CalcNextRunTime(j Job) (time.Time, error) {
 	timezone, err := time.LoadLocation(j.Timezone)
 	if err != nil {
@@ -90,6 +101,8 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
+	// Temporary Id conflict resolution: Generate in a loop until there is no conflict
+	// TODO: Modify it
 	for {
 		j.setId()
 		if _, err := s.GetJob(j.Id); err != nil {
@@ -229,6 +242,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	return j, nil
 }
 
+// Used in standalone mode.
 func (s *Scheduler) _runJob(j Job) {
 	f := reflect.ValueOf(funcMap[j.FuncName])
 	if f.IsNil() {
@@ -269,6 +283,8 @@ func (s *Scheduler) _runJob(j Job) {
 	}
 }
 
+// Used in cluster mode.
+// Call the gRPC API of the other node to run the `RunJob`.
 func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 	go func() {
 		conn, _ := grpc.Dial(node.SchedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -310,9 +326,11 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 func (s *Scheduler) _scheduleJob(j Job) error {
 	isRunJobLocal := false
 
+	// In standalone mode.
 	if s.clusterNode == nil {
 		isRunJobLocal = true
 	} else {
+		// In cluster mode, all nodes are equal and may pick myself.
 		node, err := s.clusterNode.choiceNode(j.Queues)
 		if err != nil || s.clusterNode.Id == node.Id {
 			isRunJobLocal = true
@@ -341,6 +359,8 @@ func (s *Scheduler) RunJob(j Job) error {
 	return nil
 }
 
+// Used in cluster mode.
+// Select a worker node
 func (s *Scheduler) ScheduleJob(j Job) error {
 	slog.Info(fmt.Sprintf("Scheduler schedule job `%s`.\n", j.FullName()))
 
@@ -366,10 +386,15 @@ func (s *Scheduler) run() {
 				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s\n", err))
 				continue
 			}
+
+			// If there are no job in store,
+			// the scheduler should be stopped to prevent being woken up all the time.
 			if len(js) == 0 {
 				s.Stop()
 				continue
 			}
+
+			// If there are ineligible job, subsequent job do not need to be checked.
 			sort.Sort(JobSlice(js))
 
 			for _, j := range js {
@@ -431,6 +456,7 @@ func (s *Scheduler) Stop() {
 	slog.Info("Scheduler stop.\n")
 }
 
+// Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler
 func (s *Scheduler) getNextWakeupInterval() time.Duration {
 	nextRunTimeMin, err := s.store.GetNextRunTime()
 	if err != nil {
