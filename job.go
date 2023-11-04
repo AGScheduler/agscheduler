@@ -17,41 +17,71 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
+// constant indicating a job's type
 const (
 	TYPE_DATETIME = "datetime"
 	TYPE_INTERVAL = "interval"
 	TYPE_CRON     = "cron"
+)
 
+// constant indicating a job's status
+const (
 	STATUS_RUNNING = "running"
 	STATUS_PAUSED  = "paused"
 )
 
+// Carry the information of the scheduled job
 type Job struct {
-	Id       string                     `json:"id"`
-	Name     string                     `json:"name"`
-	Type     string                     `json:"type"`
-	StartAt  string                     `json:"start_at"`
-	EndAt    string                     `json:"end_at"`
-	Interval string                     `json:"interval"`
-	CronExpr string                     `json:"cron_expr"`
-	Timezone string                     `json:"timezone"`
-	Func     func(context.Context, Job) `json:"-"`
-	FuncName string                     `json:"func_name"`
-	Args     map[string]any             `json:"args"`
-	Timeout  string                     `json:"timeout"`
-	Queues   []string                   `json:"queues"`
+	// The unique identifier of this job, automatically generated.
+	// It should not be set manually.
+	Id string `json:"id"`
+	// User defined.
+	Name string `json:"name"`
+	// Optional: `TYPE_DATETIME` | `TYPE_INTERVAL` | `TYPE_CRON`.
+	Type string `json:"type"`
+	// It can be used when Type is `TYPE_DATETIME`.
+	StartAt string `json:"start_at"`
+	// This field is useless.
+	EndAt string `json:"end_at"`
+	// It can be used when Type is `TYPE_INTERVAL`.
+	Interval string `json:"interval"`
+	// It can be used when Type is `TYPE_CRON`.
+	CronExpr string `json:"cron_expr"`
+	// Refer to `time.LoadLocation`.
+	Timezone string `json:"timezone"`
+	// The job actually runs the function,
+	// and you need to register it through 'RegisterFuncs' before using it.
+	// Since it cannot be stored by serialization,
+	// when using RPC or HTTP calls, you should use `FuncName`.
+	Func func(context.Context, Job) `json:"-"`
+	// The actual path of `Func`.
+	// This field has a higher priority than `Func`
+	FuncName string `json:"func_name"`
+	// Arguments for `Func`.
+	Args map[string]any `json:"args"`
+	// The running timeout of `Func`.
+	Timeout string `json:"timeout"`
+	// Used in cluster mode, if empty, randomly pick a node to run `Func`.
+	Queues []string `json:"queues"`
 
+	// Automatic update, not manual setting.
 	LastRunTime time.Time `json:"last_run_time"`
+	// Automatic update, not manual setting.
+	// When the job is paused, this field is set to `9999-09-09 09:09:09`.
 	NextRunTime time.Time `json:"next_run_time"`
-	Status      string    `json:"status"`
+	// Optional: `STATUS_RUNNING` | `STATUS_PAUSED`.
+	// It should not be set manually.
+	Status string `json:"status"`
 }
 
+// `sort.Interface`, sorted by 'NextRunTime', ascend.
 type JobSlice []Job
 
 func (js JobSlice) Len() int           { return len(js) }
 func (js JobSlice) Less(i, j int) bool { return js[i].NextRunTime.Before(js[j].NextRunTime) }
 func (js JobSlice) Swap(i, j int)      { js[i], js[j] = js[j], js[i] }
 
+// Set Job's Id, called when the scheduler run `AddJob`.
 func (j *Job) setId() {
 	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
 }
@@ -85,6 +115,7 @@ func (j Job) String() string {
 	)
 }
 
+// Serialize Job and convert to Bytes
 func StateDump(j Job) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
@@ -95,6 +126,7 @@ func StateDump(j Job) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
+// Deserialize Bytes and convert to Job
 func StateLoad(state []byte) (Job, error) {
 	var j Job
 	buf := bytes.NewBuffer(state)
@@ -106,6 +138,7 @@ func StateLoad(state []byte) (Job, error) {
 	return j, nil
 }
 
+// Used to gRPC Protobuf
 func JobToPbJobPtr(j Job) *pb.Job {
 	args, _ := structpb.NewStruct(j.Args)
 
@@ -129,6 +162,7 @@ func JobToPbJobPtr(j Job) *pb.Job {
 	}
 }
 
+// Used to gRPC Protobuf
 func PbJobPtrToJob(pbJob *pb.Job) Job {
 	return Job{
 		Id:       pbJob.GetId(),
@@ -150,6 +184,7 @@ func PbJobPtrToJob(pbJob *pb.Job) Job {
 	}
 }
 
+// Used to gRPC Protobuf
 func JobsToPbJobsPtr(js []Job) *pb.Jobs {
 	pbJs := pb.Jobs{}
 
@@ -160,6 +195,7 @@ func JobsToPbJobsPtr(js []Job) *pb.Jobs {
 	return &pbJs
 }
 
+// Used to gRPC Protobuf
 func PbJobsPtrToJobs(pbJs *pb.Jobs) []Job {
 	js := make([]Job, 0)
 
@@ -170,6 +206,9 @@ func PbJobsPtrToJobs(pbJs *pb.Jobs) []Job {
 	return js
 }
 
+// Record the actual path of function and the corresponding function.
+// Since golang can't serialize functions,
+// need to register them with `RegisterFuncs` before using it.
 var funcMap = make(map[string]func(context.Context, Job))
 
 func getFuncName(f func(context.Context, Job)) string {

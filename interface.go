@@ -4,7 +4,6 @@ import "time"
 
 // Defines the interface that each store must implement.
 type Store interface {
-
 	// Initialization functions for each store,
 	// called when the scheduler run `SetStore`.
 	Init() error
