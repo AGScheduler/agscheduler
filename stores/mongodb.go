@@ -17,6 +17,7 @@ const (
 	COLLECTION = "jobs"
 )
 
+// Stores jobs in a MongoDB database.
 type MongoDBStore struct {
 	Client     *mongo.Client
 	Database   string

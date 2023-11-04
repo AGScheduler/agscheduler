@@ -15,6 +15,7 @@ const (
 	RUN_TIMES_PATH = "/agscheduler/run_times"
 )
 
+// Stores jobs in a etcd.
 type EtcdStore struct {
 	Cli          *clientv3.Client
 	JobsPath     string

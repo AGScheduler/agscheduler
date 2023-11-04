@@ -13,6 +13,7 @@ const (
 	RUN_TIMES_KEY = "agscheduler.run_times"
 )
 
+// Stores jobs in a Redis database.
 type RedisStore struct {
 	RDB         *redis.Client
 	JobsKey     string

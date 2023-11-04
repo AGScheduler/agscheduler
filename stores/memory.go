@@ -7,6 +7,7 @@ import (
 	"github.com/kwkwc/agscheduler"
 )
 
+// Stores jobs in an array in RAM. Provides no persistence support.
 type MemoryStore struct {
 	jobs []agscheduler.Job
 }
