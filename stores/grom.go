@@ -11,12 +11,15 @@ import (
 
 const TABLE_NAME = "jobs"
 
+// GORM table
 type Jobs struct {
 	ID          string    `gorm:"size:64;primaryKey"`
 	NextRunTime time.Time `gorm:"index"`
 	State       []byte    `gorm:"type:bytes;not null"`
 }
 
+// Stores jobs in a database table using GORM.
+// The table will be created if it doesn't exist in the database.
 type GORMStore struct {
 	DB        *gorm.DB
 	TableName string
