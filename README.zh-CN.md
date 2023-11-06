@@ -30,6 +30,10 @@
 - 支持集群
   - [x] 远程工作节点
 
+## 架构
+
+![Framework](assets/framework.png)
+
 ## 使用
 
 ```golang
