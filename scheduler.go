@@ -396,7 +396,6 @@ func (s *Scheduler) run() {
 
 			// If there are ineligible job, subsequent job do not need to be checked.
 			sort.Sort(JobSlice(js))
-
 			for _, j := range js {
 				if j.NextRunTime.Before(now) {
 					nextRunTime, err := CalcNextRunTime(j)
@@ -429,6 +428,8 @@ func (s *Scheduler) run() {
 	}
 }
 
+// In addition to being called manually,
+// it is also called after `AddJob`.
 func (s *Scheduler) Start() {
 	if s.isRunning {
 		slog.Info("Scheduler is running.\n")
@@ -444,6 +445,8 @@ func (s *Scheduler) Start() {
 	slog.Info("Scheduler start.\n")
 }
 
+// In addition to being called manually,
+// there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.\n")
