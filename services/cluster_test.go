@@ -39,7 +39,7 @@ func TestClusterService(t *testing.T) {
 	err = cservice.Start()
 	assert.NoError(t, err)
 
-	assert.Len(t, cnMain.QueueMap(), 1)
+	assert.Len(t, cnMain.NodeMap(), 1)
 	cn := &agscheduler.ClusterNode{
 		MainEndpoint: cnMain.Endpoint,
 		// Endpoint:          "127.0.0.1:36366",
@@ -48,7 +48,7 @@ func TestClusterService(t *testing.T) {
 	}
 	err = cn.RegisterNodeRemote(ctx)
 	assert.NoError(t, err)
-	assert.Len(t, cnMain.QueueMap(), 2)
+	assert.Len(t, cnMain.NodeMap(), 2)
 
 	resp, err := http.Get("http://" + cnMain.EndpointHTTP + "/cluster/nodes")
 	assert.NoError(t, err)
@@ -60,13 +60,13 @@ func TestClusterService(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, rJ.Data.(map[string]any), 2)
 
-	var queueMap map[string]map[string]map[string]any
+	var nodeMap map[string]map[string]map[string]any
 	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)
 	assert.NoError(t, err)
 	filters := make(map[string]any)
-	err = rClient.Call("CRPCService.Nodes", filters, &queueMap)
+	err = rClient.Call("CRPCService.Nodes", filters, &nodeMap)
 	assert.NoError(t, err)
-	assert.Len(t, queueMap, 2)
+	assert.Len(t, nodeMap, 2)
 
 	time.Sleep(200 * time.Millisecond)
 }

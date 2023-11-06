@@ -21,7 +21,7 @@ type Node struct {
 	EndpointHTTP      string
 	SchedulerEndpoint string
 	Queue             string
-	QueueMap          map[string]map[string]map[string]any
+	NodeMap           map[string]map[string]map[string]any
 }
 
 func (n *Node) toClusterNode() *ClusterNode {
@@ -33,7 +33,7 @@ func (n *Node) toClusterNode() *ClusterNode {
 		SchedulerEndpoint: n.SchedulerEndpoint,
 		Queue:             n.Queue,
 
-		queueMap: n.QueueMap,
+		nodeMap: n.NodeMap,
 	}
 }
 
@@ -68,7 +68,7 @@ type ClusterNode struct {
 
 	// Stores node information for the entire cluster.
 	// It should not be set manually.
-	queueMap map[string]map[string]map[string]any
+	nodeMap map[string]map[string]map[string]any
 }
 
 func (cn *ClusterNode) toNode() *Node {
@@ -79,20 +79,20 @@ func (cn *ClusterNode) toNode() *Node {
 		EndpointHTTP:      cn.EndpointHTTP,
 		SchedulerEndpoint: cn.SchedulerEndpoint,
 		Queue:             cn.Queue,
-		QueueMap:          cn.queueMap,
+		NodeMap:           cn.nodeMap,
 	}
 }
 
-func (cn *ClusterNode) setQueueMap(qmap map[string]map[string]map[string]any) {
+func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
 	var mutex sync.Mutex
 
 	mutex.Lock()
-	cn.queueMap = qmap
+	cn.nodeMap = nmap
 	mutex.Unlock()
 }
 
-func (cn *ClusterNode) QueueMap() map[string]map[string]map[string]any {
-	return cn.queueMap
+func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
+	return cn.nodeMap
 }
 
 func (cn *ClusterNode) setId() {
@@ -118,13 +118,13 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 
 	mutex.Lock()
 
-	if cn.queueMap == nil {
-		cn.queueMap = make(map[string]map[string]map[string]any)
+	if cn.nodeMap == nil {
+		cn.nodeMap = make(map[string]map[string]map[string]any)
 	}
-	if _, ok := cn.queueMap[n.Queue]; !ok {
-		cn.queueMap[n.Queue] = map[string]map[string]any{}
+	if _, ok := cn.nodeMap[n.Queue]; !ok {
+		cn.nodeMap[n.Queue] = map[string]map[string]any{}
 	}
-	cn.queueMap[n.Queue][n.Id] = map[string]any{
+	cn.nodeMap[n.Queue][n.Id] = map[string]any{
 		"id":                 n.Id,
 		"main_endpoint":      n.MainEndpoint,
 		"endpoint":           n.Endpoint,
@@ -142,7 +142,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 // if you specify a queue number, filter by queue number.
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
-	for q, v := range cn.queueMap {
+	for q, v := range cn.nodeMap {
 		if len(queues) != 0 && !slices.Contains(queues, q) {
 			continue
 		}
@@ -183,7 +183,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 			return
 		case <-timer.C:
 			now := time.Now().UTC()
-			for _, v := range cn.queueMap {
+			for _, v := range cn.nodeMap {
 				for id, v2 := range v {
 					if cn.Id == id {
 						continue
@@ -219,14 +219,14 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.SchedulerEndpoint = cn.SchedulerEndpoint
 	reply.Queue = cn.Queue
 
-	reply.QueueMap = cn.queueMap
+	reply.NodeMap = cn.nodeMap
 }
 
 // RPC API
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
-	reply.QueueMap = cn.queueMap
+	reply.NodeMap = cn.nodeMap
 }
 
 // Used for work node
@@ -251,7 +251,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	case <-time.After(3 * time.Second):
 		return fmt.Errorf("register to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
-	cn.setQueueMap(main.QueueMap)
+	cn.setNodeMap(main.NodeMap)
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler HTTP Service listening at: %s", main.EndpointHTTP))
@@ -304,7 +304,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	case <-time.After(400 * time.Millisecond):
 		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
-	cn.setQueueMap(main.QueueMap)
+	cn.setNodeMap(main.NodeMap)
 
 	return nil
 }

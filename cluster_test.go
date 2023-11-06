@@ -58,11 +58,11 @@ func TestClusterSetId(t *testing.T) {
 func TestClusterRegisterNode(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.QueueMap(), 0)
+	assert.Len(t, cn.NodeMap(), 0)
 
 	cn.registerNode(cn)
 
-	assert.Len(t, cn.QueueMap(), 1)
+	assert.Len(t, cn.NodeMap(), 1)
 }
 
 func TestClusterChoiceNode(t *testing.T) {
@@ -76,7 +76,7 @@ func TestClusterChoiceNode(t *testing.T) {
 func TestClusterChoiceNodeUnhealthy(t *testing.T) {
 	cn := getClusterNode()
 	cn.registerNode(cn)
-	cn.queueMap[cn.Queue][cn.Id]["health"] = false
+	cn.nodeMap[cn.Queue][cn.Id]["health"] = false
 
 	_, err := cn.choiceNode([]string{})
 	assert.Error(t, err)
@@ -96,41 +96,41 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.Id = id
 	cn.registerNode(cn)
 	cn.Id = "1"
-	cn.queueMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
-	assert.Equal(t, true, cn.queueMap[cn.Queue][id]["health"].(bool))
+	cn.nodeMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
+	assert.Equal(t, true, cn.nodeMap[cn.Queue][id]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go cn.checkNode(ctx)
 	time.Sleep(500 * time.Millisecond)
 
-	assert.Equal(t, false, cn.queueMap[cn.Queue][id]["health"].(bool))
+	assert.Equal(t, false, cn.nodeMap[cn.Queue][id]["health"].(bool))
 
-	cn.queueMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-6 * time.Minute)
+	cn.nodeMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-6 * time.Minute)
 	time.Sleep(500 * time.Millisecond)
 
-	_, ok := cn.queueMap[cn.Queue][id]
+	_, ok := cn.nodeMap[cn.Queue][id]
 	assert.Equal(t, false, ok)
 }
 
 func TestClusterRPCRegister(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.QueueMap(), 0)
+	assert.Len(t, cn.NodeMap(), 0)
 
 	cn.RPCRegister(cn.toNode(), &Node{})
 
-	assert.Len(t, cn.QueueMap(), 1)
+	assert.Len(t, cn.NodeMap(), 1)
 }
 
 func TestClusterRPCPing(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.QueueMap(), 0)
+	assert.Len(t, cn.NodeMap(), 0)
 
 	cn.RPCPing(cn.toNode(), &Node{})
 
-	assert.Len(t, cn.QueueMap(), 1)
+	assert.Len(t, cn.NodeMap(), 1)
 }
 
 func TestClusterRegisterNodeRemote(t *testing.T) {

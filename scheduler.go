@@ -301,7 +301,7 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		_, err := client.RunJob(ctx, pbJ)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
-			s.clusterNode.queueMap[node.Queue][node.Id]["health"] = false
+			s.clusterNode.nodeMap[node.Queue][node.Id]["health"] = false
 		}
 	}()
 }

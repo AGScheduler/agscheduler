@@ -16,7 +16,7 @@ type cHTTPService struct {
 }
 
 func (chs *cHTTPService) nodes(c *gin.Context) {
-	c.JSON(200, gin.H{"data": chs.cn.QueueMap(), "error": ""})
+	c.JSON(200, gin.H{"data": chs.cn.NodeMap(), "error": ""})
 }
 
 type clusterHTTPService struct {
