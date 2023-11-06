@@ -102,43 +102,11 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
-	// Temporary Id conflict resolution: Generate in a loop until there is no conflict
-	// TODO: Modify it
-	for {
-		j.setId()
-		if _, err := s.GetJob(j.Id); err != nil {
-			break
-		}
+	if err := j.init(); err != nil {
+		return Job{}, err
 	}
 
 	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
-
-	j.Status = STATUS_RUNNING
-
-	if j.Timezone == "" {
-		j.Timezone = "UTC"
-	}
-
-	if j.FuncName == "" {
-		j.FuncName = getFuncName(j.Func)
-	}
-	if _, ok := funcMap[j.FuncName]; !ok {
-		return Job{}, FuncUnregisteredError(j.FuncName)
-	}
-
-	if j.Timeout == "" {
-		j.Timeout = "1h"
-	}
-	_, err := time.ParseDuration(j.Timeout)
-	if err != nil {
-		return Job{}, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
-	}
-
-	nextRunTime, err := CalcNextRunTime(j)
-	if err != nil {
-		return Job{}, err
-	}
-	j.NextRunTime = nextRunTime
 
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
@@ -164,15 +132,8 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 		return Job{}, err
 	}
 
-	lastNextWakeupInterval := s.getNextWakeupInterval()
-
-	if _, ok := funcMap[j.FuncName]; !ok {
-		return Job{}, FuncUnregisteredError(j.FuncName)
-	}
-
-	_, err := time.ParseDuration(j.Timeout)
-	if err != nil {
-		return Job{}, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	if err := j.check(); err != nil {
+		return Job{}, err
 	}
 
 	nextRunTime, err := CalcNextRunTime(j)
@@ -180,6 +141,8 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 		return Job{}, err
 	}
 	j.NextRunTime = nextRunTime
+
+	lastNextWakeupInterval := s.getNextWakeupInterval()
 
 	err = s.store.UpdateJob(j)
 

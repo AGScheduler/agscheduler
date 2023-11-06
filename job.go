@@ -83,9 +83,54 @@ func (js JobSlice) Len() int           { return len(js) }
 func (js JobSlice) Less(i, j int) bool { return js[i].NextRunTime.Before(js[j].NextRunTime) }
 func (js JobSlice) Swap(i, j int)      { js[i], js[j] = js[j], js[i] }
 
-// Set Job's Id, called when the scheduler run `AddJob`.
 func (j *Job) setId() {
 	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
+}
+
+// Initialization functions for each job,
+// called when the scheduler run `AddJob`.
+func (j *Job) init() error {
+	j.setId()
+
+	j.Status = STATUS_RUNNING
+
+	if j.Timezone == "" {
+		j.Timezone = "UTC"
+	}
+
+	if j.FuncName == "" {
+		j.FuncName = getFuncName(j.Func)
+	}
+
+	if j.Timeout == "" {
+		j.Timeout = "1h"
+	}
+
+	nextRunTime, err := CalcNextRunTime(*j)
+	if err != nil {
+		return err
+	}
+	j.NextRunTime = nextRunTime
+
+	if err := j.check(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Called when the job run `init` or scheduler run `UpdateJob`.
+func (j *Job) check() error {
+	if _, ok := funcMap[j.FuncName]; !ok {
+		return FuncUnregisteredError(j.FuncName)
+	}
+
+	_, err := time.ParseDuration(j.Timeout)
+	if err != nil {
+		return &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	}
+
+	return nil
 }
 
 func (j *Job) FullName() string {
