@@ -30,6 +30,10 @@ English | [简体中文](README.zh-CN.md)
 - Supports cluster
   - [x] Remote worker nodes
 
+## Framework
+
+![Framework](assets/framework.png)
+
 ## Usage
 
 ```golang
