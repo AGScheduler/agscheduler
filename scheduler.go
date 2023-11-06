@@ -22,6 +22,8 @@ import (
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 
+var mutexS sync.Mutex
+
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
 type Scheduler struct {
@@ -266,7 +268,6 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		_, err := client.RunJob(ctx, pbJ)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
-			s.clusterNode.nodeMap[node.Queue][node.Id]["health"] = false
 		}
 	}()
 }
@@ -397,9 +398,9 @@ func (s *Scheduler) run() {
 // In addition to being called manually,
 // it is also called after `AddJob`.
 func (s *Scheduler) Start() {
-	var mutex sync.Mutex
+	defer mutexS.Unlock()
 
-	mutex.Lock()
+	mutexS.Lock()
 
 	if s.isRunning {
 		slog.Info("Scheduler is running.\n")
@@ -413,16 +414,14 @@ func (s *Scheduler) Start() {
 	go s.run()
 
 	slog.Info("Scheduler start.\n")
-
-	mutex.Unlock()
 }
 
 // In addition to being called manually,
 // there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
-	var mutex sync.Mutex
+	defer mutexS.Unlock()
 
-	mutex.Lock()
+	mutexS.Lock()
 
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.\n")
@@ -433,8 +432,6 @@ func (s *Scheduler) Stop() {
 	s.isRunning = false
 
 	slog.Info("Scheduler stop.\n")
-
-	mutex.Unlock()
 }
 
 // Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler
