@@ -37,14 +37,37 @@ func (n *Node) toClusterNode() *ClusterNode {
 	}
 }
 
+// Each node provides `RPC`, `HTTP`, `Scheduler gRPC` services,
+// but only the main node starts the scheduler,
+// the other worker nodes register with the main node
+// and then run jobs from the main node via the Scheduler's `RunJob` API.
 type ClusterNode struct {
-	Id                string
-	MainEndpoint      string
-	Endpoint          string
-	EndpointHTTP      string
+	// The unique identifier of this node, automatically generated.
+	// It should not be set manually.
+	Id string
+	// Main node RPC listening address.
+	// If you are the main, `MainEndpoint` is the same as `Endpoint`.
+	// Default: `127.0.0.1:36364`
+	MainEndpoint string
+	// RPC listening address.
+	// Used to expose the cluster's internal API.
+	// Default: `127.0.0.1:36364`
+	Endpoint string
+	// HTTP listening address.
+	// Used to expose the cluster's external API.
+	// Default: `127.0.0.1:63637`
+	EndpointHTTP string
+	// Scheduler gRPC listening address.
+	// Used to expose the scheduler's external API.
+	// Default: `127.0.0.1:36363`
 	SchedulerEndpoint string
-	Queue             string
+	// Useful when a job specifies a queue.
+	// A queue number can correspond to multiple nodes.
+	// Default: `default`
+	Queue string
 
+	// Stores node information for the entire cluster.
+	// It should not be set manually.
 	queueMap map[string]map[string]map[string]any
 }
 
@@ -76,6 +99,8 @@ func (cn *ClusterNode) setId() {
 	cn.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
 }
 
+// Initialization functions for each node,
+// called when the scheduler run `SetClusterNode`.
 func (cn *ClusterNode) init(ctx context.Context) error {
 	cn.setId()
 	cn.registerNode(cn)
@@ -87,6 +112,7 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	return nil
 }
 
+// Register node with the cluster.
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	var mutex sync.Mutex
 
@@ -112,6 +138,8 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	mutex.Unlock()
 }
 
+// Randomly select a healthy node from the cluster,
+// if you specify a queue number, filter by queue number.
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
 	for q, v := range cn.queueMap {
@@ -143,6 +171,8 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	return &ClusterNode{}, fmt.Errorf("cluster node not found")
 }
 
+// Regularly check node,
+// if a node has not been updated for a long time it is marked as unhealthy or the node is deleted.
 func (cn *ClusterNode) checkNode(ctx context.Context) {
 	interval := 400 * time.Millisecond
 	timer := time.NewTimer(interval)
@@ -173,6 +203,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 	}
 }
 
+// RPC API
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s:%s`", args.Id, args.Endpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
@@ -191,12 +222,16 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.QueueMap = cn.queueMap
 }
 
+// RPC API
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
 	reply.QueueMap = cn.queueMap
 }
 
+// Used for work node
+//
+// After initialization, node need to register with the main node and synchronize cluster node information.
 func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	slog.Info(fmt.Sprintf("Register to Cluster Main Node: `%s`", cn.MainEndpoint))
 
@@ -227,6 +262,9 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	return nil
 }
 
+// Used for work node
+//
+// Started when the node run `RegisterNodeRemote`.
 func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	interval := 200 * time.Millisecond
 	timer := time.NewTimer(interval)
@@ -246,6 +284,9 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	}
 }
 
+// Used for work node
+//
+// Update and synchronize cluster node information.
 func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
