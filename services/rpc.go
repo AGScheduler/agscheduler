@@ -97,7 +97,9 @@ func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, 
 
 type SchedulerRPCService struct {
 	Scheduler *agscheduler.Scheduler
-	Address   string
+
+	// Default: `127.0.0.1:36363`
+	Address string
 }
 
 func (s *SchedulerRPCService) Start() error {

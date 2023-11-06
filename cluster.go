@@ -21,7 +21,7 @@ type Node struct {
 	EndpointHTTP      string
 	SchedulerEndpoint string
 	Queue             string
-	QueueMap          map[string]map[string]map[string]any
+	NodeMap           map[string]map[string]map[string]any
 }
 
 func (n *Node) toClusterNode() *ClusterNode {
@@ -33,19 +33,42 @@ func (n *Node) toClusterNode() *ClusterNode {
 		SchedulerEndpoint: n.SchedulerEndpoint,
 		Queue:             n.Queue,
 
-		queueMap: n.QueueMap,
+		nodeMap: n.NodeMap,
 	}
 }
 
+// Each node provides `RPC`, `HTTP`, `Scheduler gRPC` services,
+// but only the main node starts the scheduler,
+// the other worker nodes register with the main node
+// and then run jobs from the main node via the Scheduler's `RunJob` API.
 type ClusterNode struct {
-	Id                string
-	MainEndpoint      string
-	Endpoint          string
-	EndpointHTTP      string
+	// The unique identifier of this node, automatically generated.
+	// It should not be set manually.
+	Id string
+	// Main node RPC listening address.
+	// If you are the main, `MainEndpoint` is the same as `Endpoint`.
+	// Default: `127.0.0.1:36364`
+	MainEndpoint string
+	// RPC listening address.
+	// Used to expose the cluster's internal API.
+	// Default: `127.0.0.1:36364`
+	Endpoint string
+	// HTTP listening address.
+	// Used to expose the cluster's external API.
+	// Default: `127.0.0.1:63637`
+	EndpointHTTP string
+	// Scheduler gRPC listening address.
+	// Used to expose the scheduler's external API.
+	// Default: `127.0.0.1:36363`
 	SchedulerEndpoint string
-	Queue             string
+	// Useful when a job specifies a queue.
+	// A queue can correspond to multiple nodes.
+	// Default: `default`
+	Queue string
 
-	queueMap map[string]map[string]map[string]any
+	// Stores node information for the entire cluster.
+	// It should not be set manually.
+	nodeMap map[string]map[string]map[string]any
 }
 
 func (cn *ClusterNode) toNode() *Node {
@@ -56,26 +79,28 @@ func (cn *ClusterNode) toNode() *Node {
 		EndpointHTTP:      cn.EndpointHTTP,
 		SchedulerEndpoint: cn.SchedulerEndpoint,
 		Queue:             cn.Queue,
-		QueueMap:          cn.queueMap,
+		NodeMap:           cn.nodeMap,
 	}
 }
 
-func (cn *ClusterNode) setQueueMap(qmap map[string]map[string]map[string]any) {
+func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
 	var mutex sync.Mutex
 
 	mutex.Lock()
-	cn.queueMap = qmap
+	cn.nodeMap = nmap
 	mutex.Unlock()
 }
 
-func (cn *ClusterNode) QueueMap() map[string]map[string]map[string]any {
-	return cn.queueMap
+func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
+	return cn.nodeMap
 }
 
 func (cn *ClusterNode) setId() {
 	cn.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
 }
 
+// Initialization functions for each node,
+// called when the scheduler run `SetClusterNode`.
 func (cn *ClusterNode) init(ctx context.Context) error {
 	cn.setId()
 	cn.registerNode(cn)
@@ -87,34 +112,43 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	return nil
 }
 
+// Register node with the cluster.
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	var mutex sync.Mutex
 
 	mutex.Lock()
 
-	if cn.queueMap == nil {
-		cn.queueMap = make(map[string]map[string]map[string]any)
+	if cn.nodeMap == nil {
+		cn.nodeMap = make(map[string]map[string]map[string]any)
 	}
-	if _, ok := cn.queueMap[n.Queue]; !ok {
-		cn.queueMap[n.Queue] = map[string]map[string]any{}
+	if _, ok := cn.nodeMap[n.Queue]; !ok {
+		cn.nodeMap[n.Queue] = map[string]map[string]any{}
 	}
-	cn.queueMap[n.Queue][n.Id] = map[string]any{
-		"id":                 n.Id,
-		"main_endpoint":      n.MainEndpoint,
-		"endpoint":           n.Endpoint,
-		"endpoint_http":      n.EndpointHTTP,
-		"scheduler_endpoint": n.SchedulerEndpoint,
-		"queue":              n.Queue,
-		"health":             true,
-		"last_register_time": time.Now().UTC(),
+	now := time.Now().UTC()
+	register_time := cn.nodeMap[n.Queue][n.Id]["register_time"]
+	if register_time == nil {
+		register_time = now
+	}
+	cn.nodeMap[n.Queue][n.Id] = map[string]any{
+		"id":                  n.Id,
+		"main_endpoint":       n.MainEndpoint,
+		"endpoint":            n.Endpoint,
+		"endpoint_http":       n.EndpointHTTP,
+		"scheduler_endpoint":  n.SchedulerEndpoint,
+		"queue":               n.Queue,
+		"health":              true,
+		"register_time":       register_time,
+		"last_heartbeat_time": now,
 	}
 
 	mutex.Unlock()
 }
 
+// Randomly select a healthy node from the cluster,
+// if you specify a queue, filter by queue.
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
-	for q, v := range cn.queueMap {
+	for q, v := range cn.nodeMap {
 		if len(queues) != 0 && !slices.Contains(queues, q) {
 			continue
 		}
@@ -143,6 +177,8 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	return &ClusterNode{}, fmt.Errorf("cluster node not found")
 }
 
+// Regularly check node,
+// if a node has not been updated for a long time it is marked as unhealthy or the node is deleted.
 func (cn *ClusterNode) checkNode(ctx context.Context) {
 	interval := 400 * time.Millisecond
 	timer := time.NewTimer(interval)
@@ -153,17 +189,17 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 			return
 		case <-timer.C:
 			now := time.Now().UTC()
-			for _, v := range cn.queueMap {
+			for _, v := range cn.nodeMap {
 				for id, v2 := range v {
 					if cn.Id == id {
 						continue
 					}
 					endpoint := v2["endpoint"].(string)
-					lastRegisterTime := v2["last_register_time"].(time.Time)
-					if now.Sub(lastRegisterTime) > 5*time.Minute {
+					lastHeartbeatTime := v2["last_heartbeat_time"].(time.Time)
+					if now.Sub(lastHeartbeatTime) > 5*time.Minute {
 						delete(v, id)
 						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` have been deleted because unhealthy", id, endpoint))
-					} else if now.Sub(lastRegisterTime) > 400*time.Millisecond {
+					} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
 						v2["health"] = false
 					}
 				}
@@ -173,6 +209,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 	}
 }
 
+// RPC API
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s:%s`", args.Id, args.Endpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
@@ -188,15 +225,19 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.SchedulerEndpoint = cn.SchedulerEndpoint
 	reply.Queue = cn.Queue
 
-	reply.QueueMap = cn.queueMap
+	reply.NodeMap = cn.nodeMap
 }
 
+// RPC API
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
-	reply.QueueMap = cn.queueMap
+	reply.NodeMap = cn.nodeMap
 }
 
+// Used for worker node
+//
+// After initialization, node need to register with the main node and synchronize cluster node information.
 func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	slog.Info(fmt.Sprintf("Register to Cluster Main Node: `%s`", cn.MainEndpoint))
 
@@ -216,7 +257,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	case <-time.After(3 * time.Second):
 		return fmt.Errorf("register to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
-	cn.setQueueMap(main.QueueMap)
+	cn.setNodeMap(main.NodeMap)
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler HTTP Service listening at: %s", main.EndpointHTTP))
@@ -227,6 +268,9 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	return nil
 }
 
+// Used for worker node
+//
+// Started when the node run `RegisterNodeRemote`.
 func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	interval := 200 * time.Millisecond
 	timer := time.NewTimer(interval)
@@ -246,6 +290,9 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	}
 }
 
+// Used for worker node
+//
+// Update and synchronize cluster node information.
 func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	rClient, err := rpc.DialHTTP("tcp", cn.MainEndpoint)
 	if err != nil {
@@ -263,7 +310,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	case <-time.After(400 * time.Millisecond):
 		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
-	cn.setQueueMap(main.QueueMap)
+	cn.setNodeMap(main.NodeMap)
 
 	return nil
 }

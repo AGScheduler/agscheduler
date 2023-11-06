@@ -28,7 +28,7 @@ func (crs *CRPCService) Ping(args *agscheduler.Node, reply *agscheduler.Node) er
 }
 
 func (crs *CRPCService) Nodes(filters map[string]any, reply *map[string]map[string]map[string]any) error {
-	*reply = crs.cn.QueueMap()
+	*reply = crs.cn.NodeMap()
 	return nil
 }
 

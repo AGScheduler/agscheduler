@@ -37,7 +37,7 @@ type Job struct {
 	Id string `json:"id"`
 	// User defined.
 	Name string `json:"name"`
-	// Optional: `TYPE_DATETIME` | `TYPE_INTERVAL` | `TYPE_CRON`.
+	// Optional: `TYPE_DATETIME` | `TYPE_INTERVAL` | `TYPE_CRON`
 	Type string `json:"type"`
 	// It can be used when Type is `TYPE_DATETIME`.
 	StartAt string `json:"start_at"`
@@ -48,6 +48,7 @@ type Job struct {
 	// It can be used when Type is `TYPE_CRON`.
 	CronExpr string `json:"cron_expr"`
 	// Refer to `time.LoadLocation`.
+	// Default: `UTC`
 	Timezone string `json:"timezone"`
 	// The job actually runs the function,
 	// and you need to register it through 'RegisterFuncs' before using it.
@@ -60,6 +61,7 @@ type Job struct {
 	// Arguments for `Func`.
 	Args map[string]any `json:"args"`
 	// The running timeout of `Func`.
+	// Default: `1h`
 	Timeout string `json:"timeout"`
 	// Used in cluster mode, if empty, randomly pick a node to run `Func`.
 	Queues []string `json:"queues"`
@@ -69,7 +71,7 @@ type Job struct {
 	// Automatic update, not manual setting.
 	// When the job is paused, this field is set to `9999-09-09 09:09:09`.
 	NextRunTime time.Time `json:"next_run_time"`
-	// Optional: `STATUS_RUNNING` | `STATUS_PAUSED`.
+	// Optional: `STATUS_RUNNING` | `STATUS_PAUSED`
 	// It should not be set manually.
 	Status string `json:"status"`
 }
@@ -81,9 +83,54 @@ func (js JobSlice) Len() int           { return len(js) }
 func (js JobSlice) Less(i, j int) bool { return js[i].NextRunTime.Before(js[j].NextRunTime) }
 func (js JobSlice) Swap(i, j int)      { js[i], js[j] = js[j], js[i] }
 
-// Set Job's Id, called when the scheduler run `AddJob`.
 func (j *Job) setId() {
 	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
+}
+
+// Initialization functions for each job,
+// called when the scheduler run `AddJob`.
+func (j *Job) init() error {
+	j.setId()
+
+	j.Status = STATUS_RUNNING
+
+	if j.Timezone == "" {
+		j.Timezone = "UTC"
+	}
+
+	if j.FuncName == "" {
+		j.FuncName = getFuncName(j.Func)
+	}
+
+	if j.Timeout == "" {
+		j.Timeout = "1h"
+	}
+
+	nextRunTime, err := CalcNextRunTime(*j)
+	if err != nil {
+		return err
+	}
+	j.NextRunTime = nextRunTime
+
+	if err := j.check(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Called when the job run `init` or scheduler run `UpdateJob`.
+func (j *Job) check() error {
+	if _, ok := funcMap[j.FuncName]; !ok {
+		return FuncUnregisteredError(j.FuncName)
+	}
+
+	_, err := time.ParseDuration(j.Timeout)
+	if err != nil {
+		return &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	}
+
+	return nil
 }
 
 func (j *Job) FullName() string {

@@ -9,6 +9,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorhill/cronexpr"
@@ -101,43 +102,11 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
-	// Temporary Id conflict resolution: Generate in a loop until there is no conflict
-	// TODO: Modify it
-	for {
-		j.setId()
-		if _, err := s.GetJob(j.Id); err != nil {
-			break
-		}
+	if err := j.init(); err != nil {
+		return Job{}, err
 	}
 
 	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
-
-	j.Status = STATUS_RUNNING
-
-	if j.Timezone == "" {
-		j.Timezone = "UTC"
-	}
-
-	if j.FuncName == "" {
-		j.FuncName = getFuncName(j.Func)
-	}
-	if _, ok := funcMap[j.FuncName]; !ok {
-		return Job{}, FuncUnregisteredError(j.FuncName)
-	}
-
-	if j.Timeout == "" {
-		j.Timeout = "1h"
-	}
-	_, err := time.ParseDuration(j.Timeout)
-	if err != nil {
-		return Job{}, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
-	}
-
-	nextRunTime, err := CalcNextRunTime(j)
-	if err != nil {
-		return Job{}, err
-	}
-	j.NextRunTime = nextRunTime
 
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
@@ -163,15 +132,8 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 		return Job{}, err
 	}
 
-	lastNextWakeupInterval := s.getNextWakeupInterval()
-
-	if _, ok := funcMap[j.FuncName]; !ok {
-		return Job{}, FuncUnregisteredError(j.FuncName)
-	}
-
-	_, err := time.ParseDuration(j.Timeout)
-	if err != nil {
-		return Job{}, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	if err := j.check(); err != nil {
+		return Job{}, err
 	}
 
 	nextRunTime, err := CalcNextRunTime(j)
@@ -180,14 +142,18 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 	}
 	j.NextRunTime = nextRunTime
 
-	err = s.store.UpdateJob(j)
+	lastNextWakeupInterval := s.getNextWakeupInterval()
+
+	if err := s.store.UpdateJob(j); err != nil {
+		return Job{}, err
+	}
 
 	nextWakeupInterval := s.getNextWakeupInterval()
 	if nextWakeupInterval < lastNextWakeupInterval {
 		s.wakeup()
 	}
 
-	return j, err
+	return j, nil
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
@@ -300,7 +266,7 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		_, err := client.RunJob(ctx, pbJ)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
-			s.clusterNode.queueMap[node.Queue][node.Id]["health"] = false
+			s.clusterNode.nodeMap[node.Queue][node.Id]["health"] = false
 		}
 	}()
 }
@@ -396,7 +362,6 @@ func (s *Scheduler) run() {
 
 			// If there are ineligible job, subsequent job do not need to be checked.
 			sort.Sort(JobSlice(js))
-
 			for _, j := range js {
 				if j.NextRunTime.Before(now) {
 					nextRunTime, err := CalcNextRunTime(j)
@@ -429,7 +394,13 @@ func (s *Scheduler) run() {
 	}
 }
 
+// In addition to being called manually,
+// it is also called after `AddJob`.
 func (s *Scheduler) Start() {
+	var mutex sync.Mutex
+
+	mutex.Lock()
+
 	if s.isRunning {
 		slog.Info("Scheduler is running.\n")
 		return
@@ -442,9 +413,17 @@ func (s *Scheduler) Start() {
 	go s.run()
 
 	slog.Info("Scheduler start.\n")
+
+	mutex.Unlock()
 }
 
+// In addition to being called manually,
+// there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
+	var mutex sync.Mutex
+
+	mutex.Lock()
+
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.\n")
 		return
@@ -454,6 +433,8 @@ func (s *Scheduler) Stop() {
 	s.isRunning = false
 
 	slog.Info("Scheduler stop.\n")
+
+	mutex.Unlock()
 }
 
 // Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler
