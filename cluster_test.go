@@ -96,7 +96,7 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.Id = id
 	cn.registerNode(cn)
 	cn.Id = "1"
-	cn.nodeMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
+	cn.nodeMap[cn.Queue][id]["last_heartbeat_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
 	assert.Equal(t, true, cn.nodeMap[cn.Queue][id]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -106,7 +106,7 @@ func TestClusterCheckNode(t *testing.T) {
 
 	assert.Equal(t, false, cn.nodeMap[cn.Queue][id]["health"].(bool))
 
-	cn.nodeMap[cn.Queue][id]["last_register_time"] = time.Now().UTC().Add(-6 * time.Minute)
+	cn.nodeMap[cn.Queue][id]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
 	time.Sleep(500 * time.Millisecond)
 
 	_, ok := cn.nodeMap[cn.Queue][id]

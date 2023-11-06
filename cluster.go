@@ -124,15 +124,21 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	if _, ok := cn.nodeMap[n.Queue]; !ok {
 		cn.nodeMap[n.Queue] = map[string]map[string]any{}
 	}
+	now := time.Now().UTC()
+	register_time := cn.nodeMap[n.Queue][n.Id]["register_time"]
+	if register_time == nil {
+		register_time = now
+	}
 	cn.nodeMap[n.Queue][n.Id] = map[string]any{
-		"id":                 n.Id,
-		"main_endpoint":      n.MainEndpoint,
-		"endpoint":           n.Endpoint,
-		"endpoint_http":      n.EndpointHTTP,
-		"scheduler_endpoint": n.SchedulerEndpoint,
-		"queue":              n.Queue,
-		"health":             true,
-		"last_register_time": time.Now().UTC(),
+		"id":                  n.Id,
+		"main_endpoint":       n.MainEndpoint,
+		"endpoint":            n.Endpoint,
+		"endpoint_http":       n.EndpointHTTP,
+		"scheduler_endpoint":  n.SchedulerEndpoint,
+		"queue":               n.Queue,
+		"health":              true,
+		"register_time":       register_time,
+		"last_heartbeat_time": now,
 	}
 
 	mutex.Unlock()
@@ -189,11 +195,11 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 						continue
 					}
 					endpoint := v2["endpoint"].(string)
-					lastRegisterTime := v2["last_register_time"].(time.Time)
-					if now.Sub(lastRegisterTime) > 5*time.Minute {
+					lastHeartbeatTime := v2["last_heartbeat_time"].(time.Time)
+					if now.Sub(lastHeartbeatTime) > 5*time.Minute {
 						delete(v, id)
 						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` have been deleted because unhealthy", id, endpoint))
-					} else if now.Sub(lastRegisterTime) > 400*time.Millisecond {
+					} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
 						v2["health"] = false
 					}
 				}
