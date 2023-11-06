@@ -14,6 +14,8 @@ import (
 	"github.com/google/uuid"
 )
 
+var mutexC sync.Mutex
+
 type Node struct {
 	Id                string
 	MainEndpoint      string
@@ -84,11 +86,10 @@ func (cn *ClusterNode) toNode() *Node {
 }
 
 func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
-	var mutex sync.Mutex
+	defer mutexC.Unlock()
 
-	mutex.Lock()
+	mutexC.Lock()
 	cn.nodeMap = nmap
-	mutex.Unlock()
 }
 
 func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
@@ -114,9 +115,9 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 
 // Register node with the cluster.
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
-	var mutex sync.Mutex
+	defer mutexC.Unlock()
 
-	mutex.Lock()
+	mutexC.Lock()
 
 	if cn.nodeMap == nil {
 		cn.nodeMap = make(map[string]map[string]map[string]any)
@@ -140,8 +141,6 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		"register_time":       register_time,
 		"last_heartbeat_time": now,
 	}
-
-	mutex.Unlock()
 }
 
 // Randomly select a healthy node from the cluster,
@@ -197,10 +196,14 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 					endpoint := v2["endpoint"].(string)
 					lastHeartbeatTime := v2["last_heartbeat_time"].(time.Time)
 					if now.Sub(lastHeartbeatTime) > 5*time.Minute {
+						mutexC.Lock()
 						delete(v, id)
+						mutexC.Unlock()
 						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` have been deleted because unhealthy", id, endpoint))
 					} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
+						mutexC.Lock()
 						v2["health"] = false
+						mutexC.Unlock()
 					}
 				}
 			}
