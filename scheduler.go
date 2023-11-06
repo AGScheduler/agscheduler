@@ -9,6 +9,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorhill/cronexpr"
@@ -431,6 +432,10 @@ func (s *Scheduler) run() {
 // In addition to being called manually,
 // it is also called after `AddJob`.
 func (s *Scheduler) Start() {
+	var mutex sync.Mutex
+
+	mutex.Lock()
+
 	if s.isRunning {
 		slog.Info("Scheduler is running.\n")
 		return
@@ -443,11 +448,17 @@ func (s *Scheduler) Start() {
 	go s.run()
 
 	slog.Info("Scheduler start.\n")
+
+	mutex.Unlock()
 }
 
 // In addition to being called manually,
 // there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
+	var mutex sync.Mutex
+
+	mutex.Lock()
+
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.\n")
 		return
@@ -457,6 +468,8 @@ func (s *Scheduler) Stop() {
 	s.isRunning = false
 
 	slog.Info("Scheduler stop.\n")
+
+	mutex.Unlock()
 }
 
 // Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler
