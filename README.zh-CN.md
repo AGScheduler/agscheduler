@@ -181,7 +181,7 @@ cn.RegisterNodeRemote(ctx)
 
 ## Cluster API
 
-| gRPC Function | HTTP Method | HTTP Endpoint             |
+| RPC Function | HTTP Method | HTTP Endpoint             |
 |---------------|-------------|---------------------------|
 | Nodes         | GET         | /cluster/nodes            |
 
