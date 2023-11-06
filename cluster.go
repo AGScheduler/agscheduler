@@ -62,7 +62,7 @@ type ClusterNode struct {
 	// Default: `127.0.0.1:36363`
 	SchedulerEndpoint string
 	// Useful when a job specifies a queue.
-	// A queue number can correspond to multiple nodes.
+	// A queue can correspond to multiple nodes.
 	// Default: `default`
 	Queue string
 
@@ -145,7 +145,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 }
 
 // Randomly select a healthy node from the cluster,
-// if you specify a queue number, filter by queue number.
+// if you specify a queue, filter by queue.
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
 	for q, v := range cn.nodeMap {
@@ -235,7 +235,7 @@ func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	reply.NodeMap = cn.nodeMap
 }
 
-// Used for work node
+// Used for worker node
 //
 // After initialization, node need to register with the main node and synchronize cluster node information.
 func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
@@ -268,7 +268,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	return nil
 }
 
-// Used for work node
+// Used for worker node
 //
 // Started when the node run `RegisterNodeRemote`.
 func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
@@ -290,7 +290,7 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 	}
 }
 
-// Used for work node
+// Used for worker node
 //
 // Update and synchronize cluster node information.
 func (cn *ClusterNode) pingRemote(ctx context.Context) error {

@@ -48,7 +48,7 @@ func (s *ClusterService) Start() error {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("Cluster Node Queue: `%s`", s.Cn.Queue))
+	slog.Info(fmt.Sprintf("Cluster Queue: `%s`", s.Cn.Queue))
 
 	return nil
 }
