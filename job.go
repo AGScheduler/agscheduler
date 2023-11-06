@@ -37,7 +37,7 @@ type Job struct {
 	Id string `json:"id"`
 	// User defined.
 	Name string `json:"name"`
-	// Optional: `TYPE_DATETIME` | `TYPE_INTERVAL` | `TYPE_CRON`.
+	// Optional: `TYPE_DATETIME` | `TYPE_INTERVAL` | `TYPE_CRON`
 	Type string `json:"type"`
 	// It can be used when Type is `TYPE_DATETIME`.
 	StartAt string `json:"start_at"`
@@ -48,6 +48,7 @@ type Job struct {
 	// It can be used when Type is `TYPE_CRON`.
 	CronExpr string `json:"cron_expr"`
 	// Refer to `time.LoadLocation`.
+	// Default: `UTC`
 	Timezone string `json:"timezone"`
 	// The job actually runs the function,
 	// and you need to register it through 'RegisterFuncs' before using it.
@@ -60,6 +61,7 @@ type Job struct {
 	// Arguments for `Func`.
 	Args map[string]any `json:"args"`
 	// The running timeout of `Func`.
+	// Default: `1h`
 	Timeout string `json:"timeout"`
 	// Used in cluster mode, if empty, randomly pick a node to run `Func`.
 	Queues []string `json:"queues"`
@@ -69,7 +71,7 @@ type Job struct {
 	// Automatic update, not manual setting.
 	// When the job is paused, this field is set to `9999-09-09 09:09:09`.
 	NextRunTime time.Time `json:"next_run_time"`
-	// Optional: `STATUS_RUNNING` | `STATUS_PAUSED`.
+	// Optional: `STATUS_RUNNING` | `STATUS_PAUSED`
 	// It should not be set manually.
 	Status string `json:"status"`
 }

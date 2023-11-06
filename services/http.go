@@ -108,7 +108,9 @@ func (shs *sHTTPService) stop(c *gin.Context) {
 
 type SchedulerHTTPService struct {
 	Scheduler *agscheduler.Scheduler
-	Address   string
+
+	// Default: `127.0.0.1:63636`
+	Address string
 }
 
 func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) {
