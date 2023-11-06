@@ -144,14 +144,16 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 
 	lastNextWakeupInterval := s.getNextWakeupInterval()
 
-	err = s.store.UpdateJob(j)
+	if err := s.store.UpdateJob(j); err != nil {
+		return Job{}, err
+	}
 
 	nextWakeupInterval := s.getNextWakeupInterval()
 	if nextWakeupInterval < lastNextWakeupInterval {
 		s.wakeup()
 	}
 
-	return j, err
+	return j, nil
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
