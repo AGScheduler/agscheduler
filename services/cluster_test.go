@@ -35,7 +35,7 @@ func TestClusterService(t *testing.T) {
 	err = scheduler.SetClusterNode(ctx, cnMain)
 	assert.NoError(t, err)
 
-	cservice := ClusterService{Scheduler: scheduler, Cn: cnMain}
+	cservice := ClusterService{Cn: cnMain}
 	err = cservice.Start()
 	assert.NoError(t, err)
 

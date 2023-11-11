@@ -8,8 +8,7 @@ import (
 )
 
 type ClusterService struct {
-	Scheduler *agscheduler.Scheduler
-	Cn        *agscheduler.ClusterNode
+	Cn *agscheduler.ClusterNode
 }
 
 func (s *ClusterService) Start() error {
@@ -29,20 +28,20 @@ func (s *ClusterService) Start() error {
 		s.Cn.Queue = "default"
 	}
 
-	srservice := &SchedulerRPCService{Scheduler: s.Scheduler}
+	srservice := &SchedulerRPCService{Scheduler: s.Cn.Scheduler}
 	srservice.Address = s.Cn.SchedulerEndpoint
 	err := srservice.Start()
 	if err != nil {
 		return err
 	}
 
-	crservice := &clusterRPCService{Scheduler: s.Scheduler, Cn: s.Cn}
+	crservice := &clusterRPCService{Cn: s.Cn}
 	err = crservice.Start()
 	if err != nil {
 		return err
 	}
 
-	chservice := &clusterHTTPService{Scheduler: s.Scheduler, Cn: s.Cn}
+	chservice := &clusterHTTPService{Cn: s.Cn}
 	err = chservice.Start()
 	if err != nil {
 		return err

@@ -13,8 +13,7 @@ import (
 )
 
 type CRPCService struct {
-	scheduler *agscheduler.Scheduler
-	cn        *agscheduler.ClusterNode
+	cn *agscheduler.ClusterNode
 }
 
 func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node) error {
@@ -33,14 +32,13 @@ func (crs *CRPCService) Nodes(filters map[string]any, reply *map[string]map[stri
 }
 
 type clusterRPCService struct {
-	Scheduler *agscheduler.Scheduler
-	Cn        *agscheduler.ClusterNode
+	Cn *agscheduler.ClusterNode
 }
 
 func (s *clusterRPCService) Start() error {
 	gob.Register(time.Time{})
 
-	crs := &CRPCService{scheduler: s.Scheduler, cn: s.Cn}
+	crs := &CRPCService{cn: s.Cn}
 	rpc.Register(crs)
 	rpc.HandleHTTP()
 

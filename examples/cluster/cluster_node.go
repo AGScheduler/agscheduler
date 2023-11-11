@@ -51,7 +51,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cservice := &services.ClusterService{Scheduler: scheduler, Cn: cn}
+	cservice := &services.ClusterService{Cn: cn}
 	err = cservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start cluster service: %s", err))

@@ -36,7 +36,7 @@ type Scheduler struct {
 	// It should not be set manually.
 	isRunning bool
 
-	// Used in cluster mode, bind to the scheduler.
+	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
 }
 
@@ -57,6 +57,7 @@ func (s *Scheduler) getStore() Store {
 // Bind the cluster node
 func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
 	s.clusterNode = cn
+	cn.Scheduler = s
 	if err := s.clusterNode.init(ctx); err != nil {
 		return err
 	}
