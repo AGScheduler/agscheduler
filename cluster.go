@@ -84,7 +84,7 @@ func (cn *ClusterNode) toNode() *Node {
 		EndpointHTTP:      cn.EndpointHTTP,
 		SchedulerEndpoint: cn.SchedulerEndpoint,
 		Queue:             cn.Queue,
-		NodeMap:           cn.nodeMap,
+		NodeMap:           cn.NodeMap(),
 	}
 }
 
@@ -96,6 +96,9 @@ func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
 }
 
 func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
+	defer mutexC.Unlock()
+
+	mutexC.Lock()
 	return cn.nodeMap
 }
 
@@ -150,7 +153,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 // if you specify a queue, filter by queue.
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
-	for q, v := range cn.nodeMap {
+	for q, v := range cn.NodeMap() {
 		if len(queues) != 0 && !slices.Contains(queues, q) {
 			continue
 		}
@@ -191,7 +194,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 			return
 		case <-timer.C:
 			now := time.Now().UTC()
-			for _, v := range cn.nodeMap {
+			for _, v := range cn.NodeMap() {
 				for id, v2 := range v {
 					if cn.Id == id {
 						continue
@@ -231,14 +234,14 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.SchedulerEndpoint = cn.SchedulerEndpoint
 	reply.Queue = cn.Queue
 
-	reply.NodeMap = cn.nodeMap
+	reply.NodeMap = cn.NodeMap()
 }
 
 // RPC API
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
-	reply.NodeMap = cn.nodeMap
+	reply.NodeMap = cn.NodeMap()
 }
 
 // Used for worker node
