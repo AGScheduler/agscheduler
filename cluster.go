@@ -71,6 +71,9 @@ type ClusterNode struct {
 	// Stores node information for the entire cluster.
 	// It should not be set manually.
 	nodeMap map[string]map[string]map[string]any
+
+	// Bind to each other and the scheduler.
+	Scheduler *Scheduler
 }
 
 func (cn *ClusterNode) toNode() *Node {

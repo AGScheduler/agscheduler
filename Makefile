@@ -2,8 +2,8 @@ SHELL=/bin/bash
 
 .PHONY: install format format-check lint test check-all \
 	up-ci-services down-ci-services protobuf examples \
-	up-cluster-rpc-service down-cluster-rpc-service \
-	down-cluster-rpc-service_second
+	up-cluster-ci-service down-cluster-ci-service \
+	down-cluster-ci-service_second
 
 install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
@@ -21,18 +21,18 @@ format-check:
 lint:
 	go vet .
 
-up-cluster-rpc-service:
+up-cluster-ci-service:
 	go run examples/cluster/cluster_main.go -e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663 &
 
-down-cluster-rpc-service:
-	ps -ef | grep "-e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663" \
-	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-rpc-service"
+down-cluster-ci-service:
+	ps -ef | grep "cluster_main -e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663" \
+	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
 
-down-cluster-rpc-service_second:
-	ps -ef | grep "-e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663" \
-	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-rpc-service"
+down-cluster-ci-service_second:
+	ps -ef | grep "cluster_main -e 127.0.0.1:36664 -eh 127.0.0.1:63667 -se 127.0.0.1:36663" \
+	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
 
-test: down-cluster-rpc-service up-cluster-rpc-service
+test: down-cluster-ci-service up-cluster-ci-service
 	go test \
 		-covermode=set \
 		-coverprofile=coverage.out \
@@ -43,7 +43,7 @@ test: down-cluster-rpc-service up-cluster-rpc-service
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
 
-check-all: format-check lint test down-cluster-rpc-service_second
+check-all: format-check lint test down-cluster-ci-service_second
 
 up-ci-services:
 	docker compose -f ci/docker-compose.ci.yml up -d

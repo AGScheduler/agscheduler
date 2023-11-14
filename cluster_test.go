@@ -42,8 +42,13 @@ func TestClusterNodeToNode(t *testing.T) {
 	n := cn.toNode()
 
 	valueOfCN := reflect.ValueOf(*cn)
+	typeOfCN := reflect.TypeOf(*cn)
 	valueOfN := reflect.ValueOf(*n)
 	for i := 0; i < valueOfCN.NumField(); i++ {
+		fieldType := typeOfCN.Field(i)
+		if fieldType.Name == "Scheduler" {
+			continue
+		}
 		assert.Equal(t, valueOfCN.Field(i).String(), valueOfN.Field(i).String())
 	}
 }

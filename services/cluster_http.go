@@ -11,8 +11,7 @@ import (
 )
 
 type cHTTPService struct {
-	scheduler *agscheduler.Scheduler
-	cn        *agscheduler.ClusterNode
+	cn *agscheduler.ClusterNode
 }
 
 func (chs *cHTTPService) nodes(c *gin.Context) {
@@ -20,8 +19,7 @@ func (chs *cHTTPService) nodes(c *gin.Context) {
 }
 
 type clusterHTTPService struct {
-	Scheduler *agscheduler.Scheduler
-	Cn        *agscheduler.ClusterNode
+	Cn *agscheduler.ClusterNode
 }
 
 func (s *clusterHTTPService) registerRoutes(r *gin.Engine, shs *cHTTPService) {
@@ -33,7 +31,7 @@ func (s *clusterHTTPService) Start() error {
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	s.registerRoutes(r, &cHTTPService{scheduler: s.Scheduler, cn: s.Cn})
+	s.registerRoutes(r, &cHTTPService{cn: s.Cn})
 
 	slog.Info(fmt.Sprintf("cluster HTTP Service listening at: %s", s.Cn.EndpointHTTP))
 

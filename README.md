@@ -149,7 +149,7 @@ cnMain := &agscheduler.ClusterNodeClusterNode{
 	Queue:             "default",
 }
 schedulerMain.SetClusterNode(ctx, cnMain)
-cserviceMain := &services.ClusterService{Scheduler: schedulerMain, Cn: cnMain}
+cserviceMain := &services.ClusterService{Cn: cnMain}
 cserviceMain.Start()
 
 // Node
@@ -161,7 +161,7 @@ cn := &agscheduler.ClusterNode{
 	Queue:             "node",
 }
 scheduler.SetClusterNode(ctx, cn)
-cservice := &services.ClusterService{Scheduler: scheduler, Cn: cn}
+cservice := &services.ClusterService{Cn: cn}
 cservice.Start()
 
 cn.RegisterNodeRemote(ctx)
