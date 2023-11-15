@@ -60,6 +60,22 @@ func TestClusterSetId(t *testing.T) {
 	assert.Len(t, cn.Id, 16)
 }
 
+func TestClusterInit(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cn := &ClusterNode{}
+	cn.init(ctx)
+
+	assert.Equal(t, "127.0.0.1:36364", cn.Endpoint)
+	assert.Equal(t, "127.0.0.1:36364", cn.MainEndpoint)
+	assert.Equal(t, "127.0.0.1:63637", cn.EndpointHTTP)
+	assert.Equal(t, "127.0.0.1:36363", cn.SchedulerEndpoint)
+	assert.Equal(t, "default", cn.Queue)
+	assert.NotEmpty(t, cn.Id)
+	assert.NotEmpty(t, cn.NodeMap())
+}
+
 func TestClusterRegisterNode(t *testing.T) {
 	cn := getClusterNode()
 

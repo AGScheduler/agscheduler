@@ -110,6 +110,22 @@ func (cn *ClusterNode) setId() {
 // Initialization functions for each node,
 // called when the scheduler run `SetClusterNode`.
 func (cn *ClusterNode) init(ctx context.Context) error {
+	if cn.Endpoint == "" {
+		cn.Endpoint = "127.0.0.1:36364"
+	}
+	if cn.MainEndpoint == "" {
+		cn.MainEndpoint = cn.Endpoint
+	}
+	if cn.EndpointHTTP == "" {
+		cn.EndpointHTTP = "127.0.0.1:63637"
+	}
+	if cn.SchedulerEndpoint == "" {
+		cn.SchedulerEndpoint = "127.0.0.1:36363"
+	}
+	if cn.Queue == "" {
+		cn.Queue = "default"
+	}
+
 	cn.setId()
 	cn.registerNode(cn)
 
