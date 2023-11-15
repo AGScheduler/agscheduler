@@ -163,8 +163,6 @@ cn := &agscheduler.ClusterNode{
 scheduler.SetClusterNode(ctx, cn)
 cservice := &services.ClusterService{Cn: cn}
 cservice.Start()
-
-cn.RegisterNodeRemote(ctx)
 ```
 
 ## Scheduler API
