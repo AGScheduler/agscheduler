@@ -124,7 +124,7 @@ func main() {
 
 	srservice := services.SchedulerRPCService{
 		Scheduler: scheduler,
-		Address:   "127.0.0.1:36363",
+		Address:   "127.0.0.1:36360",
 	}
 	err = srservice.Start()
 	if err != nil {
@@ -132,7 +132,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, _ := grpc.Dial("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 

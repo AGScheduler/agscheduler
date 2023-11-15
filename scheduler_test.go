@@ -46,9 +46,9 @@ func getJobWithoutFunc() agscheduler.Job {
 func getClusterNode() *agscheduler.ClusterNode {
 	return &agscheduler.ClusterNode{
 		Id:                "1",
-		MainEndpoint:      "127.0.0.1:36364",
-		Endpoint:          "127.0.0.1:36364",
-		SchedulerEndpoint: "127.0.0.1:36363",
+		MainEndpoint:      "127.0.0.1:36380",
+		Endpoint:          "127.0.0.1:36380",
+		SchedulerEndpoint: "127.0.0.1:36360",
 		Queue:             "default",
 	}
 }

@@ -49,19 +49,19 @@ type ClusterNode struct {
 	Id string
 	// Main node RPC listening address.
 	// If you are the main, `MainEndpoint` is the same as `Endpoint`.
-	// Default: `127.0.0.1:36364`
+	// Default: `127.0.0.1:36380`
 	MainEndpoint string
 	// RPC listening address.
 	// Used to expose the cluster's internal API.
-	// Default: `127.0.0.1:36364`
+	// Default: `127.0.0.1:36380`
 	Endpoint string
 	// HTTP listening address.
 	// Used to expose the cluster's external API.
-	// Default: `127.0.0.1:63637`
+	// Default: `127.0.0.1:36390`
 	EndpointHTTP string
 	// Scheduler gRPC listening address.
 	// Used to expose the scheduler's external API.
-	// Default: `127.0.0.1:36363`
+	// Default: `127.0.0.1:36360`
 	SchedulerEndpoint string
 	// Useful when a job specifies a queue.
 	// A queue can correspond to multiple nodes.
@@ -111,16 +111,16 @@ func (cn *ClusterNode) setId() {
 // called when the scheduler run `SetClusterNode`.
 func (cn *ClusterNode) init(ctx context.Context) error {
 	if cn.Endpoint == "" {
-		cn.Endpoint = "127.0.0.1:36364"
+		cn.Endpoint = "127.0.0.1:36380"
 	}
 	if cn.MainEndpoint == "" {
 		cn.MainEndpoint = cn.Endpoint
 	}
 	if cn.EndpointHTTP == "" {
-		cn.EndpointHTTP = "127.0.0.1:63637"
+		cn.EndpointHTTP = "127.0.0.1:36390"
 	}
 	if cn.SchedulerEndpoint == "" {
-		cn.SchedulerEndpoint = "127.0.0.1:36363"
+		cn.SchedulerEndpoint = "127.0.0.1:36360"
 	}
 	if cn.Queue == "" {
 		cn.Queue = "default"

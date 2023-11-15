@@ -150,7 +150,7 @@ func main() {
 
 	shservice := services.SchedulerHTTPService{
 		Scheduler: scheduler,
-		Address:   "127.0.0.1:63636",
+		Address:   "127.0.0.1:36370",
 	}
 	err = shservice.Start()
 	if err != nil {
@@ -160,7 +160,7 @@ func main() {
 
 	time.Sleep(time.Second)
 
-	baseUrl := "http://127.0.0.1:63636"
+	baseUrl := "http://127.0.0.1:36370"
 
 	runExampleHTTP(baseUrl)
 }

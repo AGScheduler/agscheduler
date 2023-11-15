@@ -9,7 +9,7 @@ import scheduler_pb2_grpc
 
 
 def run():
-    with grpc.insecure_channel("127.0.0.1:36363") as channel:
+    with grpc.insecure_channel("127.0.0.1:36360") as channel:
         args = Struct()
         args.update({"arg1": "1", "arg2": "2", "arg3": "3"}),
         stub = scheduler_pb2_grpc.SchedulerStub(channel)

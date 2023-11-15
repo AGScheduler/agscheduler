@@ -32,7 +32,7 @@ func runExampleRPC(c pb.SchedulerClient) {
 }
 
 func main() {
-	conn, _ := grpc.Dial("127.0.0.1:36363", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, _ := grpc.Dial("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 

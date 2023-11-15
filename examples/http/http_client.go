@@ -37,7 +37,7 @@ func runExampleHTTP(baseUrl string) {
 }
 
 func main() {
-	baseUrl := "http://127.0.0.1:63636"
+	baseUrl := "http://127.0.0.1:36370"
 
 	runExampleHTTP(baseUrl)
 }

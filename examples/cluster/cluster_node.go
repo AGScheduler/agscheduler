@@ -1,6 +1,6 @@
 // 1. go run examples/cluster/cluster_main.go
 // 2. go run examples/cluster/cluster_node.go
-// 3. go run examples/cluster/cluster_node.go -e 127.0.0.1:36371 -eh 127.0.0.1:63639 -se 127.0.0.1:36370
+// 3. go run examples/cluster/cluster_node.go -e 127.0.0.1:36382 -eh 127.0.0.1:36392 -se 127.0.0.1:36362
 // 4. go run examples/rpc/rpc_client.go
 
 package main
@@ -18,10 +18,10 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-var mainEndpoint = flag.String("me", "127.0.0.1:36364", "Cluster Main Node endpoint")
-var endpoint = flag.String("e", "127.0.0.1:36366", "Cluster Node endpoint")
-var endpointHTTP = flag.String("eh", "127.0.0.1:63638", "Cluster Node endpoint HTTP")
-var schedulerEndpoint = flag.String("se", "127.0.0.1:36365", "Cluster Node Scheduler endpoint")
+var mainEndpoint = flag.String("me", "127.0.0.1:36380", "Cluster Main Node endpoint")
+var endpoint = flag.String("e", "127.0.0.1:36381", "Cluster Node endpoint")
+var endpointHTTP = flag.String("eh", "127.0.0.1:36391", "Cluster Node endpoint HTTP")
+var schedulerEndpoint = flag.String("se", "127.0.0.1:36361", "Cluster Node Scheduler endpoint")
 var queue = flag.String("q", "node", "Cluster Node queue")
 
 func main() {

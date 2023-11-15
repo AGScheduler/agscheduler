@@ -98,13 +98,13 @@ func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, 
 type SchedulerRPCService struct {
 	Scheduler *agscheduler.Scheduler
 
-	// Default: `127.0.0.1:36363`
+	// Default: `127.0.0.1:36360`
 	Address string
 }
 
 func (s *SchedulerRPCService) Start() error {
 	if s.Address == "" {
-		s.Address = "127.0.0.1:36363"
+		s.Address = "127.0.0.1:36360"
 	}
 
 	lis, err := net.Listen("tcp", s.Address)
