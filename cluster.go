@@ -70,6 +70,7 @@ type ClusterNode struct {
 
 	// Stores node information for the entire cluster.
 	// It should not be set manually.
+	// def: map[<queue>]map[<id>]map[string]any
 	nodeMap map[string]map[string]map[string]any
 
 	// Bind to each other and the scheduler.
