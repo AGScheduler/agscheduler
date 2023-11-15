@@ -20,7 +20,7 @@ func TestClusterService(t *testing.T) {
 
 	store := &stores.MemoryStore{}
 	cnMain := &agscheduler.ClusterNode{
-		// MainEndpoint:      "127.0.0.1:36364",
+		MainEndpoint: ":36364",
 		// Endpoint:          "127.0.0.1:36364",
 		EndpointHTTP: "127.0.0.1:63637",
 		// SchedulerEndpoint: "127.0.0.1:36363",
