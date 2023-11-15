@@ -20,10 +20,10 @@ func TestClusterService(t *testing.T) {
 
 	store := &stores.MemoryStore{}
 	cnMain := &agscheduler.ClusterNode{
-		MainEndpoint: ":36364",
-		// Endpoint:          "127.0.0.1:36364",
-		EndpointHTTP: "127.0.0.1:63637",
-		// SchedulerEndpoint: "127.0.0.1:36363",
+		MainEndpoint: ":36380",
+		// Endpoint:          "127.0.0.1:36380",
+		EndpointHTTP: "127.0.0.1:36390",
+		// SchedulerEndpoint: "127.0.0.1:36360",
 		// Queue:             "default",
 	}
 	scheduler := &agscheduler.Scheduler{}
@@ -42,8 +42,8 @@ func TestClusterService(t *testing.T) {
 	assert.Len(t, cnMain.NodeMap(), 1)
 	cn := &agscheduler.ClusterNode{
 		MainEndpoint: cnMain.Endpoint,
-		// Endpoint:          "127.0.0.1:36366",
-		SchedulerEndpoint: "127.0.0.1:36365",
+		// Endpoint:          "127.0.0.1:36381",
+		SchedulerEndpoint: "127.0.0.1:36361",
 		Queue:             "node",
 	}
 	err = cn.RegisterNodeRemote(ctx)

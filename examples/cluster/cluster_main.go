@@ -15,9 +15,9 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-var endpoint = flag.String("e", "127.0.0.1:36364", "Cluster Main Node endpoint")
-var endpointHTTP = flag.String("eh", "127.0.0.1:63637", "Cluster Main Node endpoint HTTP")
-var schedulerEndpoint = flag.String("se", "127.0.0.1:36363", "Cluster Main Node Scheduler endpoint")
+var endpoint = flag.String("e", "127.0.0.1:36380", "Cluster Main Node endpoint")
+var endpointHTTP = flag.String("eh", "127.0.0.1:36390", "Cluster Main Node endpoint HTTP")
+var schedulerEndpoint = flag.String("se", "127.0.0.1:36360", "Cluster Main Node Scheduler endpoint")
 var queue = flag.String("q", "default", "Cluster Main Node queue")
 
 func main() {
