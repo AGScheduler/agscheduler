@@ -271,6 +271,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.MainEndpoint, err)
 	}
+	defer rClient.Close()
 
 	var main Node
 	ch := make(chan error, 1)
@@ -324,6 +325,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.MainEndpoint, err)
 	}
+	defer rClient.Close()
 
 	var main Node
 	ch := make(chan error, 1)
