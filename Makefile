@@ -34,6 +34,7 @@ down-cluster-ci-service_second:
 
 test: down-cluster-ci-service up-cluster-ci-service
 	go test \
+		-timeout 120s \
 		-covermode=set \
 		-coverprofile=coverage.out \
 		. \
