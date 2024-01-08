@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/rpc"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 )
@@ -19,6 +20,7 @@ type Node struct {
 	EndpointHTTP      string
 	SchedulerEndpoint string
 	Queue             string
+	Mode              string
 	NodeMap           map[string]map[string]map[string]any
 }
 
@@ -29,6 +31,7 @@ func (n *Node) toClusterNode() *ClusterNode {
 		EndpointHTTP:      n.EndpointHTTP,
 		SchedulerEndpoint: n.SchedulerEndpoint,
 		Queue:             n.Queue,
+		Mode:              n.Mode,
 
 		nodeMap: n.NodeMap,
 	}
@@ -61,6 +64,8 @@ type ClusterNode struct {
 	// Default: `default`
 	Queue string
 
+	Mode string
+
 	// Stores node information for the entire cluster.
 	// It should not be set manually.
 	// def: map[<queue>]map[<endpoint>]map[string]any
@@ -68,6 +73,8 @@ type ClusterNode struct {
 
 	// Bind to each other and the scheduler.
 	Scheduler *Scheduler
+
+	Raft *Raft
 }
 
 func (cn *ClusterNode) toNode() *Node {
@@ -77,6 +84,7 @@ func (cn *ClusterNode) toNode() *Node {
 		EndpointHTTP:      cn.EndpointHTTP,
 		SchedulerEndpoint: cn.SchedulerEndpoint,
 		Queue:             cn.Queue,
+		Mode:              cn.Mode,
 		NodeMap:           cn.NodeMap(),
 	}
 }
@@ -93,6 +101,23 @@ func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
 
 	mutexC.RLock()
 	return cn.nodeMap
+}
+
+func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
+	HANodeMap := make(map[string]map[string]map[string]any)
+	for queue, v := range cn.NodeMap() {
+		for endpoint, v2 := range v {
+			if strings.ToUpper(v2["mode"].(string)) != "HA" {
+				continue
+			}
+			if _, ok := HANodeMap[queue]; !ok {
+				HANodeMap[queue] = map[string]map[string]any{}
+			}
+			HANodeMap[queue][endpoint] = v2
+		}
+	}
+
+	return HANodeMap
 }
 
 func (cn *ClusterNode) IsMainNode() bool {
@@ -123,6 +148,11 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	go cn.heartbeatRemote(ctx)
 	go cn.checkNode(ctx)
 
+	if strings.ToUpper(cn.Mode) == "HA" {
+		cn.Raft = &Raft{cn: cn}
+		cn.Raft.start()
+	}
+
 	return nil
 }
 
@@ -149,6 +179,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		"endpoint_http":       n.EndpointHTTP,
 		"scheduler_endpoint":  n.SchedulerEndpoint,
 		"queue":               n.Queue,
+		"mode":                strings.ToUpper(n.Mode),
 		"health":              true,
 		"register_time":       register_time,
 		"last_heartbeat_time": now,
@@ -249,6 +280,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
+	reply.MainEndpoint = cn.MainEndpoint
 	reply.NodeMap = cn.NodeMap()
 }
 
@@ -275,6 +307,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	case <-time.After(3 * time.Second):
 		return fmt.Errorf("register to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
+	cn.MainEndpoint = main.MainEndpoint
 	cn.setNodeMap(main.NodeMap)
 
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
@@ -332,6 +365,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	case <-time.After(400 * time.Millisecond):
 		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
+	cn.MainEndpoint = main.MainEndpoint
 	cn.setNodeMap(main.NodeMap)
 
 	return nil
