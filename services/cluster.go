@@ -34,7 +34,7 @@ func (s *ClusterService) Start() error {
 
 	slog.Info(fmt.Sprintf("Cluster Queue: `%s`", s.Cn.Queue))
 
-	if s.Cn.MainEndpoint != s.Cn.Endpoint {
+	if !s.Cn.IsMainNode() {
 		err = s.Cn.RegisterNodeRemote(context.TODO())
 		if err != nil {
 			return fmt.Errorf("failed to register node remote: %s", err)

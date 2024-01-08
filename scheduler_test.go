@@ -45,7 +45,6 @@ func getJobWithoutFunc() agscheduler.Job {
 
 func getClusterNode() *agscheduler.ClusterNode {
 	return &agscheduler.ClusterNode{
-		Id:                "1",
 		MainEndpoint:      "127.0.0.1:36380",
 		Endpoint:          "127.0.0.1:36380",
 		SchedulerEndpoint: "127.0.0.1:36360",
@@ -309,7 +308,6 @@ func TestSchedulerScheduleJobRemote(t *testing.T) {
 	defer cancel()
 	err := s.SetClusterNode(ctx, cn)
 	assert.NoError(t, err)
-	cn.Id = "1"
 	_, err = s.AddJob(j)
 	assert.NoError(t, err)
 

@@ -300,7 +300,7 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 	} else {
 		// In cluster mode, all nodes are equal and may pick myself.
 		node, err := s.clusterNode.choiceNode(j.Queues)
-		if err != nil || s.clusterNode.Id == node.Id {
+		if err != nil || s.clusterNode.Endpoint == node.Endpoint {
 			isRunJobLocal = true
 		} else {
 			s._runJobRemote(node, j)
@@ -347,6 +347,11 @@ func (s *Scheduler) run() {
 			slog.Info("Scheduler quit.\n")
 			return
 		case <-s.timer.C:
+			if s.clusterNode != nil && !s.clusterNode.IsMainNode() {
+				s.timer.Reset(time.Second)
+				continue
+			}
+
 			now := time.Now().UTC()
 
 			js, err := s.GetAllJobs()

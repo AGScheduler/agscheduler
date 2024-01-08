@@ -23,6 +23,7 @@ lint:
 
 up-cluster-ci-service:
 	go run examples/cluster/cluster_main.go -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 &
+	sleep 2s
 
 down-cluster-ci-service:
 	ps -ef | grep "cluster_main -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660" \
@@ -34,6 +35,7 @@ down-cluster-ci-service_second:
 
 test: down-cluster-ci-service up-cluster-ci-service
 	go test \
+		-timeout 120s \
 		-covermode=set \
 		-coverprofile=coverage.out \
 		. \

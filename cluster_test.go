@@ -12,7 +12,6 @@ import (
 
 func getClusterNode() *ClusterNode {
 	return &ClusterNode{
-		Id:                "1",
 		MainEndpoint:      "127.0.0.1:36380",
 		Endpoint:          "127.0.0.1:36380",
 		SchedulerEndpoint: "127.0.0.1:36360",
@@ -22,7 +21,6 @@ func getClusterNode() *ClusterNode {
 
 func TestClusterToClusterNode(t *testing.T) {
 	n := Node{
-		Id:                "1",
 		MainEndpoint:      "127.0.0.1:36380",
 		Endpoint:          "127.0.0.1:36380",
 		SchedulerEndpoint: "127.0.0.1:36360",
@@ -53,13 +51,6 @@ func TestClusterNodeToNode(t *testing.T) {
 	}
 }
 
-func TestClusterSetId(t *testing.T) {
-	cn := getClusterNode()
-	cn.setId()
-
-	assert.Len(t, cn.Id, 16)
-}
-
 func TestClusterInit(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -72,7 +63,6 @@ func TestClusterInit(t *testing.T) {
 	assert.Equal(t, "127.0.0.1:36390", cn.EndpointHTTP)
 	assert.Equal(t, "127.0.0.1:36360", cn.SchedulerEndpoint)
 	assert.Equal(t, "default", cn.Queue)
-	assert.NotEmpty(t, cn.Id)
 	assert.NotEmpty(t, cn.NodeMap())
 }
 
@@ -97,7 +87,7 @@ func TestClusterChoiceNode(t *testing.T) {
 func TestClusterChoiceNodeUnhealthy(t *testing.T) {
 	cn := getClusterNode()
 	cn.registerNode(cn)
-	cn.nodeMap[cn.Queue][cn.Id]["health"] = false
+	cn.nodeMap[cn.Queue][cn.Endpoint]["health"] = false
 
 	_, err := cn.choiceNode([]string{})
 	assert.Error(t, err)
@@ -113,24 +103,25 @@ func TestClusterChoiceNodeQueueNotExist(t *testing.T) {
 
 func TestClusterCheckNode(t *testing.T) {
 	cn := getClusterNode()
-	id := "2"
-	cn.Id = id
+	endpointBak := cn.Endpoint
+	endpoint := "test"
+	cn.Endpoint = endpoint
 	cn.registerNode(cn)
-	cn.Id = "1"
-	cn.nodeMap[cn.Queue][id]["last_heartbeat_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
-	assert.Equal(t, true, cn.NodeMap()[cn.Queue][id]["health"].(bool))
+	cn.Endpoint = endpointBak
+	cn.nodeMap[cn.Queue][endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
+	assert.Equal(t, true, cn.NodeMap()[cn.Queue][endpoint]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go cn.checkNode(ctx)
 	time.Sleep(500 * time.Millisecond)
 
-	assert.Equal(t, false, cn.NodeMap()[cn.Queue][id]["health"].(bool))
+	assert.Equal(t, false, cn.NodeMap()[cn.Queue][endpoint]["health"].(bool))
 
-	cn.nodeMap[cn.Queue][id]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
+	cn.nodeMap[cn.Queue][endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
 	time.Sleep(500 * time.Millisecond)
 
-	_, ok := cn.NodeMap()[cn.Queue][id]
+	_, ok := cn.NodeMap()[cn.Queue][endpoint]
 	assert.Equal(t, false, ok)
 }
 
