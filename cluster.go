@@ -7,17 +7,13 @@ import (
 	"math/rand"
 	"net/rpc"
 	"slices"
-	"strings"
 	"sync"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var mutexC sync.Mutex
 
 type Node struct {
-	Id                string
 	MainEndpoint      string
 	Endpoint          string
 	EndpointHTTP      string
@@ -28,7 +24,6 @@ type Node struct {
 
 func (n *Node) toClusterNode() *ClusterNode {
 	return &ClusterNode{
-		Id:                n.Id,
 		MainEndpoint:      n.MainEndpoint,
 		Endpoint:          n.Endpoint,
 		EndpointHTTP:      n.EndpointHTTP,
@@ -44,13 +39,11 @@ func (n *Node) toClusterNode() *ClusterNode {
 // the other worker nodes register with the main node
 // and then run jobs from the main node via the Scheduler's `RunJob` API.
 type ClusterNode struct {
-	// The unique identifier of this node, automatically generated.
-	// It should not be set manually.
-	Id string
 	// Main node RPC listening address.
 	// If you are the main, `MainEndpoint` is the same as `Endpoint`.
 	// Default: `127.0.0.1:36380`
 	MainEndpoint string
+	// The unique identifier of this node.
 	// RPC listening address.
 	// Used to expose the cluster's internal API.
 	// Default: `127.0.0.1:36380`
@@ -70,7 +63,7 @@ type ClusterNode struct {
 
 	// Stores node information for the entire cluster.
 	// It should not be set manually.
-	// def: map[<queue>]map[<id>]map[string]any
+	// def: map[<queue>]map[<endpoint>]map[string]any
 	nodeMap map[string]map[string]map[string]any
 
 	// Bind to each other and the scheduler.
@@ -79,7 +72,6 @@ type ClusterNode struct {
 
 func (cn *ClusterNode) toNode() *Node {
 	return &Node{
-		Id:                cn.Id,
 		MainEndpoint:      cn.MainEndpoint,
 		Endpoint:          cn.Endpoint,
 		EndpointHTTP:      cn.EndpointHTTP,
@@ -103,10 +95,6 @@ func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
 	return cn.nodeMap
 }
 
-func (cn *ClusterNode) setId() {
-	cn.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
-}
-
 // Initialization functions for each node,
 // called when the scheduler run `SetClusterNode`.
 func (cn *ClusterNode) init(ctx context.Context) error {
@@ -126,7 +114,6 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 		cn.Queue = "default"
 	}
 
-	cn.setId()
 	cn.registerNode(cn)
 
 	if cn.MainEndpoint == cn.Endpoint {
@@ -149,12 +136,11 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		cn.nodeMap[n.Queue] = map[string]map[string]any{}
 	}
 	now := time.Now().UTC()
-	register_time := cn.nodeMap[n.Queue][n.Id]["register_time"]
+	register_time := cn.nodeMap[n.Queue][n.Endpoint]["register_time"]
 	if register_time == nil {
 		register_time = now
 	}
-	cn.nodeMap[n.Queue][n.Id] = map[string]any{
-		"id":                  n.Id,
+	cn.nodeMap[n.Queue][n.Endpoint] = map[string]any{
 		"main_endpoint":       n.MainEndpoint,
 		"endpoint":            n.Endpoint,
 		"endpoint_http":       n.EndpointHTTP,
@@ -174,14 +160,13 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 		if len(queues) != 0 && !slices.Contains(queues, q) {
 			continue
 		}
-		for id, v2 := range v {
+		for endpoint, v2 := range v {
 			if !v2["health"].(bool) {
 				continue
 			}
 			cns = append(cns, &ClusterNode{
-				Id:                id,
 				MainEndpoint:      v2["main_endpoint"].(string),
-				Endpoint:          v2["endpoint"].(string),
+				Endpoint:          endpoint,
 				EndpointHTTP:      v2["endpoint_http"].(string),
 				SchedulerEndpoint: v2["scheduler_endpoint"].(string),
 				Queue:             v2["queue"].(string),
@@ -212,17 +197,16 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 		case <-timer.C:
 			now := time.Now().UTC()
 			for _, v := range cn.NodeMap() {
-				for id, v2 := range v {
-					if cn.Id == id {
+				for endpoint, v2 := range v {
+					if cn.Endpoint == endpoint {
 						continue
 					}
-					endpoint := v2["endpoint"].(string)
 					lastHeartbeatTime := v2["last_heartbeat_time"].(time.Time)
 					if now.Sub(lastHeartbeatTime) > 5*time.Minute {
 						mutexC.Lock()
-						delete(v, id)
+						delete(v, endpoint)
 						mutexC.Unlock()
-						slog.Warn(fmt.Sprintf("Cluster node `%s:%s` have been deleted because unhealthy", id, endpoint))
+						slog.Warn(fmt.Sprintf("Cluster node `%s` have been deleted because unhealthy", endpoint))
 					} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
 						mutexC.Lock()
 						v2["health"] = false
@@ -237,14 +221,13 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 
 // RPC API
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
-	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s:%s`", args.Id, args.Endpoint))
+	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s`", args.Endpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
 	slog.Info(fmt.Sprintf("Cluster Node Scheduler HTTP Service listening at: %s", args.EndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Node Queue: `%s`", args.Queue))
 
 	cn.registerNode(args.toClusterNode())
 
-	reply.Id = cn.Id
 	reply.MainEndpoint = cn.MainEndpoint
 	reply.Endpoint = cn.Endpoint
 	reply.EndpointHTTP = cn.EndpointHTTP

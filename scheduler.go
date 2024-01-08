@@ -300,7 +300,7 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 	} else {
 		// In cluster mode, all nodes are equal and may pick myself.
 		node, err := s.clusterNode.choiceNode(j.Queues)
-		if err != nil || s.clusterNode.Id == node.Id {
+		if err != nil || s.clusterNode.Endpoint == node.Endpoint {
 			isRunJobLocal = true
 		} else {
 			s._runJobRemote(node, j)
