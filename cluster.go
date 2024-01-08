@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var mutexC sync.Mutex
+var mutexC sync.RWMutex
 
 type Node struct {
 	MainEndpoint      string
@@ -89,10 +89,14 @@ func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
 }
 
 func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
-	defer mutexC.Unlock()
+	defer mutexC.RUnlock()
 
-	mutexC.Lock()
+	mutexC.RLock()
 	return cn.nodeMap
+}
+
+func (cn *ClusterNode) IsMainNode() bool {
+	return cn.MainEndpoint == cn.Endpoint
 }
 
 // Initialization functions for each node,
@@ -116,9 +120,8 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 
 	cn.registerNode(cn)
 
-	if cn.MainEndpoint == cn.Endpoint {
-		go cn.checkNode(ctx)
-	}
+	go cn.heartbeatRemote(ctx)
+	go cn.checkNode(ctx)
 
 	return nil
 }
@@ -195,6 +198,11 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
+			if !cn.IsMainNode() {
+				timer.Reset(interval)
+				continue
+			}
+
 			now := time.Now().UTC()
 			for _, v := range cn.NodeMap() {
 				for endpoint, v2 := range v {
@@ -273,8 +281,6 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler HTTP Service listening at: %s", main.EndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Main Node Queue: `%s`", main.Queue))
 
-	go cn.heartbeatRemote(ctx)
-
 	return nil
 }
 
@@ -290,6 +296,11 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
+			if cn.IsMainNode() {
+				timer.Reset(interval)
+				continue
+			}
+
 			if err := cn.pingRemote(ctx); err != nil {
 				slog.Info(fmt.Sprintf("Ping remote error: %s", err))
 				timer.Reset(time.Second)
