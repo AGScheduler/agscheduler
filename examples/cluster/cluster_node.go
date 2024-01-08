@@ -23,6 +23,7 @@ var endpoint = flag.String("e", "127.0.0.1:36381", "Cluster Node endpoint")
 var endpointHTTP = flag.String("eh", "127.0.0.1:36391", "Cluster Node endpoint HTTP")
 var schedulerEndpoint = flag.String("se", "127.0.0.1:36361", "Cluster Node Scheduler endpoint")
 var queue = flag.String("q", "node", "Cluster Node queue")
+var mode = flag.String("m", "", "Cluster Node mode")
 
 func main() {
 	agscheduler.RegisterFuncs(examples.PrintMsg)
@@ -37,6 +38,7 @@ func main() {
 		EndpointHTTP:      *endpointHTTP,
 		SchedulerEndpoint: *schedulerEndpoint,
 		Queue:             *queue,
+		Mode:              *mode,
 	}
 
 	scheduler := &agscheduler.Scheduler{}
