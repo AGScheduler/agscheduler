@@ -347,6 +347,11 @@ func (s *Scheduler) run() {
 			slog.Info("Scheduler quit.\n")
 			return
 		case <-s.timer.C:
+			if s.clusterNode != nil && !s.clusterNode.IsMainNode() {
+				s.timer.Reset(time.Second)
+				continue
+			}
+
 			now := time.Now().UTC()
 
 			js, err := s.GetAllJobs()
