@@ -65,6 +65,10 @@ func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
 	return nil
 }
 
+func (s *Scheduler) IsClusterMode() bool {
+	return s.clusterNode != nil
+}
+
 func (s *Scheduler) getClusterNode() *ClusterNode {
 	return s.clusterNode
 }
@@ -295,7 +299,7 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 	isRunJobLocal := false
 
 	// In standalone mode.
-	if s.clusterNode == nil {
+	if !s.IsClusterMode() {
 		isRunJobLocal = true
 	} else {
 		// In cluster mode, all nodes are equal and may pick myself.
@@ -347,7 +351,7 @@ func (s *Scheduler) run() {
 			slog.Info("Scheduler quit.\n")
 			return
 		case <-s.timer.C:
-			if s.clusterNode != nil && !s.clusterNode.IsMainNode() {
+			if s.IsClusterMode() && !s.clusterNode.IsMainNode() {
 				s.timer.Reset(time.Second)
 				continue
 			}

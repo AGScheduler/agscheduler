@@ -15,23 +15,25 @@ import (
 var mutexC sync.RWMutex
 
 type Node struct {
-	MainEndpoint      string
-	Endpoint          string
-	EndpointHTTP      string
-	SchedulerEndpoint string
-	Queue             string
-	Mode              string
-	NodeMap           map[string]map[string]map[string]any
+	MainEndpoint          string
+	Endpoint              string
+	EndpointHTTP          string
+	SchedulerEndpoint     string
+	SchedulerEndpointHTTP string
+	Queue                 string
+	Mode                  string
+	NodeMap               map[string]map[string]map[string]any
 }
 
 func (n *Node) toClusterNode() *ClusterNode {
 	return &ClusterNode{
-		MainEndpoint:      n.MainEndpoint,
-		Endpoint:          n.Endpoint,
-		EndpointHTTP:      n.EndpointHTTP,
-		SchedulerEndpoint: n.SchedulerEndpoint,
-		Queue:             n.Queue,
-		Mode:              n.Mode,
+		MainEndpoint:          n.MainEndpoint,
+		Endpoint:              n.Endpoint,
+		EndpointHTTP:          n.EndpointHTTP,
+		SchedulerEndpoint:     n.SchedulerEndpoint,
+		SchedulerEndpointHTTP: n.SchedulerEndpointHTTP,
+		Queue:                 n.Queue,
+		Mode:                  n.Mode,
 
 		nodeMap: n.NodeMap,
 	}
@@ -59,6 +61,10 @@ type ClusterNode struct {
 	// Used to expose the scheduler's external API.
 	// Default: `127.0.0.1:36360`
 	SchedulerEndpoint string
+	// Scheduler HTTP listening address.
+	// Used to expose the scheduler's external API.
+	// Default: `127.0.0.1:36370`
+	SchedulerEndpointHTTP string
 	// Useful when a job specifies a queue.
 	// A queue can correspond to multiple nodes.
 	// Default: `default`
@@ -79,13 +85,14 @@ type ClusterNode struct {
 
 func (cn *ClusterNode) toNode() *Node {
 	return &Node{
-		MainEndpoint:      cn.MainEndpoint,
-		Endpoint:          cn.Endpoint,
-		EndpointHTTP:      cn.EndpointHTTP,
-		SchedulerEndpoint: cn.SchedulerEndpoint,
-		Queue:             cn.Queue,
-		Mode:              cn.Mode,
-		NodeMap:           cn.NodeMap(),
+		MainEndpoint:          cn.MainEndpoint,
+		Endpoint:              cn.Endpoint,
+		EndpointHTTP:          cn.EndpointHTTP,
+		SchedulerEndpoint:     cn.SchedulerEndpoint,
+		SchedulerEndpointHTTP: cn.SchedulerEndpointHTTP,
+		Queue:                 cn.Queue,
+		Mode:                  cn.Mode,
+		NodeMap:               cn.NodeMap(),
 	}
 }
 
@@ -120,6 +127,19 @@ func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
 	return HANodeMap
 }
 
+func (cn *ClusterNode) MainNode() map[string]any {
+	for _, v := range cn.HANodeMap() {
+		for endpoint, v2 := range v {
+			if cn.MainEndpoint != endpoint {
+				continue
+			}
+			return v2
+		}
+	}
+
+	return make(map[string]any)
+}
+
 func (cn *ClusterNode) IsMainNode() bool {
 	return cn.MainEndpoint == cn.Endpoint
 }
@@ -138,6 +158,9 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	}
 	if cn.SchedulerEndpoint == "" {
 		cn.SchedulerEndpoint = "127.0.0.1:36360"
+	}
+	if cn.SchedulerEndpointHTTP == "" {
+		cn.SchedulerEndpointHTTP = "127.0.0.1:36370"
 	}
 	if cn.Queue == "" {
 		cn.Queue = "default"
@@ -174,15 +197,16 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		register_time = now
 	}
 	cn.nodeMap[n.Queue][n.Endpoint] = map[string]any{
-		"main_endpoint":       n.MainEndpoint,
-		"endpoint":            n.Endpoint,
-		"endpoint_http":       n.EndpointHTTP,
-		"scheduler_endpoint":  n.SchedulerEndpoint,
-		"queue":               n.Queue,
-		"mode":                strings.ToUpper(n.Mode),
-		"health":              true,
-		"register_time":       register_time,
-		"last_heartbeat_time": now,
+		"main_endpoint":           n.MainEndpoint,
+		"endpoint":                n.Endpoint,
+		"endpoint_http":           n.EndpointHTTP,
+		"scheduler_endpoint":      n.SchedulerEndpoint,
+		"scheduler_endpoint_http": n.SchedulerEndpointHTTP,
+		"queue":                   n.Queue,
+		"mode":                    strings.ToUpper(n.Mode),
+		"health":                  true,
+		"register_time":           register_time,
+		"last_heartbeat_time":     now,
 	}
 }
 
@@ -199,11 +223,12 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 				continue
 			}
 			cns = append(cns, &ClusterNode{
-				MainEndpoint:      v2["main_endpoint"].(string),
-				Endpoint:          endpoint,
-				EndpointHTTP:      v2["endpoint_http"].(string),
-				SchedulerEndpoint: v2["scheduler_endpoint"].(string),
-				Queue:             v2["queue"].(string),
+				MainEndpoint:          v2["main_endpoint"].(string),
+				Endpoint:              endpoint,
+				EndpointHTTP:          v2["endpoint_http"].(string),
+				SchedulerEndpoint:     v2["scheduler_endpoint"].(string),
+				SchedulerEndpointHTTP: v2["scheduler_endpoint_http"].(string),
+				Queue:                 v2["queue"].(string),
 			})
 		}
 	}
@@ -261,8 +286,9 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 // RPC API
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s`", args.Endpoint))
-	slog.Info(fmt.Sprintf("Cluster Node Scheduler RPC Service listening at: %s", args.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Node Scheduler HTTP Service listening at: %s", args.EndpointHTTP))
+	slog.Info(fmt.Sprintf("Cluster Node HTTP Service listening at: %s", args.EndpointHTTP))
+	slog.Info(fmt.Sprintf("Cluster Node Scheduler gRPC Service listening at: %s", args.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Node Scheduler HTTP Service listening at: %s", args.SchedulerEndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Node Queue: `%s`", args.Queue))
 
 	cn.registerNode(args.toClusterNode())
@@ -271,6 +297,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.Endpoint = cn.Endpoint
 	reply.EndpointHTTP = cn.EndpointHTTP
 	reply.SchedulerEndpoint = cn.SchedulerEndpoint
+	reply.SchedulerEndpointHTTP = cn.SchedulerEndpointHTTP
 	reply.Queue = cn.Queue
 
 	reply.NodeMap = cn.NodeMap()
@@ -310,8 +337,9 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	cn.MainEndpoint = main.MainEndpoint
 	cn.setNodeMap(main.NodeMap)
 
-	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler RPC Service listening at: %s", main.SchedulerEndpoint))
-	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler HTTP Service listening at: %s", main.EndpointHTTP))
+	slog.Info(fmt.Sprintf("Cluster Main Node HTTP Service listening at: %s", main.EndpointHTTP))
+	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler gRPC Service listening at: %s", main.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler HTTP Service listening at: %s", main.SchedulerEndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Main Node Queue: `%s`", main.Queue))
 
 	return nil

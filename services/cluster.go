@@ -20,6 +20,13 @@ func (s *ClusterService) Start() error {
 		return err
 	}
 
+	shservice := &SchedulerHTTPService{Scheduler: s.Cn.Scheduler}
+	shservice.Address = s.Cn.SchedulerEndpointHTTP
+	err = shservice.Start()
+	if err != nil {
+		return err
+	}
+
 	crservice := &clusterRPCService{Cn: s.Cn}
 	err = crservice.Start()
 	if err != nil {

@@ -24,6 +24,7 @@ func TestClusterService(t *testing.T) {
 		// Endpoint:          "127.0.0.1:36380",
 		EndpointHTTP: "127.0.0.1:36390",
 		// SchedulerEndpoint: "127.0.0.1:36360",
+		SchedulerEndpointHTTP: "127.0.0.1:36372",
 		// Queue:             "default",
 	}
 	scheduler := &agscheduler.Scheduler{}
@@ -43,8 +44,9 @@ func TestClusterService(t *testing.T) {
 	cn := &agscheduler.ClusterNode{
 		MainEndpoint: cnMain.Endpoint,
 		// Endpoint:          "127.0.0.1:36381",
-		SchedulerEndpoint: "127.0.0.1:36361",
-		Queue:             "node",
+		SchedulerEndpoint:     "127.0.0.1:36361",
+		SchedulerEndpointHTTP: "127.0.0.1:36371",
+		Queue:                 "node",
 	}
 	err = cn.RegisterNodeRemote(ctx)
 	assert.NoError(t, err)

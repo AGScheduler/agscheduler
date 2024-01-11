@@ -22,17 +22,17 @@ lint:
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
-	go run examples/cluster/cluster_main.go -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 &
+	go run examples/cluster/cluster_main.go -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 -seh 127.0.0.1:36670 &
 	sleep 2s
 
 .PHONY: down-cluster-ci-service
 down-cluster-ci-service:
-	ps -ef | grep "cluster_main -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660" \
+	ps -ef | grep "cluster_main -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 -seh 127.0.0.1:36670" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
 
 .PHONY: down-cluster-ci-service_second
 down-cluster-ci-service_second:
-	ps -ef | grep "cluster_main -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660" \
+	ps -ef | grep "cluster_main -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 -seh 127.0.0.1:36670" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
 
 
