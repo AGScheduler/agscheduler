@@ -135,7 +135,9 @@ func (s *SchedulerHTTPService) Start() error {
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(cors.Default())
-	r.Use(agscheduler.ClusterHAGinProxy(s.Scheduler))
+
+	chap := &agscheduler.ClusterHAProxy{Scheduler: s.Scheduler}
+	r.Use(chap.GinProxy())
 
 	s.registerRoutes(r, &sHTTPService{scheduler: s.Scheduler})
 

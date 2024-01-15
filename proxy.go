@@ -1,33 +1,95 @@
 package agscheduler
 
 import (
+	"context"
+	"fmt"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"reflect"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+
+	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
-func ClusterHAGinProxy(s *Scheduler) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if !s.IsClusterMode() {
+type ClusterHAProxy struct {
+	Scheduler *Scheduler
+}
+
+func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
+	return func(gc *gin.Context) {
+		if !c.Scheduler.IsClusterMode() {
 			return
 		}
 
-		if s.clusterNode.IsMainNode() {
+		if c.Scheduler.clusterNode.IsMainNode() {
 			return
 		}
 
 		proxyUrl := new(url.URL)
-		if c.Request.TLS == nil {
+		if gc.Request.TLS == nil {
 			proxyUrl.Scheme = "http"
 		} else {
 			proxyUrl.Scheme = "https"
 		}
-		proxyUrl.Host = s.clusterNode.MainNode()["scheduler_endpoint_http"].(string)
-		c.Request.Host = proxyUrl.Host
+
+		schedulerEndpointHTTP, ok := c.Scheduler.clusterNode.MainNode()["scheduler_endpoint_http"].(string)
+		if !ok {
+			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for scheduler_endpoint_http"})
+			gc.Abort()
+		}
+		proxyUrl.Host = schedulerEndpointHTTP
 
 		proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
-
-		proxy.ServeHTTP(c.Writer, c.Request)
+		proxy.ServeHTTP(gc.Writer, gc.Request)
 	}
+}
+
+func (c *ClusterHAProxy) GRPCProxyInterceptor(
+	ctx context.Context,
+	req any,
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (resp any, err error) {
+	if !c.Scheduler.IsClusterMode() {
+		return handler(ctx, req)
+	}
+
+	cn := GetClusterNode(c.Scheduler)
+	if cn.IsMainNode() {
+		return handler(ctx, req)
+	}
+
+	schedulerEndpoint, ok := cn.MainNode()["scheduler_endpoint"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid type for scheduler_endpoint")
+	}
+	conn, err := grpc.Dial(schedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("dialing %s failure", schedulerEndpoint)
+	}
+	defer conn.Close()
+
+	client := pb.NewSchedulerClient(conn)
+
+	methodParts := strings.Split(info.FullMethod, "/")
+	methodName := methodParts[len(methodParts)-1]
+	method := reflect.ValueOf(client).MethodByName(methodName)
+	if !method.IsValid() {
+		return nil, fmt.Errorf("method not found: %s", info.FullMethod)
+	}
+
+	args := []reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(req)}
+	responseValues := method.Call(args)
+	resp = responseValues[0].Interface()
+	errInter := responseValues[1].Interface()
+	if errInter != nil {
+		err = errInter.(error)
+	}
+
+	return resp, err
 }

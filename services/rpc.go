@@ -112,7 +112,8 @@ func (s *SchedulerRPCService) Start() error {
 		return fmt.Errorf("scheduler gRPC Service listen failure: %s", err)
 	}
 
-	srv := grpc.NewServer(grpc.UnaryInterceptor(panicInterceptor))
+	chap := &agscheduler.ClusterHAProxy{Scheduler: s.Scheduler}
+	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(panicInterceptor, chap.GRPCProxyInterceptor))
 	pb.RegisterSchedulerServer(srv, &sRPCService{scheduler: s.Scheduler})
 	slog.Info(fmt.Sprintf("Scheduler gRPC Service listening at: %s", lis.Addr()))
 
