@@ -31,6 +31,10 @@ func (crs *CRPCService) Nodes(filters map[string]any, reply *map[string]map[stri
 	return nil
 }
 
+func (crs *CRPCService) RunJob(j agscheduler.Job, reply *any) error {
+	return crs.cn.Scheduler.RunJob(j)
+}
+
 func (crs *CRPCService) RaftRequestVote(args agscheduler.VoteArgs, reply *agscheduler.VoteReply) error {
 	crs.cn.Raft.RPCRequestVote(args, reply)
 	return nil
