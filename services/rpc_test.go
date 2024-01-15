@@ -92,7 +92,8 @@ func TestRPCService(t *testing.T) {
 		Scheduler: scheduler,
 		// Address:   "127.0.0.1:36360",
 	}
-	srservice.Start()
+	err = srservice.Start()
+	assert.NoError(t, err)
 
 	conn, err := grpc.Dial(srservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
@@ -100,6 +101,9 @@ func TestRPCService(t *testing.T) {
 	client := pb.NewSchedulerClient(conn)
 
 	testAGSchedulerRPC(t, client)
+
+	err = srservice.Stop()
+	assert.NoError(t, err)
 
 	err = store.Clear()
 	assert.NoError(t, err)

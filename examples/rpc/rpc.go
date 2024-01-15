@@ -137,4 +137,10 @@ func main() {
 	client := pb.NewSchedulerClient(conn)
 
 	runExampleRPC(client)
+
+	err = srservice.Stop()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to stop service: %s", err))
+		os.Exit(1)
+	}
 }

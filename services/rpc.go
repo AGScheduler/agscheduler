@@ -100,6 +100,8 @@ type SchedulerRPCService struct {
 
 	// Default: `127.0.0.1:36360`
 	Address string
+
+	srv *grpc.Server
 }
 
 func (s *SchedulerRPCService) Start() error {
@@ -113,15 +115,21 @@ func (s *SchedulerRPCService) Start() error {
 	}
 
 	chap := &agscheduler.ClusterHAProxy{Scheduler: s.Scheduler}
-	srv := grpc.NewServer(grpc.ChainUnaryInterceptor(panicInterceptor, chap.GRPCProxyInterceptor))
-	pb.RegisterSchedulerServer(srv, &sRPCService{scheduler: s.Scheduler})
+	s.srv = grpc.NewServer(grpc.ChainUnaryInterceptor(panicInterceptor, chap.GRPCProxyInterceptor))
+	pb.RegisterSchedulerServer(s.srv, &sRPCService{scheduler: s.Scheduler})
 	slog.Info(fmt.Sprintf("Scheduler gRPC Service listening at: %s", lis.Addr()))
 
 	go func() {
-		if err := srv.Serve(lis); err != nil {
+		if err := s.srv.Serve(lis); err != nil {
 			slog.Error(fmt.Sprintf("Scheduler gRPC Service Unavailable: %s", err))
 		}
 	}()
+
+	return nil
+}
+
+func (s *SchedulerRPCService) Stop() error {
+	s.srv.Stop()
 
 	return nil
 }

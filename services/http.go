@@ -1,8 +1,10 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -111,6 +113,8 @@ type SchedulerHTTPService struct {
 
 	// Default: `127.0.0.1:36370`
 	Address string
+
+	srv *http.Server
 }
 
 func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) {
@@ -143,11 +147,24 @@ func (s *SchedulerHTTPService) Start() error {
 
 	slog.Info(fmt.Sprintf("Scheduler HTTP Service listening at: %s", s.Address))
 
+	s.srv = &http.Server{
+		Addr:    s.Address,
+		Handler: r,
+	}
+
 	go func() {
-		if err := r.Run(s.Address); err != nil {
+		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error(fmt.Sprintf("Scheduler HTTP Service Unavailable: %s", err))
 		}
 	}()
+
+	return nil
+}
+
+func (s *SchedulerHTTPService) Stop() error {
+	if err := s.srv.Shutdown(context.Background()); err != nil {
+		return fmt.Errorf("failed to stop service: %s", err)
+	}
 
 	return nil
 }

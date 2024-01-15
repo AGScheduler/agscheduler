@@ -163,4 +163,10 @@ func main() {
 	baseUrl := "http://127.0.0.1:36370"
 
 	runExampleHTTP(baseUrl)
+
+	err = shservice.Stop()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to stop service: %s", err))
+		os.Exit(1)
+	}
 }

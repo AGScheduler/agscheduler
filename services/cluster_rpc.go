@@ -1,10 +1,10 @@
 package services
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"net/rpc"
 	"time"
@@ -43,6 +43,8 @@ func (crs *CRPCService) RaftHeartbeat(args agscheduler.HeartbeatArgs, reply *ags
 
 type clusterRPCService struct {
 	Cn *agscheduler.ClusterNode
+
+	srv *http.Server
 }
 
 func (s *clusterRPCService) Start() error {
@@ -52,13 +54,23 @@ func (s *clusterRPCService) Start() error {
 	rpc.Register(crs)
 	rpc.HandleHTTP()
 
-	lis, err := net.Listen("tcp", s.Cn.Endpoint)
-	if err != nil {
-		return fmt.Errorf("cluster RPC Service listen failure: %s", err)
-	}
+	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", s.Cn.Endpoint))
 
-	go http.Serve(lis, nil)
-	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", lis.Addr()))
+	s.srv = &http.Server{Addr: s.Cn.Endpoint}
+
+	go func() {
+		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error(fmt.Sprintf("Cluster RPC Service Unavailable: %s", err))
+		}
+	}()
+
+	return nil
+}
+
+func (s *clusterRPCService) Stop() error {
+	if err := s.srv.Shutdown(context.Background()); err != nil {
+		return fmt.Errorf("failed to stop service: %s", err)
+	}
 
 	return nil
 }

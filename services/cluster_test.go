@@ -71,4 +71,7 @@ func TestClusterService(t *testing.T) {
 	assert.Len(t, nodeMap, 2)
 
 	time.Sleep(200 * time.Millisecond)
+
+	err = cservice.Stop()
+	assert.NoError(t, err)
 }

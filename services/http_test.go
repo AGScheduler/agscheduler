@@ -147,13 +147,15 @@ func TestHTTPService(t *testing.T) {
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
 
 	shservice := SchedulerHTTPService{
 		Scheduler: scheduler,
 		// Address:   "127.0.0.1:36370",
 	}
-	shservice.Start()
+	err = shservice.Start()
+	assert.NoError(t, err)
 
 	time.Sleep(time.Second)
 
@@ -161,5 +163,9 @@ func TestHTTPService(t *testing.T) {
 
 	testAGSchedulerHTTP(t, baseUrl)
 
-	store.Clear()
+	err = shservice.Stop()
+	assert.NoError(t, err)
+
+	err = store.Clear()
+	assert.NoError(t, err)
 }
