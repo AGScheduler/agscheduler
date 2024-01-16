@@ -140,7 +140,7 @@ func (s *SchedulerHTTPService) Start() error {
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	chap := &agscheduler.ClusterHAProxy{Scheduler: s.Scheduler}
+	chap := &ClusterHAProxy{Scheduler: s.Scheduler}
 	r.Use(chap.GinProxy())
 
 	s.registerRoutes(r, &sHTTPService{scheduler: s.Scheduler})

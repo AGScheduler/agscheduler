@@ -1,4 +1,4 @@
-package agscheduler
+package services
 
 import (
 	"context"
@@ -14,11 +14,12 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	"github.com/kwkwc/agscheduler"
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
 type ClusterHAProxy struct {
-	Scheduler *Scheduler
+	Scheduler *agscheduler.Scheduler
 }
 
 func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
@@ -27,7 +28,8 @@ func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
 			return
 		}
 
-		if c.Scheduler.clusterNode.IsMainNode() {
+		cn := agscheduler.GetClusterNode(c.Scheduler)
+		if cn.IsMainNode() {
 			return
 		}
 
@@ -38,7 +40,7 @@ func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
 			proxyUrl.Scheme = "https"
 		}
 
-		schedulerEndpointHTTP, ok := c.Scheduler.clusterNode.HAMainNode()["scheduler_endpoint_http"].(string)
+		schedulerEndpointHTTP, ok := cn.HAMainNode()["scheduler_endpoint_http"].(string)
 		if !ok {
 			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for scheduler_endpoint_http"})
 			gc.Abort()
@@ -60,7 +62,7 @@ func (c *ClusterHAProxy) GRPCProxyInterceptor(
 		return handler(ctx, req)
 	}
 
-	cn := GetClusterNode(c.Scheduler)
+	cn := agscheduler.GetClusterNode(c.Scheduler)
 	if cn.IsMainNode() {
 		return handler(ctx, req)
 	}
