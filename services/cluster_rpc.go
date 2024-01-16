@@ -36,12 +36,16 @@ func (crs *CRPCService) RunJob(j agscheduler.Job, reply *any) error {
 }
 
 func (crs *CRPCService) RaftRequestVote(args agscheduler.VoteArgs, reply *agscheduler.VoteReply) error {
-	crs.cn.Raft.RPCRequestVote(args, reply)
+	if crs.cn.Raft != nil {
+		crs.cn.Raft.RPCRequestVote(args, reply)
+	}
 	return nil
 }
 
 func (crs *CRPCService) RaftHeartbeat(args agscheduler.HeartbeatArgs, reply *agscheduler.HeartbeatReply) error {
-	crs.cn.Raft.RPCHeartbeat(args, reply)
+	if crs.cn.Raft != nil {
+		crs.cn.Raft.RPCHeartbeat(args, reply)
+	}
 	return nil
 }
 
