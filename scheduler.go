@@ -257,6 +257,13 @@ func (s *Scheduler) _runJob(j Job) {
 // Call the RPC API of the other node to run the `RunJob`.
 func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` _runJobRemote error: %s\n", j.FullName(), err))
+				slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+			}
+		}()
+
 		rClient, err := rpc.DialHTTP("tcp", node.Endpoint)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Failed to connect to cluster node: `%s`, error: %s", node.Endpoint, err))
@@ -265,7 +272,16 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 
 		var r any
 		ch := make(chan error, 1)
-		go func() { ch <- rClient.Call("CRPCService.RunJob", j, &r) }()
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					slog.Error(fmt.Sprintf("Job `%s` CRPCService.RunJob error: %s\n", j.FullName(), err))
+					slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+				}
+			}()
+
+			ch <- rClient.Call("CRPCService.RunJob", j, &r)
+		}()
 		select {
 		case err := <-ch:
 			if err != nil {

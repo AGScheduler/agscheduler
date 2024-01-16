@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -37,7 +38,7 @@ func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
 			proxyUrl.Scheme = "https"
 		}
 
-		schedulerEndpointHTTP, ok := c.Scheduler.clusterNode.MainNode()["scheduler_endpoint_http"].(string)
+		schedulerEndpointHTTP, ok := c.Scheduler.clusterNode.HAMainNode()["scheduler_endpoint_http"].(string)
 		if !ok {
 			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for scheduler_endpoint_http"})
 			gc.Abort()
@@ -64,7 +65,7 @@ func (c *ClusterHAProxy) GRPCProxyInterceptor(
 		return handler(ctx, req)
 	}
 
-	schedulerEndpoint, ok := cn.MainNode()["scheduler_endpoint"].(string)
+	schedulerEndpoint, ok := cn.HAMainNode()["scheduler_endpoint"].(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid type for scheduler_endpoint")
 	}
@@ -75,6 +76,9 @@ func (c *ClusterHAProxy) GRPCProxyInterceptor(
 	defer conn.Close()
 
 	client := pb.NewSchedulerClient(conn)
+
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 
 	methodParts := strings.Split(info.FullMethod, "/")
 	methodName := methodParts[len(methodParts)-1]

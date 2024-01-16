@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"net/rpc"
+	"runtime/debug"
 	"time"
 )
 
@@ -49,6 +50,13 @@ type VoteReply struct {
 }
 
 func (rf *Raft) sendRequestVote(address string, args VoteArgs, reply *VoteReply) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftRequestVote error: %s\n", address, err))
+			slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+		}
+	}()
+
 	rClient, err := rpc.DialHTTP("tcp", address)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to cluster node while sending request vote: `%s`, error: %s\n", address, err))
@@ -124,6 +132,13 @@ type HeartbeatReply struct {
 }
 
 func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs, reply *HeartbeatReply) error {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftHeartbeat error: %s\n", address, err))
+			slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+		}
+	}()
+
 	rClient, err := rpc.DialHTTP("tcp", address)
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster node: `%s`, error: %s", address, err)

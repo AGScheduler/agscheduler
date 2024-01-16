@@ -114,7 +114,7 @@ func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
 	HANodeMap := make(map[string]map[string]map[string]any)
 	for queue, v := range cn.NodeMap() {
 		for endpoint, v2 := range v {
-			if strings.ToUpper(v2["mode"].(string)) != "HA" {
+			if v2["mode"].(string) != "HA" {
 				continue
 			}
 			if _, ok := HANodeMap[queue]; !ok {
@@ -127,7 +127,7 @@ func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
 	return HANodeMap
 }
 
-func (cn *ClusterNode) MainNode() map[string]any {
+func (cn *ClusterNode) HAMainNode() map[string]any {
 	for _, v := range cn.HANodeMap() {
 		for endpoint, v2 := range v {
 			if cn.MainEndpoint != endpoint {
@@ -165,13 +165,14 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	if cn.Queue == "" {
 		cn.Queue = "default"
 	}
+	cn.Mode = strings.ToUpper(cn.Mode)
 
 	cn.registerNode(cn)
 
 	go cn.heartbeatRemote(ctx)
 	go cn.checkNode(ctx)
 
-	if strings.ToUpper(cn.Mode) == "HA" {
+	if cn.Mode == "HA" {
 		cn.Raft = &Raft{cn: cn}
 		cn.Raft.start()
 	}
@@ -203,7 +204,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		"scheduler_endpoint":      n.SchedulerEndpoint,
 		"scheduler_endpoint_http": n.SchedulerEndpointHTTP,
 		"queue":                   n.Queue,
-		"mode":                    strings.ToUpper(n.Mode),
+		"mode":                    n.Mode,
 		"health":                  true,
 		"register_time":           register_time,
 		"last_heartbeat_time":     now,
