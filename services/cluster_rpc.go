@@ -59,8 +59,23 @@ func (s *clusterRPCService) Start() error {
 	gob.Register(time.Time{})
 
 	crs := &CRPCService{cn: s.Cn}
-	rpc.Register(crs)
-	rpc.HandleHTTP()
+	rpcServer := rpc.NewServer()
+	rpcServer.Register(crs)
+
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				slog.Warn(fmt.Sprintf("Handle registered error: %s\n", err))
+			}
+		}()
+
+		rpcServer.HandleHTTP(rpc.DefaultRPCPath, rpc.DefaultDebugPath)
+	}()
+
+	s.srv = &http.Server{
+		Addr:    s.Cn.Endpoint,
+		Handler: rpcServer,
+	}
 
 	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", s.Cn.Endpoint))
 
