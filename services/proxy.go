@@ -18,11 +18,11 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
-type ClusterHAProxy struct {
+type ClusterProxy struct {
 	Scheduler *agscheduler.Scheduler
 }
 
-func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
+func (c *ClusterProxy) GinProxy() gin.HandlerFunc {
 	return func(gc *gin.Context) {
 		if !c.Scheduler.IsClusterMode() {
 			return
@@ -40,7 +40,7 @@ func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
 			proxyUrl.Scheme = "https"
 		}
 
-		schedulerEndpointHTTP, ok := cn.HAMainNode()["scheduler_endpoint_http"].(string)
+		schedulerEndpointHTTP, ok := cn.MainNode()["scheduler_endpoint_http"].(string)
 		if !ok {
 			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for scheduler_endpoint_http"})
 			gc.Abort()
@@ -52,7 +52,7 @@ func (c *ClusterHAProxy) GinProxy() gin.HandlerFunc {
 	}
 }
 
-func (c *ClusterHAProxy) GRPCProxyInterceptor(
+func (c *ClusterProxy) GRPCProxyInterceptor(
 	ctx context.Context,
 	req any,
 	info *grpc.UnaryServerInfo,
@@ -67,7 +67,7 @@ func (c *ClusterHAProxy) GRPCProxyInterceptor(
 		return handler(ctx, req)
 	}
 
-	schedulerEndpoint, ok := cn.HAMainNode()["scheduler_endpoint"].(string)
+	schedulerEndpoint, ok := cn.MainNode()["scheduler_endpoint"].(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid type for scheduler_endpoint")
 	}

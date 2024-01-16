@@ -15,7 +15,7 @@ func getClusterNode() *ClusterNode {
 		MainEndpoint:          "127.0.0.1:36380",
 		Endpoint:              "127.0.0.1:36380",
 		SchedulerEndpoint:     "127.0.0.1:36360",
-		SchedulerEndpointHTTP: "127.0.0.1:363670",
+		SchedulerEndpointHTTP: "127.0.0.1:36370",
 		Queue:                 "default",
 	}
 }
@@ -58,6 +58,8 @@ func TestClusterInit(t *testing.T) {
 	defer cancel()
 
 	cn := &ClusterNode{}
+	cn.Mode = "HA"
+
 	cn.init(ctx)
 
 	assert.Equal(t, "127.0.0.1:36380", cn.MainEndpoint)
@@ -67,6 +69,7 @@ func TestClusterInit(t *testing.T) {
 	assert.Equal(t, "127.0.0.1:36370", cn.SchedulerEndpointHTTP)
 	assert.Equal(t, "default", cn.Queue)
 	assert.NotEmpty(t, cn.NodeMap())
+	assert.NotEmpty(t, cn.Raft)
 }
 
 func TestClusterRegisterNode(t *testing.T) {
@@ -77,6 +80,38 @@ func TestClusterRegisterNode(t *testing.T) {
 	cn.registerNode(cn)
 
 	assert.Len(t, cn.NodeMap(), 1)
+}
+
+func TestClusterMainNode(t *testing.T) {
+	cn := getClusterNode()
+	cn.MainEndpoint = "EndpointHA"
+	cn.Endpoint = "EndpointTest"
+	cn.Mode = "HA"
+
+	cnHA := getClusterNode()
+	cnHA.Endpoint = "EndpointHA"
+
+	assert.Empty(t, cn.MainNode())
+
+	cn.registerNode(cn)
+	cn.registerNode(cnHA)
+
+	assert.NotEmpty(t, cn.MainNode())
+}
+
+func TestClusterHANodeMap(t *testing.T) {
+	cn := getClusterNode()
+
+	cnHA := getClusterNode()
+	cnHA.Endpoint = "EndpointHA"
+	cnHA.Mode = "HA"
+
+	assert.Len(t, cn.HANodeMap(), 0)
+
+	cn.registerNode(cn)
+	cn.registerNode(cnHA)
+
+	assert.Len(t, cn.HANodeMap(), 1)
 }
 
 func TestClusterChoiceNode(t *testing.T) {

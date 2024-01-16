@@ -16,16 +16,14 @@ import (
 )
 
 func TestClusterService(t *testing.T) {
-	agscheduler.RegisterFuncs(dryRunRPC)
-
 	store := &stores.MemoryStore{}
 	cnMain := &agscheduler.ClusterNode{
-		MainEndpoint: ":36380",
-		// Endpoint:          "127.0.0.1:36380",
+		MainEndpoint: "127.0.0.1:36380",
+		// Endpoint:              "127.0.0.1:36380",
 		EndpointHTTP: "127.0.0.1:36390",
-		// SchedulerEndpoint: "127.0.0.1:36360",
-		SchedulerEndpointHTTP: "127.0.0.1:36372",
-		// Queue:             "default",
+		// SchedulerEndpoint:     "127.0.0.1:36360",
+		// SchedulerEndpointHTTP: "127.0.0.1:36370",
+		// Queue:                 "default",
 	}
 	scheduler := &agscheduler.Scheduler{}
 	err := scheduler.SetStore(store)
@@ -36,9 +34,11 @@ func TestClusterService(t *testing.T) {
 	err = scheduler.SetClusterNode(ctx, cnMain)
 	assert.NoError(t, err)
 
-	cservice := ClusterService{Cn: cnMain}
+	cservice := &ClusterService{Cn: cnMain}
 	err = cservice.Start()
 	assert.NoError(t, err)
+
+	time.Sleep(2 * time.Second)
 
 	assert.Len(t, cnMain.NodeMap(), 1)
 	cn := &agscheduler.ClusterNode{

@@ -110,6 +110,19 @@ func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
 	return cn.nodeMap
 }
 
+func (cn *ClusterNode) MainNode() map[string]any {
+	for _, v := range cn.NodeMap() {
+		for endpoint, v2 := range v {
+			if cn.MainEndpoint != endpoint {
+				continue
+			}
+			return v2
+		}
+	}
+
+	return make(map[string]any)
+}
+
 func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
 	HANodeMap := make(map[string]map[string]map[string]any)
 	for queue, v := range cn.NodeMap() {
@@ -125,19 +138,6 @@ func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
 	}
 
 	return HANodeMap
-}
-
-func (cn *ClusterNode) HAMainNode() map[string]any {
-	for _, v := range cn.HANodeMap() {
-		for endpoint, v2 := range v {
-			if cn.MainEndpoint != endpoint {
-				continue
-			}
-			return v2
-		}
-	}
-
-	return make(map[string]any)
 }
 
 func (cn *ClusterNode) IsMainNode() bool {
@@ -174,7 +174,7 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 
 	if cn.Mode == "HA" {
 		cn.Raft = &Raft{cn: cn}
-		cn.Raft.start()
+		cn.Raft.start(ctx)
 	}
 
 	return nil

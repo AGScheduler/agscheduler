@@ -1,6 +1,7 @@
 package agscheduler
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -199,52 +200,57 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 	return nil
 }
 
-func (rf *Raft) start() {
+func (rf *Raft) start(ctx context.Context) {
 	rf.role = Follower
 	rf.currentTerm = 0
 	rf.votedFor = ""
 	rf.heartbeatC = make(chan bool)
 	rf.toLeaderC = make(chan bool)
 
-	go func() {
+	go func(ctx context.Context) {
 
 		rand.New(rand.NewSource(time.Now().UnixNano()))
 
 		for {
-			switch rf.role {
-			case Follower:
-				select {
-				case <-rf.heartbeatC:
-					slog.Debug(fmt.Sprintf("Follower: `%s` recived heartbeat\n", rf.cn.Endpoint))
-				case <-time.After(time.Duration(rand.Intn(200)+400) * time.Millisecond):
-					slog.Warn(fmt.Sprintf("Follower: `%s` timeout\n", rf.cn.Endpoint))
-					rf.role = Candidate
+			select {
+			case <-ctx.Done():
+				return
+			default:
+				switch rf.role {
+				case Follower:
+					select {
+					case <-rf.heartbeatC:
+						slog.Debug(fmt.Sprintf("Follower: `%s` recived heartbeat\n", rf.cn.Endpoint))
+					case <-time.After(time.Duration(rand.Intn(200)+400) * time.Millisecond):
+						slog.Warn(fmt.Sprintf("Follower: `%s` timeout\n", rf.cn.Endpoint))
+						rf.role = Candidate
+					}
+				case Candidate:
+					slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm candidate\n", rf.cn.Endpoint))
+
+					rf.cn.Scheduler.Stop()
+
+					rf.currentTerm++
+					rf.votedFor = rf.cn.Endpoint
+					rf.voteCount = 1
+					go rf.broadcastRequestVote()
+
+					select {
+					case <-time.After(time.Duration(rand.Intn(5000)+400) * time.Millisecond):
+						rf.role = Follower
+					case <-rf.toLeaderC:
+						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader\n", rf.cn.Endpoint))
+						rf.role = Leader
+
+						rf.cn.MainEndpoint = rf.cn.Endpoint
+						rf.cn.registerNode(rf.cn)
+						rf.cn.Scheduler.Start()
+					}
+				case Leader:
+					rf.broadcastHeartbeat()
+					time.Sleep(100 * time.Millisecond)
 				}
-			case Candidate:
-				slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm candidate\n", rf.cn.Endpoint))
-
-				rf.cn.Scheduler.Stop()
-
-				rf.currentTerm++
-				rf.votedFor = rf.cn.Endpoint
-				rf.voteCount = 1
-				go rf.broadcastRequestVote()
-
-				select {
-				case <-time.After(time.Duration(rand.Intn(5000)+400) * time.Millisecond):
-					rf.role = Follower
-				case <-rf.toLeaderC:
-					slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader\n", rf.cn.Endpoint))
-					rf.role = Leader
-
-					rf.cn.MainEndpoint = rf.cn.Endpoint
-					rf.cn.registerNode(rf.cn)
-					rf.cn.Scheduler.Start()
-				}
-			case Leader:
-				rf.broadcastHeartbeat()
-				time.Sleep(100 * time.Millisecond)
 			}
 		}
-	}()
+	}(ctx)
 }
