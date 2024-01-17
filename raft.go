@@ -193,7 +193,7 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 
 	reply.Term = rf.currentTerm
 
-	rf.cn.MainEndpoint = args.LeaderEndpoint
+	rf.cn.SetMainEndpoint(args.LeaderEndpoint)
 
 	rf.heartbeatC <- true
 
@@ -242,7 +242,7 @@ func (rf *Raft) start(ctx context.Context) {
 						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader\n", rf.cn.Endpoint))
 						rf.role = Leader
 
-						rf.cn.MainEndpoint = rf.cn.Endpoint
+						rf.cn.SetMainEndpoint(rf.cn.Endpoint)
 						rf.cn.registerNode(rf.cn)
 						rf.cn.Scheduler.Start()
 					}

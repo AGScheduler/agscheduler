@@ -96,6 +96,13 @@ func (cn *ClusterNode) toNode() *Node {
 	}
 }
 
+func (cn *ClusterNode) SetMainEndpoint(endpoint string) {
+	defer mutexC.Unlock()
+
+	mutexC.Lock()
+	cn.MainEndpoint = endpoint
+}
+
 func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
 	defer mutexC.Unlock()
 
@@ -338,7 +345,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	case <-time.After(3 * time.Second):
 		return fmt.Errorf("register to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
-	cn.MainEndpoint = main.MainEndpoint
+	cn.SetMainEndpoint(main.MainEndpoint)
 	cn.setNodeMap(main.NodeMap)
 
 	slog.Info(fmt.Sprintf("Cluster Main Node HTTP Service listening at: %s", main.EndpointHTTP))
@@ -397,7 +404,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 	case <-time.After(400 * time.Millisecond):
 		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.MainEndpoint)
 	}
-	cn.MainEndpoint = main.MainEndpoint
+	cn.SetMainEndpoint(main.MainEndpoint)
 	cn.setNodeMap(main.NodeMap)
 
 	return nil
