@@ -268,6 +268,9 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 					}
 					lastHeartbeatTime := v2["last_heartbeat_time"].(time.Time)
 					if now.Sub(lastHeartbeatTime) > 5*time.Minute {
+						if v2["mode"].(string) == "HA" {
+							continue
+						}
 						mutexC.Lock()
 						delete(v, endpoint)
 						mutexC.Unlock()
