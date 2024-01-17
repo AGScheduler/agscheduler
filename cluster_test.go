@@ -62,7 +62,7 @@ func TestClusterInit(t *testing.T) {
 
 	cn.init(ctx)
 
-	assert.Equal(t, "127.0.0.1:36380", cn.MainEndpoint)
+	assert.Equal(t, "127.0.0.1:36380", cn.GetMainEndpoint())
 	assert.Equal(t, "127.0.0.1:36380", cn.Endpoint)
 	assert.Equal(t, "127.0.0.1:36390", cn.EndpointHTTP)
 	assert.Equal(t, "127.0.0.1:36360", cn.SchedulerEndpoint)
@@ -84,7 +84,7 @@ func TestClusterRegisterNode(t *testing.T) {
 
 func TestClusterMainNode(t *testing.T) {
 	cn := getClusterNode()
-	cn.MainEndpoint = "EndpointHA"
+	cn.SetMainEndpoint("EndpointHA")
 	cn.Endpoint = "EndpointTest"
 	cn.Mode = "HA"
 
@@ -187,7 +187,7 @@ func TestClusterRegisterNodeRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.MainEndpoint = "127.0.0.1:36680"
+	cn.SetMainEndpoint("127.0.0.1:36680")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -201,7 +201,7 @@ func TestClusterHeartbeatRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.MainEndpoint = "127.0.0.1:36680"
+	cn.SetMainEndpoint("127.0.0.1:36680")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -214,7 +214,7 @@ func TestClusterPingRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.MainEndpoint = "127.0.0.1:36680"
+	cn.SetMainEndpoint("127.0.0.1:36680")
 
 	err := cn.pingRemote(context.TODO())
 	assert.NoError(t, err)
