@@ -128,6 +128,8 @@ func (s *SchedulerRPCService) Start() error {
 }
 
 func (s *SchedulerRPCService) Stop() error {
+	slog.Info("Scheduler gRPC Service stop")
+
 	s.srv.Stop()
 
 	return nil

@@ -162,6 +162,8 @@ func (s *SchedulerHTTPService) Start() error {
 }
 
 func (s *SchedulerHTTPService) Stop() error {
+	slog.Info("Scheduler HTTP Service stop")
+
 	if err := s.srv.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("failed to stop service: %s", err)
 	}

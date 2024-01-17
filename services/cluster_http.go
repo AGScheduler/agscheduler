@@ -54,6 +54,8 @@ func (s *clusterHTTPService) Start() error {
 }
 
 func (s *clusterHTTPService) Stop() error {
+	slog.Info("Cluster HTTP Service stop")
+
 	if err := s.srv.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("failed to stop service: %s", err)
 	}

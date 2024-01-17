@@ -91,6 +91,8 @@ func (s *clusterRPCService) Start() error {
 }
 
 func (s *clusterRPCService) Stop() error {
+	slog.Info("Cluster RPC Service stop")
+
 	if err := s.srv.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("failed to stop service: %s", err)
 	}
