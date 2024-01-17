@@ -368,11 +368,6 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
-			if cn.IsMainNode() {
-				timer.Reset(interval)
-				continue
-			}
-
 			if err := cn.pingRemote(ctx); err != nil {
 				slog.Info(fmt.Sprintf("Ping remote error: %s", err))
 				timer.Reset(time.Second)
