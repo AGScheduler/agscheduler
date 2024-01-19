@@ -26,3 +26,7 @@ go.work
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Log
+log
+*.log
