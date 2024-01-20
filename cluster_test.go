@@ -14,9 +14,11 @@ func getClusterNode() *ClusterNode {
 	return &ClusterNode{
 		MainEndpoint:          "127.0.0.1:36380",
 		Endpoint:              "127.0.0.1:36380",
+		EndpointHTTP:          "127.0.0.1:36390",
 		SchedulerEndpoint:     "127.0.0.1:36360",
 		SchedulerEndpointHTTP: "127.0.0.1:36370",
 		Queue:                 "default",
+		Mode:                  "",
 	}
 }
 
@@ -24,9 +26,11 @@ func TestClusterToClusterNode(t *testing.T) {
 	n := Node{
 		MainEndpoint:          "127.0.0.1:36380",
 		Endpoint:              "127.0.0.1:36380",
+		EndpointHTTP:          "127.0.0.1:36390",
 		SchedulerEndpoint:     "127.0.0.1:36360",
 		SchedulerEndpointHTTP: "127.0.0.1:36370",
 		Queue:                 "default",
+		Mode:                  "",
 	}
 	cn := n.toClusterNode()
 
@@ -68,18 +72,18 @@ func TestClusterInit(t *testing.T) {
 	assert.Equal(t, "127.0.0.1:36360", cn.SchedulerEndpoint)
 	assert.Equal(t, "127.0.0.1:36370", cn.SchedulerEndpointHTTP)
 	assert.Equal(t, "default", cn.Queue)
-	assert.NotEmpty(t, cn.NodeMap())
+	assert.NotEmpty(t, cn.NodeMapCopy())
 	assert.NotEmpty(t, cn.Raft)
 }
 
 func TestClusterRegisterNode(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.NodeMap(), 0)
+	assert.Len(t, cn.NodeMapCopy(), 0)
 
 	cn.registerNode(cn)
 
-	assert.Len(t, cn.NodeMap(), 1)
+	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
 func TestClusterMainNode(t *testing.T) {
@@ -147,40 +151,40 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.registerNode(cn)
 	cn.Endpoint = endpointBak
 	cn.nodeMap[cn.Queue][endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
-	assert.Equal(t, true, cn.NodeMap()[cn.Queue][endpoint]["health"].(bool))
+	assert.Equal(t, true, cn.NodeMapCopy()[cn.Queue][endpoint]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go cn.checkNode(ctx)
 	time.Sleep(500 * time.Millisecond)
 
-	assert.Equal(t, false, cn.NodeMap()[cn.Queue][endpoint]["health"].(bool))
+	assert.Equal(t, false, cn.NodeMapCopy()[cn.Queue][endpoint]["health"].(bool))
 
 	cn.nodeMap[cn.Queue][endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
 	time.Sleep(500 * time.Millisecond)
 
-	_, ok := cn.NodeMap()[cn.Queue][endpoint]
+	_, ok := cn.NodeMapCopy()[cn.Queue][endpoint]
 	assert.Equal(t, false, ok)
 }
 
 func TestClusterRPCRegister(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.NodeMap(), 0)
+	assert.Len(t, cn.NodeMapCopy(), 0)
 
 	cn.RPCRegister(cn.toNode(), &Node{})
 
-	assert.Len(t, cn.NodeMap(), 1)
+	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
 func TestClusterRPCPing(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.NodeMap(), 0)
+	assert.Len(t, cn.NodeMapCopy(), 0)
 
 	cn.RPCPing(cn.toNode(), &Node{})
 
-	assert.Len(t, cn.NodeMap(), 1)
+	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
 func TestClusterRegisterNodeRemote(t *testing.T) {

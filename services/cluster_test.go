@@ -40,7 +40,7 @@ func TestClusterService(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	assert.Len(t, cnMain.NodeMap(), 1)
+	assert.Len(t, cnMain.NodeMapCopy(), 1)
 	cn := &agscheduler.ClusterNode{
 		MainEndpoint: cnMain.Endpoint,
 		// Endpoint:          "127.0.0.1:36381",
@@ -50,7 +50,7 @@ func TestClusterService(t *testing.T) {
 	}
 	err = cn.RegisterNodeRemote(ctx)
 	assert.NoError(t, err)
-	assert.Len(t, cnMain.NodeMap(), 2)
+	assert.Len(t, cnMain.NodeMapCopy(), 2)
 
 	resp, err := http.Get("http://" + cnMain.EndpointHTTP + "/cluster/nodes")
 	assert.NoError(t, err)

@@ -424,9 +424,8 @@ func (s *Scheduler) run() {
 // In addition to being called manually,
 // it is also called after `AddJob`.
 func (s *Scheduler) Start() {
-	defer mutexS.Unlock()
-
 	mutexS.Lock()
+	defer mutexS.Unlock()
 
 	if s.isRunning {
 		slog.Info("Scheduler is running.\n")
@@ -445,9 +444,8 @@ func (s *Scheduler) Start() {
 // In addition to being called manually,
 // there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
-	defer mutexS.Unlock()
-
 	mutexS.Lock()
+	defer mutexS.Unlock()
 
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.\n")

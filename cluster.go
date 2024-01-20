@@ -1,7 +1,9 @@
 package agscheduler
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -93,26 +95,40 @@ func (cn *ClusterNode) toNode() *Node {
 		SchedulerEndpointHTTP: cn.SchedulerEndpointHTTP,
 		Queue:                 cn.Queue,
 		Mode:                  cn.Mode,
-		NodeMap:               cn.NodeMap(),
+		NodeMap:               cn.NodeMapCopy(),
 	}
 }
 
 func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
+	nodeMapMutexC.Lock()
 	defer nodeMapMutexC.Unlock()
 
-	nodeMapMutexC.Lock()
 	cn.nodeMap = nmap
 }
 
-func (cn *ClusterNode) NodeMap() map[string]map[string]map[string]any {
+func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src map[string]map[string]map[string]any) error {
+	gob.Register(time.Time{})
+
+	var buffer bytes.Buffer
+	if err := gob.NewEncoder(&buffer).Encode(src); err != nil {
+		return err
+	}
+
+	return gob.NewDecoder(bytes.NewBuffer(buffer.Bytes())).Decode(&dst)
+}
+
+func (cn *ClusterNode) NodeMapCopy() map[string]map[string]map[string]any {
+	nodeMapMutexC.RLock()
 	defer nodeMapMutexC.RUnlock()
 
-	nodeMapMutexC.RLock()
-	return cn.nodeMap
+	nodeMapCopy := make(map[string]map[string]map[string]any)
+	cn.deepCopyNodeMapByGob(nodeMapCopy, cn.nodeMap)
+
+	return nodeMapCopy
 }
 
 func (cn *ClusterNode) MainNode() map[string]any {
-	for _, v := range cn.NodeMap() {
+	for _, v := range cn.NodeMapCopy() {
 		for endpoint, v2 := range v {
 			if cn.GetMainEndpoint() != endpoint {
 				continue
@@ -126,7 +142,7 @@ func (cn *ClusterNode) MainNode() map[string]any {
 
 func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
 	HANodeMap := make(map[string]map[string]map[string]any)
-	for queue, v := range cn.NodeMap() {
+	for queue, v := range cn.NodeMapCopy() {
 		for endpoint, v2 := range v {
 			if v2["mode"].(string) != "HA" {
 				continue
@@ -142,16 +158,16 @@ func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
 }
 
 func (cn *ClusterNode) SetMainEndpoint(endpoint string) {
+	mainEndpointMutexC.Lock()
 	defer mainEndpointMutexC.Unlock()
 
-	mainEndpointMutexC.Lock()
 	cn.MainEndpoint = endpoint
 }
 
 func (cn *ClusterNode) GetMainEndpoint() string {
+	mainEndpointMutexC.RLock()
 	defer mainEndpointMutexC.RUnlock()
 
-	mainEndpointMutexC.RLock()
 	return cn.MainEndpoint
 }
 
@@ -197,9 +213,8 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 
 // Register node with the cluster.
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
-	defer nodeMapMutexC.Unlock()
-
 	nodeMapMutexC.Lock()
+	defer nodeMapMutexC.Unlock()
 
 	if cn.nodeMap == nil {
 		cn.nodeMap = make(map[string]map[string]map[string]any)
@@ -230,7 +245,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 // if you specify a queue, filter by queue.
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
-	for q, v := range cn.NodeMap() {
+	for q, v := range cn.NodeMapCopy() {
 		if len(queues) != 0 && !slices.Contains(queues, q) {
 			continue
 		}
@@ -276,7 +291,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 			}
 
 			now := time.Now().UTC()
-			for _, v := range cn.NodeMap() {
+			for queue, v := range cn.NodeMapCopy() {
 				for endpoint, v2 := range v {
 					if cn.Endpoint == endpoint {
 						continue
@@ -287,12 +302,12 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 							continue
 						}
 						nodeMapMutexC.Lock()
-						delete(v, endpoint)
+						delete(cn.nodeMap[queue], endpoint)
 						nodeMapMutexC.Unlock()
 						slog.Warn(fmt.Sprintf("Cluster node `%s` have been deleted because unhealthy", endpoint))
 					} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
 						nodeMapMutexC.Lock()
-						v2["health"] = false
+						cn.nodeMap[queue][endpoint]["health"] = false
 						nodeMapMutexC.Unlock()
 					}
 				}
@@ -319,7 +334,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	reply.SchedulerEndpointHTTP = cn.SchedulerEndpointHTTP
 	reply.Queue = cn.Queue
 
-	reply.NodeMap = cn.NodeMap()
+	reply.NodeMap = cn.NodeMapCopy()
 }
 
 // RPC API
@@ -327,7 +342,7 @@ func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
 	reply.MainEndpoint = cn.GetMainEndpoint()
-	reply.NodeMap = cn.NodeMap()
+	reply.NodeMap = cn.NodeMapCopy()
 }
 
 // Used for worker node
