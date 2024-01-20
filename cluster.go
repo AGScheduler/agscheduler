@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+type TypeNodeMap map[string]map[string]any
+
 var nodeMapMutexC sync.RWMutex
 var mainEndpointMutexC sync.RWMutex
 
@@ -25,7 +27,7 @@ type Node struct {
 	SchedulerEndpointHTTP string
 	Queue                 string
 	Mode                  string
-	NodeMap               map[string]map[string]map[string]any
+	NodeMap               TypeNodeMap
 }
 
 func (n *Node) toClusterNode() *ClusterNode {
@@ -77,8 +79,8 @@ type ClusterNode struct {
 
 	// Stores node information for the entire cluster.
 	// It should not be set manually.
-	// def: map[<queue>]map[<endpoint>]map[string]any
-	nodeMap map[string]map[string]map[string]any
+	// def: map[<endpoint>]map[string]any
+	nodeMap TypeNodeMap
 
 	// Bind to each other and the scheduler.
 	Scheduler *Scheduler
@@ -99,14 +101,14 @@ func (cn *ClusterNode) toNode() *Node {
 	}
 }
 
-func (cn *ClusterNode) setNodeMap(nmap map[string]map[string]map[string]any) {
+func (cn *ClusterNode) setNodeMap(nmap TypeNodeMap) {
 	nodeMapMutexC.Lock()
 	defer nodeMapMutexC.Unlock()
 
 	cn.nodeMap = nmap
 }
 
-func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src map[string]map[string]map[string]any) error {
+func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src TypeNodeMap) error {
 	gob.Register(time.Time{})
 
 	var buffer bytes.Buffer
@@ -117,41 +119,27 @@ func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src map[string]map[string]map[s
 	return gob.NewDecoder(bytes.NewBuffer(buffer.Bytes())).Decode(&dst)
 }
 
-func (cn *ClusterNode) NodeMapCopy() map[string]map[string]map[string]any {
+func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
 	nodeMapMutexC.RLock()
 	defer nodeMapMutexC.RUnlock()
 
-	nodeMapCopy := make(map[string]map[string]map[string]any)
+	nodeMapCopy := make(TypeNodeMap)
 	cn.deepCopyNodeMapByGob(nodeMapCopy, cn.nodeMap)
 
 	return nodeMapCopy
 }
 
 func (cn *ClusterNode) MainNode() map[string]any {
-	for _, v := range cn.NodeMapCopy() {
-		for endpoint, v2 := range v {
-			if cn.GetMainEndpoint() != endpoint {
-				continue
-			}
-			return v2
-		}
-	}
-
-	return make(map[string]any)
+	return cn.NodeMapCopy()[cn.GetMainEndpoint()]
 }
 
-func (cn *ClusterNode) HANodeMap() map[string]map[string]map[string]any {
-	HANodeMap := make(map[string]map[string]map[string]any)
-	for queue, v := range cn.NodeMapCopy() {
-		for endpoint, v2 := range v {
-			if v2["mode"].(string) != "HA" {
-				continue
-			}
-			if _, ok := HANodeMap[queue]; !ok {
-				HANodeMap[queue] = map[string]map[string]any{}
-			}
-			HANodeMap[queue][endpoint] = v2
+func (cn *ClusterNode) HANodeMap() TypeNodeMap {
+	HANodeMap := make(TypeNodeMap)
+	for endpoint, v := range cn.NodeMapCopy() {
+		if v["mode"].(string) != "HA" {
+			continue
 		}
+		HANodeMap[endpoint] = v
 	}
 
 	return HANodeMap
@@ -217,17 +205,17 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	defer nodeMapMutexC.Unlock()
 
 	if cn.nodeMap == nil {
-		cn.nodeMap = make(map[string]map[string]map[string]any)
+		cn.nodeMap = make(TypeNodeMap)
 	}
-	if _, ok := cn.nodeMap[n.Queue]; !ok {
-		cn.nodeMap[n.Queue] = map[string]map[string]any{}
+	if _, ok := cn.nodeMap[n.Endpoint]; !ok {
+		cn.nodeMap[n.Endpoint] = map[string]any{}
 	}
 	now := time.Now().UTC()
-	register_time := cn.nodeMap[n.Queue][n.Endpoint]["register_time"]
+	register_time := cn.nodeMap[n.Endpoint]["register_time"]
 	if register_time == nil {
 		register_time = now
 	}
-	cn.nodeMap[n.Queue][n.Endpoint] = map[string]any{
+	cn.nodeMap[n.Endpoint] = map[string]any{
 		"main_endpoint":           n.GetMainEndpoint(),
 		"endpoint":                n.Endpoint,
 		"endpoint_http":           n.EndpointHTTP,
@@ -245,23 +233,22 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 // if you specify a queue, filter by queue.
 func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	cns := make([]*ClusterNode, 0)
-	for q, v := range cn.NodeMapCopy() {
-		if len(queues) != 0 && !slices.Contains(queues, q) {
+	for endpoint, v := range cn.NodeMapCopy() {
+		if !v["health"].(bool) {
 			continue
 		}
-		for endpoint, v2 := range v {
-			if !v2["health"].(bool) {
-				continue
-			}
-			cns = append(cns, &ClusterNode{
-				MainEndpoint:          v2["main_endpoint"].(string),
-				Endpoint:              endpoint,
-				EndpointHTTP:          v2["endpoint_http"].(string),
-				SchedulerEndpoint:     v2["scheduler_endpoint"].(string),
-				SchedulerEndpointHTTP: v2["scheduler_endpoint_http"].(string),
-				Queue:                 v2["queue"].(string),
-			})
+		if len(queues) != 0 && !slices.Contains(queues, v["queue"].(string)) {
+			continue
 		}
+		cns = append(cns, &ClusterNode{
+			MainEndpoint:          v["main_endpoint"].(string),
+			Endpoint:              endpoint,
+			EndpointHTTP:          v["endpoint_http"].(string),
+			SchedulerEndpoint:     v["scheduler_endpoint"].(string),
+			SchedulerEndpointHTTP: v["scheduler_endpoint_http"].(string),
+			Queue:                 v["queue"].(string),
+			Mode:                  v["mode"].(string),
+		})
 	}
 
 	cns_count := len(cns)
@@ -291,25 +278,23 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 			}
 
 			now := time.Now().UTC()
-			for queue, v := range cn.NodeMapCopy() {
-				for endpoint, v2 := range v {
-					if cn.Endpoint == endpoint {
+			for endpoint, v := range cn.NodeMapCopy() {
+				if cn.Endpoint == endpoint {
+					continue
+				}
+				lastHeartbeatTime := v["last_heartbeat_time"].(time.Time)
+				if now.Sub(lastHeartbeatTime) > 5*time.Minute {
+					if v["mode"].(string) == "HA" {
 						continue
 					}
-					lastHeartbeatTime := v2["last_heartbeat_time"].(time.Time)
-					if now.Sub(lastHeartbeatTime) > 5*time.Minute {
-						if v2["mode"].(string) == "HA" {
-							continue
-						}
-						nodeMapMutexC.Lock()
-						delete(cn.nodeMap[queue], endpoint)
-						nodeMapMutexC.Unlock()
-						slog.Warn(fmt.Sprintf("Cluster node `%s` have been deleted because unhealthy", endpoint))
-					} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
-						nodeMapMutexC.Lock()
-						cn.nodeMap[queue][endpoint]["health"] = false
-						nodeMapMutexC.Unlock()
-					}
+					nodeMapMutexC.Lock()
+					delete(cn.nodeMap, endpoint)
+					nodeMapMutexC.Unlock()
+					slog.Warn(fmt.Sprintf("Cluster node `%s` have been deleted because unhealthy", endpoint))
+				} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
+					nodeMapMutexC.Lock()
+					cn.nodeMap[endpoint]["health"] = false
+					nodeMapMutexC.Unlock()
 				}
 			}
 			timer.Reset(interval)

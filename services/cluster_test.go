@@ -62,7 +62,7 @@ func TestClusterService(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, rJ.Data.(map[string]any), 2)
 
-	var nodeMap map[string]map[string]map[string]any
+	var nodeMap agscheduler.TypeNodeMap
 	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)
 	assert.NoError(t, err)
 	filters := make(map[string]any)

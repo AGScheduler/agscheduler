@@ -85,19 +85,17 @@ func (rf *Raft) broadcastRequestVote() {
 		CandidateEndpoint: rf.cn.Endpoint,
 	}
 
-	for _, v := range rf.cn.HANodeMap() {
-		for endpoint, v2 := range v {
-			if rf.cn.Endpoint == endpoint {
-				continue
-			}
-			if !v2["health"].(bool) {
-				continue
-			}
-			go func(address string) {
-				var reply VoteReply
-				rf.sendRequestVote(address, args, &reply)
-			}(endpoint)
+	for endpoint, v := range rf.cn.HANodeMap() {
+		if rf.cn.Endpoint == endpoint {
+			continue
 		}
+		if !v["health"].(bool) {
+			continue
+		}
+		go func(address string) {
+			var reply VoteReply
+			rf.sendRequestVote(address, args, &reply)
+		}(endpoint)
 	}
 }
 
@@ -155,28 +153,26 @@ func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs, reply *Heartbe
 }
 
 func (rf *Raft) broadcastHeartbeat() {
-	for _, v := range rf.cn.HANodeMap() {
-		for endpoint := range v {
-			if rf.cn.Endpoint == endpoint {
-				continue
+	for endpoint := range rf.cn.HANodeMap() {
+		if rf.cn.Endpoint == endpoint {
+			continue
+		}
+		args := HeartbeatArgs{
+			Term:           rf.currentTerm,
+			LeaderEndpoint: rf.cn.Endpoint,
+		}
+		ch := make(chan error, 1)
+		go func(address string) {
+			var reply HeartbeatReply
+			ch <- rf.sendHeartbeat(address, args, &reply)
+		}(endpoint)
+		select {
+		case err := <-ch:
+			if err != nil {
+				slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`: %s\n", endpoint, err))
 			}
-			args := HeartbeatArgs{
-				Term:           rf.currentTerm,
-				LeaderEndpoint: rf.cn.Endpoint,
-			}
-			ch := make(chan error, 1)
-			go func(address string) {
-				var reply HeartbeatReply
-				ch <- rf.sendHeartbeat(address, args, &reply)
-			}(endpoint)
-			select {
-			case err := <-ch:
-				if err != nil {
-					slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`: %s\n", endpoint, err))
-				}
-			case <-time.After(50 * time.Millisecond):
-				slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`, timeout\n", endpoint))
-			}
+		case <-time.After(50 * time.Millisecond):
+			slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`, timeout\n", endpoint))
 		}
 	}
 }
