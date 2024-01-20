@@ -264,7 +264,7 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 // Regularly check node,
 // if a node has not been updated for a long time it is marked as unhealthy or the node is deleted.
 func (cn *ClusterNode) checkNode(ctx context.Context) {
-	interval := 400 * time.Millisecond
+	interval := 600 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
@@ -291,7 +291,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 					delete(cn.nodeMap, endpoint)
 					nodeMapMutexC.Unlock()
 					slog.Warn(fmt.Sprintf("Cluster node `%s` have been deleted because unhealthy", endpoint))
-				} else if now.Sub(lastHeartbeatTime) > 400*time.Millisecond {
+				} else if now.Sub(lastHeartbeatTime) > 600*time.Millisecond {
 					nodeMapMutexC.Lock()
 					cn.nodeMap[endpoint]["health"] = false
 					nodeMapMutexC.Unlock()
@@ -368,7 +368,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 //
 // Started when the node run `RegisterNodeRemote`.
 func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
-	interval := 200 * time.Millisecond
+	interval := 400 * time.Millisecond
 	timer := time.NewTimer(interval)
 
 	for {
@@ -404,7 +404,7 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
-	case <-time.After(400 * time.Millisecond):
+	case <-time.After(300 * time.Millisecond):
 		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.GetMainEndpoint())
 	}
 	cn.SetMainEndpoint(main.MainEndpoint)

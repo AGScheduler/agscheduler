@@ -150,18 +150,18 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.Endpoint = endpoint
 	cn.registerNode(cn)
 	cn.Endpoint = endpointBak
-	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
+	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-900 * time.Millisecond)
 	assert.Equal(t, true, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go cn.checkNode(ctx)
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(700 * time.Millisecond)
 
 	assert.Equal(t, false, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
 	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(700 * time.Millisecond)
 
 	_, ok := cn.NodeMapCopy()[endpoint]
 	assert.Equal(t, false, ok)

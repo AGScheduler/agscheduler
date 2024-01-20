@@ -171,7 +171,7 @@ func (rf *Raft) broadcastHeartbeat() {
 			if err != nil {
 				slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`: %s\n", endpoint, err))
 			}
-		case <-time.After(50 * time.Millisecond):
+		case <-time.After(100 * time.Millisecond):
 			slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`, timeout\n", endpoint))
 		}
 	}
