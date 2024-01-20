@@ -217,7 +217,7 @@ func (rf *Raft) start(ctx context.Context) {
 					select {
 					case <-rf.heartbeatC:
 						slog.Debug(fmt.Sprintf("Follower: `%s` recived heartbeat\n", rf.cn.Endpoint))
-					case <-time.After(time.Duration(rand.Intn(200)+400) * time.Millisecond):
+					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
 						slog.Warn(fmt.Sprintf("Follower: `%s` timeout\n", rf.cn.Endpoint))
 						rf.role = Candidate
 					}
@@ -232,7 +232,7 @@ func (rf *Raft) start(ctx context.Context) {
 					go rf.broadcastRequestVote()
 
 					select {
-					case <-time.After(time.Duration(rand.Intn(5000)+400) * time.Millisecond):
+					case <-time.After(time.Duration(rand.Intn(5000)+500) * time.Millisecond):
 						rf.role = Follower
 					case <-rf.toLeaderC:
 						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader\n", rf.cn.Endpoint))
@@ -244,7 +244,7 @@ func (rf *Raft) start(ctx context.Context) {
 					}
 				case Leader:
 					rf.broadcastHeartbeat()
-					time.Sleep(100 * time.Millisecond)
+					time.Sleep(300 * time.Millisecond)
 				}
 			}
 		}
