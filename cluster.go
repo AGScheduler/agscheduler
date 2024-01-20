@@ -124,7 +124,10 @@ func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
 	defer nodeMapMutexC.RUnlock()
 
 	nodeMapCopy := make(TypeNodeMap)
-	cn.deepCopyNodeMapByGob(nodeMapCopy, cn.nodeMap)
+	err := cn.deepCopyNodeMapByGob(nodeMapCopy, cn.nodeMap)
+	if err != nil {
+		slog.Error("Deep copy `NodeMap` error:", err)
+	}
 
 	return nodeMapCopy
 }
