@@ -99,6 +99,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 
 	c.RunJob(ctx, pbJob1)
 
+	c.ScheduleJob(ctx, pbJob1)
+
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
@@ -137,4 +139,10 @@ func main() {
 	client := pb.NewSchedulerClient(conn)
 
 	runExampleRPC(client)
+
+	err = srservice.Stop()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to stop service: %s", err))
+		os.Exit(1)
+	}
 }

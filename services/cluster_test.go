@@ -16,15 +16,14 @@ import (
 )
 
 func TestClusterService(t *testing.T) {
-	agscheduler.RegisterFuncs(dryRunRPC)
-
 	store := &stores.MemoryStore{}
 	cnMain := &agscheduler.ClusterNode{
-		MainEndpoint: ":36380",
-		// Endpoint:          "127.0.0.1:36380",
+		MainEndpoint: "127.0.0.1:36380",
+		// Endpoint:              "127.0.0.1:36380",
 		EndpointHTTP: "127.0.0.1:36390",
-		// SchedulerEndpoint: "127.0.0.1:36360",
-		// Queue:             "default",
+		// SchedulerEndpoint:     "127.0.0.1:36360",
+		// SchedulerEndpointHTTP: "127.0.0.1:36370",
+		// Queue:                 "default",
 	}
 	scheduler := &agscheduler.Scheduler{}
 	err := scheduler.SetStore(store)
@@ -35,20 +34,23 @@ func TestClusterService(t *testing.T) {
 	err = scheduler.SetClusterNode(ctx, cnMain)
 	assert.NoError(t, err)
 
-	cservice := ClusterService{Cn: cnMain}
+	cservice := &ClusterService{Cn: cnMain}
 	err = cservice.Start()
 	assert.NoError(t, err)
 
-	assert.Len(t, cnMain.NodeMap(), 1)
+	time.Sleep(2 * time.Second)
+
+	assert.Len(t, cnMain.NodeMapCopy(), 1)
 	cn := &agscheduler.ClusterNode{
 		MainEndpoint: cnMain.Endpoint,
 		// Endpoint:          "127.0.0.1:36381",
-		SchedulerEndpoint: "127.0.0.1:36361",
-		Queue:             "node",
+		SchedulerEndpoint:     "127.0.0.1:36361",
+		SchedulerEndpointHTTP: "127.0.0.1:36371",
+		Queue:                 "node",
 	}
 	err = cn.RegisterNodeRemote(ctx)
 	assert.NoError(t, err)
-	assert.Len(t, cnMain.NodeMap(), 2)
+	assert.Len(t, cnMain.NodeMapCopy(), 2)
 
 	resp, err := http.Get("http://" + cnMain.EndpointHTTP + "/cluster/nodes")
 	assert.NoError(t, err)
@@ -60,7 +62,7 @@ func TestClusterService(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, rJ.Data.(map[string]any), 2)
 
-	var nodeMap map[string]map[string]map[string]any
+	var nodeMap agscheduler.TypeNodeMap
 	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)
 	assert.NoError(t, err)
 	filters := make(map[string]any)
@@ -69,4 +71,7 @@ func TestClusterService(t *testing.T) {
 	assert.Len(t, nodeMap, 2)
 
 	time.Sleep(200 * time.Millisecond)
+
+	err = cservice.Stop()
+	assert.NoError(t, err)
 }

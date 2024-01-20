@@ -29,6 +29,7 @@ const (
 	Scheduler_PauseJob_FullMethodName      = "/scheduler.Scheduler/PauseJob"
 	Scheduler_ResumeJob_FullMethodName     = "/scheduler.Scheduler/ResumeJob"
 	Scheduler_RunJob_FullMethodName        = "/scheduler.Scheduler/RunJob"
+	Scheduler_ScheduleJob_FullMethodName   = "/scheduler.Scheduler/ScheduleJob"
 	Scheduler_Start_FullMethodName         = "/scheduler.Scheduler/Start"
 	Scheduler_Stop_FullMethodName          = "/scheduler.Scheduler/Stop"
 )
@@ -46,6 +47,7 @@ type SchedulerClient interface {
 	PauseJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*Job, error)
 	ResumeJob(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*Job, error)
 	RunJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ScheduleJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Start(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
@@ -139,6 +141,15 @@ func (c *schedulerClient) RunJob(ctx context.Context, in *Job, opts ...grpc.Call
 	return out, nil
 }
 
+func (c *schedulerClient) ScheduleJob(ctx context.Context, in *Job, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Scheduler_ScheduleJob_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *schedulerClient) Start(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Scheduler_Start_FullMethodName, in, out, opts...)
@@ -170,6 +181,7 @@ type SchedulerServer interface {
 	PauseJob(context.Context, *JobId) (*Job, error)
 	ResumeJob(context.Context, *JobId) (*Job, error)
 	RunJob(context.Context, *Job) (*emptypb.Empty, error)
+	ScheduleJob(context.Context, *Job) (*emptypb.Empty, error)
 	Start(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	Stop(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedSchedulerServer()
@@ -205,6 +217,9 @@ func (UnimplementedSchedulerServer) ResumeJob(context.Context, *JobId) (*Job, er
 }
 func (UnimplementedSchedulerServer) RunJob(context.Context, *Job) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RunJob not implemented")
+}
+func (UnimplementedSchedulerServer) ScheduleJob(context.Context, *Job) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ScheduleJob not implemented")
 }
 func (UnimplementedSchedulerServer) Start(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Start not implemented")
@@ -387,6 +402,24 @@ func _Scheduler_RunJob_Handler(srv interface{}, ctx context.Context, dec func(in
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Scheduler_ScheduleJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Job)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SchedulerServer).ScheduleJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Scheduler_ScheduleJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SchedulerServer).ScheduleJob(ctx, req.(*Job))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Scheduler_Start_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -465,6 +498,10 @@ var Scheduler_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RunJob",
 			Handler:    _Scheduler_RunJob_Handler,
+		},
+		{
+			MethodName: "ScheduleJob",
+			Handler:    _Scheduler_ScheduleJob_Handler,
 		},
 		{
 			MethodName: "Start",

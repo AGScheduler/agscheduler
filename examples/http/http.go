@@ -124,6 +124,8 @@ func runExampleHTTP(baseUrl string) {
 	bJob1, _ = json.Marshal(rJob1.Data.(map[string]any))
 	http.Post(baseUrl+"/scheduler/job/run", CONTENT_TYPE, bytes.NewReader(bJob1))
 
+	http.Post(baseUrl+"/scheduler/job/schedule", CONTENT_TYPE, bytes.NewReader(bJob1))
+
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
@@ -163,4 +165,10 @@ func main() {
 	baseUrl := "http://127.0.0.1:36370"
 
 	runExampleHTTP(baseUrl)
+
+	err = shservice.Stop()
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to stop service: %s", err))
+		os.Exit(1)
+	}
 }

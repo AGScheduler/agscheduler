@@ -1,10 +1,10 @@
 package services
 
 import (
+	"context"
 	"encoding/gob"
 	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	"net/rpc"
 	"time"
@@ -26,29 +26,76 @@ func (crs *CRPCService) Ping(args *agscheduler.Node, reply *agscheduler.Node) er
 	return nil
 }
 
-func (crs *CRPCService) Nodes(filters map[string]any, reply *map[string]map[string]map[string]any) error {
-	*reply = crs.cn.NodeMap()
+func (crs *CRPCService) Nodes(filters map[string]any, reply *agscheduler.TypeNodeMap) error {
+	*reply = crs.cn.NodeMapCopy()
+	return nil
+}
+
+func (crs *CRPCService) RunJob(j agscheduler.Job, reply *any) error {
+	return crs.cn.Scheduler.RunJob(j)
+}
+
+func (crs *CRPCService) RaftRequestVote(args agscheduler.VoteArgs, reply *agscheduler.VoteReply) error {
+	if crs.cn.Raft != nil {
+		crs.cn.Raft.RPCRequestVote(args, reply)
+	}
+	return nil
+}
+
+func (crs *CRPCService) RaftHeartbeat(args agscheduler.HeartbeatArgs, reply *agscheduler.HeartbeatReply) error {
+	if crs.cn.Raft != nil {
+		crs.cn.Raft.RPCHeartbeat(args, reply)
+	}
 	return nil
 }
 
 type clusterRPCService struct {
 	Cn *agscheduler.ClusterNode
+
+	srv *http.Server
 }
 
 func (s *clusterRPCService) Start() error {
 	gob.Register(time.Time{})
 
 	crs := &CRPCService{cn: s.Cn}
-	rpc.Register(crs)
-	rpc.HandleHTTP()
+	rpcServer := rpc.NewServer()
+	rpcServer.Register(crs)
 
-	lis, err := net.Listen("tcp", s.Cn.Endpoint)
-	if err != nil {
-		return fmt.Errorf("cluster RPC Service listen failure: %s", err)
+	go func() {
+		defer func() {
+			if err := recover(); err != nil {
+				slog.Warn(fmt.Sprintf("Handle registered error: %s\n", err))
+			}
+		}()
+
+		rpcServer.HandleHTTP(rpc.DefaultRPCPath, rpc.DefaultDebugPath)
+	}()
+
+	s.srv = &http.Server{
+		Addr:    s.Cn.Endpoint,
+		Handler: rpcServer,
 	}
 
-	go http.Serve(lis, nil)
-	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", lis.Addr()))
+	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", s.Cn.Endpoint))
+
+	s.srv = &http.Server{Addr: s.Cn.Endpoint}
+
+	go func() {
+		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error(fmt.Sprintf("Cluster RPC Service Unavailable: %s", err))
+		}
+	}()
+
+	return nil
+}
+
+func (s *clusterRPCService) Stop() error {
+	slog.Info("Cluster RPC Service stop")
+
+	if err := s.srv.Shutdown(context.Background()); err != nil {
+		return fmt.Errorf("failed to stop service: %s", err)
+	}
 
 	return nil
 }

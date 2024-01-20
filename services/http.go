@@ -1,8 +1,10 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -96,6 +98,18 @@ func (shs *sHTTPService) runJob(c *gin.Context) {
 	c.JSON(200, gin.H{"data": nil, "error": shs.handleErr(err)})
 }
 
+func (shs *sHTTPService) scheduleJob(c *gin.Context) {
+	j := agscheduler.Job{}
+	err := c.BindJSON(&j)
+	if err != nil {
+		c.JSON(400, shs.handleJob(j, err))
+		return
+	}
+
+	err = shs.scheduler.ScheduleJob(j)
+	c.JSON(200, gin.H{"data": nil, "error": shs.handleErr(err)})
+}
+
 func (shs *sHTTPService) start(c *gin.Context) {
 	shs.scheduler.Start()
 	c.JSON(200, gin.H{"data": nil, "error": ""})
@@ -111,6 +125,8 @@ type SchedulerHTTPService struct {
 
 	// Default: `127.0.0.1:36370`
 	Address string
+
+	srv *http.Server
 }
 
 func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) {
@@ -123,6 +139,7 @@ func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) 
 	r.POST("/scheduler/job/:id/pause", shs.pauseJob)
 	r.POST("/scheduler/job/:id/resume", shs.resumeJob)
 	r.POST("/scheduler/job/run", shs.runJob)
+	r.POST("/scheduler/job/schedule", shs.scheduleJob)
 	r.POST("/scheduler/start", shs.start)
 	r.POST("/scheduler/stop", shs.stop)
 }
@@ -136,15 +153,33 @@ func (s *SchedulerHTTPService) Start() error {
 	r := gin.Default()
 	r.Use(cors.Default())
 
+	chap := &ClusterProxy{Scheduler: s.Scheduler}
+	r.Use(chap.GinProxy())
+
 	s.registerRoutes(r, &sHTTPService{scheduler: s.Scheduler})
 
 	slog.Info(fmt.Sprintf("Scheduler HTTP Service listening at: %s", s.Address))
 
+	s.srv = &http.Server{
+		Addr:    s.Address,
+		Handler: r,
+	}
+
 	go func() {
-		if err := r.Run(s.Address); err != nil {
+		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error(fmt.Sprintf("Scheduler HTTP Service Unavailable: %s", err))
 		}
 	}()
+
+	return nil
+}
+
+func (s *SchedulerHTTPService) Stop() error {
+	slog.Info("Scheduler HTTP Service stop")
+
+	if err := s.srv.Shutdown(context.Background()); err != nil {
+		return fmt.Errorf("failed to stop service: %s", err)
+	}
 
 	return nil
 }

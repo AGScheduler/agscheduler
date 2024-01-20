@@ -63,14 +63,13 @@ func (srs *sRPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job
 
 func (srs *sRPCService) RunJob(ctx context.Context, pbJob *pb.Job) (*emptypb.Empty, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
+	err := srs.scheduler.RunJob(j)
+	return &emptypb.Empty{}, err
+}
 
-	var err error
-	if pbJob.GetScheduled() {
-		err = srs.scheduler.RunJob(j)
-	} else {
-		err = srs.scheduler.ScheduleJob(j)
-	}
-
+func (srs *sRPCService) ScheduleJob(ctx context.Context, pbJob *pb.Job) (*emptypb.Empty, error) {
+	j := agscheduler.PbJobPtrToJob(pbJob)
+	err := srs.scheduler.ScheduleJob(j)
 	return &emptypb.Empty{}, err
 }
 
@@ -87,7 +86,7 @@ func (srs *sRPCService) Stop(ctx context.Context, in *emptypb.Empty) (*emptypb.E
 func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("Scheduler RPC Service method: `%s`, err: `%s`", info.FullMethod, err))
+			slog.Error(fmt.Sprintf("Scheduler gRPC Service method: `%s`, err: `%s`", info.FullMethod, err))
 		}
 	}()
 
@@ -100,6 +99,8 @@ type SchedulerRPCService struct {
 
 	// Default: `127.0.0.1:36360`
 	Address string
+
+	srv *grpc.Server
 }
 
 func (s *SchedulerRPCService) Start() error {
@@ -109,18 +110,27 @@ func (s *SchedulerRPCService) Start() error {
 
 	lis, err := net.Listen("tcp", s.Address)
 	if err != nil {
-		return fmt.Errorf("scheduler RPC Service listen failure: %s", err)
+		return fmt.Errorf("scheduler gRPC Service listen failure: %s", err)
 	}
 
-	srv := grpc.NewServer(grpc.UnaryInterceptor(panicInterceptor))
-	pb.RegisterSchedulerServer(srv, &sRPCService{scheduler: s.Scheduler})
-	slog.Info(fmt.Sprintf("Scheduler RPC Service listening at: %s", lis.Addr()))
+	chap := &ClusterProxy{Scheduler: s.Scheduler}
+	s.srv = grpc.NewServer(grpc.ChainUnaryInterceptor(panicInterceptor, chap.GRPCProxyInterceptor))
+	pb.RegisterSchedulerServer(s.srv, &sRPCService{scheduler: s.Scheduler})
+	slog.Info(fmt.Sprintf("Scheduler gRPC Service listening at: %s", lis.Addr()))
 
 	go func() {
-		if err := srv.Serve(lis); err != nil {
-			slog.Error(fmt.Sprintf("Scheduler RPC Service Unavailable: %s", err))
+		if err := s.srv.Serve(lis); err != nil {
+			slog.Error(fmt.Sprintf("Scheduler gRPC Service Unavailable: %s", err))
 		}
 	}()
+
+	return nil
+}
+
+func (s *SchedulerRPCService) Stop() error {
+	slog.Info("Scheduler gRPC Service stop")
+
+	s.srv.Stop()
 
 	return nil
 }

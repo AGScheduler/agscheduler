@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/rpc"
 	"reflect"
 	"runtime/debug"
 	"slices"
@@ -13,10 +14,6 @@ import (
 	"time"
 
 	"github.com/gorhill/cronexpr"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-
-	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
 var GetStore = (*Scheduler).getStore
@@ -63,6 +60,10 @@ func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
 	}
 
 	return nil
+}
+
+func (s *Scheduler) IsClusterMode() bool {
+	return s.clusterNode != nil
 }
 
 func (s *Scheduler) getClusterNode() *ClusterNode {
@@ -253,22 +254,41 @@ func (s *Scheduler) _runJob(j Job) {
 }
 
 // Used in cluster mode.
-// Call the gRPC API of the other node to run the `RunJob`.
+// Call the RPC API of the other node to run the `RunJob`.
 func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 	go func() {
-		conn, _ := grpc.Dial(node.SchedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		defer conn.Close()
+		defer func() {
+			if err := recover(); err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` _runJobRemote error: %s\n", j.FullName(), err))
+				slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+			}
+		}()
 
-		client := pb.NewSchedulerClient(conn)
-
-		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-		defer cancel()
-
-		pbJ := JobToPbJobPtr(j)
-		pbJ.Scheduled = true
-		_, err := client.RunJob(ctx, pbJ)
+		rClient, err := rpc.DialHTTP("tcp", node.Endpoint)
 		if err != nil {
-			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
+			slog.Error(fmt.Sprintf("Failed to connect to cluster node: `%s`, error: %s", node.Endpoint, err))
+		}
+		defer rClient.Close()
+
+		var r any
+		ch := make(chan error, 1)
+		go func() {
+			defer func() {
+				if err := recover(); err != nil {
+					slog.Error(fmt.Sprintf("Job `%s` CRPCService.RunJob error: %s\n", j.FullName(), err))
+					slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+				}
+			}()
+
+			ch <- rClient.Call("CRPCService.RunJob", j, &r)
+		}()
+		select {
+		case err := <-ch:
+			if err != nil {
+				slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
+			}
+		case <-time.After(3 * time.Second):
+			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote timeout %s\n", j.FullName(), err))
 		}
 	}()
 }
@@ -295,7 +315,7 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 	isRunJobLocal := false
 
 	// In standalone mode.
-	if s.clusterNode == nil {
+	if !s.IsClusterMode() {
 		isRunJobLocal = true
 	} else {
 		// In cluster mode, all nodes are equal and may pick myself.
@@ -347,7 +367,7 @@ func (s *Scheduler) run() {
 			slog.Info("Scheduler quit.\n")
 			return
 		case <-s.timer.C:
-			if s.clusterNode != nil && !s.clusterNode.IsMainNode() {
+			if s.IsClusterMode() && !s.clusterNode.IsMainNode() {
 				s.timer.Reset(time.Second)
 				continue
 			}
@@ -404,9 +424,8 @@ func (s *Scheduler) run() {
 // In addition to being called manually,
 // it is also called after `AddJob`.
 func (s *Scheduler) Start() {
-	defer mutexS.Unlock()
-
 	mutexS.Lock()
+	defer mutexS.Unlock()
 
 	if s.isRunning {
 		slog.Info("Scheduler is running.\n")
@@ -425,9 +444,8 @@ func (s *Scheduler) Start() {
 // In addition to being called manually,
 // there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
-	defer mutexS.Unlock()
-
 	mutexS.Lock()
+	defer mutexS.Unlock()
 
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.\n")

@@ -12,19 +12,25 @@ import (
 
 func getClusterNode() *ClusterNode {
 	return &ClusterNode{
-		MainEndpoint:      "127.0.0.1:36380",
-		Endpoint:          "127.0.0.1:36380",
-		SchedulerEndpoint: "127.0.0.1:36360",
-		Queue:             "default",
+		MainEndpoint:          "127.0.0.1:36380",
+		Endpoint:              "127.0.0.1:36380",
+		EndpointHTTP:          "127.0.0.1:36390",
+		SchedulerEndpoint:     "127.0.0.1:36360",
+		SchedulerEndpointHTTP: "127.0.0.1:36370",
+		Queue:                 "default",
+		Mode:                  "",
 	}
 }
 
 func TestClusterToClusterNode(t *testing.T) {
 	n := Node{
-		MainEndpoint:      "127.0.0.1:36380",
-		Endpoint:          "127.0.0.1:36380",
-		SchedulerEndpoint: "127.0.0.1:36360",
-		Queue:             "default",
+		MainEndpoint:          "127.0.0.1:36380",
+		Endpoint:              "127.0.0.1:36380",
+		EndpointHTTP:          "127.0.0.1:36390",
+		SchedulerEndpoint:     "127.0.0.1:36360",
+		SchedulerEndpointHTTP: "127.0.0.1:36370",
+		Queue:                 "default",
+		Mode:                  "",
 	}
 	cn := n.toClusterNode()
 
@@ -44,7 +50,7 @@ func TestClusterNodeToNode(t *testing.T) {
 	valueOfN := reflect.ValueOf(*n)
 	for i := 0; i < valueOfCN.NumField(); i++ {
 		fieldType := typeOfCN.Field(i)
-		if fieldType.Name == "Scheduler" {
+		if fieldType.Name == "Scheduler" || fieldType.Name == "Raft" {
 			continue
 		}
 		assert.Equal(t, valueOfCN.Field(i).String(), valueOfN.Field(i).String())
@@ -56,24 +62,60 @@ func TestClusterInit(t *testing.T) {
 	defer cancel()
 
 	cn := &ClusterNode{}
+	cn.Mode = "HA"
+
 	cn.init(ctx)
 
+	assert.Equal(t, "127.0.0.1:36380", cn.GetMainEndpoint())
 	assert.Equal(t, "127.0.0.1:36380", cn.Endpoint)
-	assert.Equal(t, "127.0.0.1:36380", cn.MainEndpoint)
 	assert.Equal(t, "127.0.0.1:36390", cn.EndpointHTTP)
 	assert.Equal(t, "127.0.0.1:36360", cn.SchedulerEndpoint)
+	assert.Equal(t, "127.0.0.1:36370", cn.SchedulerEndpointHTTP)
 	assert.Equal(t, "default", cn.Queue)
-	assert.NotEmpty(t, cn.NodeMap())
+	assert.NotEmpty(t, cn.NodeMapCopy())
+	assert.NotEmpty(t, cn.Raft)
 }
 
 func TestClusterRegisterNode(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.NodeMap(), 0)
+	assert.Len(t, cn.NodeMapCopy(), 0)
 
 	cn.registerNode(cn)
 
-	assert.Len(t, cn.NodeMap(), 1)
+	assert.Len(t, cn.NodeMapCopy(), 1)
+}
+
+func TestClusterMainNode(t *testing.T) {
+	cn := getClusterNode()
+	cn.SetMainEndpoint("EndpointHA")
+	cn.Endpoint = "EndpointTest"
+	cn.Mode = "HA"
+
+	cnHA := getClusterNode()
+	cnHA.Endpoint = "EndpointHA"
+
+	assert.Empty(t, cn.MainNode())
+
+	cn.registerNode(cn)
+	cn.registerNode(cnHA)
+
+	assert.NotEmpty(t, cn.MainNode())
+}
+
+func TestClusterHANodeMap(t *testing.T) {
+	cn := getClusterNode()
+
+	cnHA := getClusterNode()
+	cnHA.Endpoint = "EndpointHA"
+	cnHA.Mode = "HA"
+
+	assert.Len(t, cn.HANodeMap(), 0)
+
+	cn.registerNode(cn)
+	cn.registerNode(cnHA)
+
+	assert.Len(t, cn.HANodeMap(), 1)
 }
 
 func TestClusterChoiceNode(t *testing.T) {
@@ -87,7 +129,7 @@ func TestClusterChoiceNode(t *testing.T) {
 func TestClusterChoiceNodeUnhealthy(t *testing.T) {
 	cn := getClusterNode()
 	cn.registerNode(cn)
-	cn.nodeMap[cn.Queue][cn.Endpoint]["health"] = false
+	cn.nodeMap[cn.Endpoint]["health"] = false
 
 	_, err := cn.choiceNode([]string{})
 	assert.Error(t, err)
@@ -108,48 +150,48 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.Endpoint = endpoint
 	cn.registerNode(cn)
 	cn.Endpoint = endpointBak
-	cn.nodeMap[cn.Queue][endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-600 * time.Millisecond)
-	assert.Equal(t, true, cn.NodeMap()[cn.Queue][endpoint]["health"].(bool))
+	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-900 * time.Millisecond)
+	assert.Equal(t, true, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go cn.checkNode(ctx)
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(700 * time.Millisecond)
 
-	assert.Equal(t, false, cn.NodeMap()[cn.Queue][endpoint]["health"].(bool))
+	assert.Equal(t, false, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
-	cn.nodeMap[cn.Queue][endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
-	time.Sleep(500 * time.Millisecond)
+	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
+	time.Sleep(700 * time.Millisecond)
 
-	_, ok := cn.NodeMap()[cn.Queue][endpoint]
+	_, ok := cn.NodeMapCopy()[endpoint]
 	assert.Equal(t, false, ok)
 }
 
 func TestClusterRPCRegister(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.NodeMap(), 0)
+	assert.Len(t, cn.NodeMapCopy(), 0)
 
 	cn.RPCRegister(cn.toNode(), &Node{})
 
-	assert.Len(t, cn.NodeMap(), 1)
+	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
 func TestClusterRPCPing(t *testing.T) {
 	cn := getClusterNode()
 
-	assert.Len(t, cn.NodeMap(), 0)
+	assert.Len(t, cn.NodeMapCopy(), 0)
 
 	cn.RPCPing(cn.toNode(), &Node{})
 
-	assert.Len(t, cn.NodeMap(), 1)
+	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
 func TestClusterRegisterNodeRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.MainEndpoint = "127.0.0.1:36680"
+	cn.SetMainEndpoint("127.0.0.1:36680")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -163,7 +205,7 @@ func TestClusterHeartbeatRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.MainEndpoint = "127.0.0.1:36680"
+	cn.SetMainEndpoint("127.0.0.1:36680")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -176,7 +218,7 @@ func TestClusterPingRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.MainEndpoint = "127.0.0.1:36680"
+	cn.SetMainEndpoint("127.0.0.1:36680")
 
 	err := cn.pingRemote(context.TODO())
 	assert.NoError(t, err)

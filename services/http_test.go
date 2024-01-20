@@ -111,6 +111,16 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	assert.NoError(t, err)
 	assert.Empty(t, rJ.Error)
 
+	resp, err = http.Post(baseUrl+"/scheduler/job/schedule", CONTENT_TYPE, bytes.NewReader(bJ))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	rJ = &result{}
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
+	assert.Empty(t, rJ.Error)
+
 	req, err = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
 	assert.NoError(t, err)
 	client.Do(req)
@@ -147,13 +157,15 @@ func TestHTTPService(t *testing.T) {
 	store := &stores.MemoryStore{}
 
 	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
+	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
 
 	shservice := SchedulerHTTPService{
 		Scheduler: scheduler,
 		// Address:   "127.0.0.1:36370",
 	}
-	shservice.Start()
+	err = shservice.Start()
+	assert.NoError(t, err)
 
 	time.Sleep(time.Second)
 
@@ -161,5 +173,9 @@ func TestHTTPService(t *testing.T) {
 
 	testAGSchedulerHTTP(t, baseUrl)
 
-	store.Clear()
+	err = shservice.Stop()
+	assert.NoError(t, err)
+
+	err = store.Clear()
+	assert.NoError(t, err)
 }

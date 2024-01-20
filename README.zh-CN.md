@@ -178,6 +178,7 @@ cservice.Start()
 | PauseJob      | POST        | /scheduler/job/:id/pause  |
 | ResumeJob     | POST        | /scheduler/job/:id/resume |
 | RunJob        | POST        | /scheduler/job/run        |
+| ScheduleJob   | POST        | /scheduler/job/schedule   |
 | Start         | POST        | /scheduler/start          |
 | Stop          | POST        | /scheduler/stop           |
 

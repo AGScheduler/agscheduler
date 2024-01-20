@@ -313,6 +313,7 @@ func TestSchedulerScheduleJobRemote(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 
+	cn.Endpoint = "test"
 	err = s.ScheduleJob(j)
 	assert.NoError(t, err)
 }
