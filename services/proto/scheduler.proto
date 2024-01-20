@@ -53,6 +53,8 @@ service Scheduler {
 
   rpc RunJob (Job) returns (google.protobuf.Empty) {}
 
+  rpc ScheduleJob (Job) returns (google.protobuf.Empty) {}
+
   rpc Start (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
   rpc Stop (google.protobuf.Empty) returns (google.protobuf.Empty) {}

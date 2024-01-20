@@ -111,6 +111,16 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	assert.NoError(t, err)
 	assert.Empty(t, rJ.Error)
 
+	resp, err = http.Post(baseUrl+"/scheduler/job/schedule", CONTENT_TYPE, bytes.NewReader(bJ))
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	rJ = &result{}
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
+	assert.Empty(t, rJ.Error)
+
 	req, err = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
 	assert.NoError(t, err)
 	client.Do(req)

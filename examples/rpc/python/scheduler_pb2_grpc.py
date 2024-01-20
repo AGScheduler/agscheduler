@@ -60,6 +60,11 @@ class SchedulerStub(object):
                 request_serializer=scheduler__pb2.Job.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
+        self.ScheduleJob = channel.unary_unary(
+                '/scheduler.Scheduler/ScheduleJob',
+                request_serializer=scheduler__pb2.Job.SerializeToString,
+                response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                )
         self.Start = channel.unary_unary(
                 '/scheduler.Scheduler/Start',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
@@ -129,6 +134,12 @@ class SchedulerServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ScheduleJob(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Start(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -186,6 +197,11 @@ def add_SchedulerServicer_to_server(servicer, server):
             ),
             'RunJob': grpc.unary_unary_rpc_method_handler(
                     servicer.RunJob,
+                    request_deserializer=scheduler__pb2.Job.FromString,
+                    response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            ),
+            'ScheduleJob': grpc.unary_unary_rpc_method_handler(
+                    servicer.ScheduleJob,
                     request_deserializer=scheduler__pb2.Job.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
@@ -357,6 +373,23 @@ class Scheduler(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/scheduler.Scheduler/RunJob',
+            scheduler__pb2.Job.SerializeToString,
+            google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def ScheduleJob(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/scheduler.Scheduler/ScheduleJob',
             scheduler__pb2.Job.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,

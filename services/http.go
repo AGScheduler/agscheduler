@@ -98,6 +98,18 @@ func (shs *sHTTPService) runJob(c *gin.Context) {
 	c.JSON(200, gin.H{"data": nil, "error": shs.handleErr(err)})
 }
 
+func (shs *sHTTPService) scheduleJob(c *gin.Context) {
+	j := agscheduler.Job{}
+	err := c.BindJSON(&j)
+	if err != nil {
+		c.JSON(400, shs.handleJob(j, err))
+		return
+	}
+
+	err = shs.scheduler.ScheduleJob(j)
+	c.JSON(200, gin.H{"data": nil, "error": shs.handleErr(err)})
+}
+
 func (shs *sHTTPService) start(c *gin.Context) {
 	shs.scheduler.Start()
 	c.JSON(200, gin.H{"data": nil, "error": ""})
@@ -127,6 +139,7 @@ func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) 
 	r.POST("/scheduler/job/:id/pause", shs.pauseJob)
 	r.POST("/scheduler/job/:id/resume", shs.resumeJob)
 	r.POST("/scheduler/job/run", shs.runJob)
+	r.POST("/scheduler/job/schedule", shs.scheduleJob)
 	r.POST("/scheduler/start", shs.start)
 	r.POST("/scheduler/stop", shs.stop)
 }

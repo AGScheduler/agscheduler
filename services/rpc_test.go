@@ -63,6 +63,9 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	_, err = c.RunJob(ctx, pbJ)
 	assert.NoError(t, err)
 
+	_, err = c.ScheduleJob(ctx, pbJ)
+	assert.NoError(t, err)
+
 	_, err = c.DeleteJob(ctx, &pb.JobId{Id: j.Id})
 	assert.NoError(t, err)
 	_, err = c.GetJob(ctx, &pb.JobId{Id: j.Id})
