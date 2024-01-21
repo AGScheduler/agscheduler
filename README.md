@@ -25,7 +25,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
 - Supports remote call
-  - [x] gRPC
+  - [x] [gRPC](https://grpc.io/)
   - [x] HTTP API
 - Supports cluster
   - [x] Remote worker nodes
