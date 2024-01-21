@@ -183,7 +183,7 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 		return nil
 	}
 
-	if args.Term > rf.currentTerm {
+	if args.Term > rf.currentTerm || rf.role == Leader {
 		rf.toFollower(args.Term)
 	}
 

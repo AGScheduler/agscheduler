@@ -25,7 +25,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	srservice := services.SchedulerRPCService{
+	srservice := services.SchedulerGRPCService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:36360",
 	}

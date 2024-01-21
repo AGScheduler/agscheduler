@@ -26,9 +26,10 @@
   - [x] [etcd](https://etcd.io/)
 - 支持远程调用
   - [x] gRPC
-  - [x] HTTP APIs
+  - [x] HTTP API
 - 支持集群
   - [x] 远程工作节点
+  - [x] 调度器高可用（实验性）
 
 ## 架构
 
@@ -110,7 +111,7 @@ func main() {
 
 ```golang
 // Server
-srservice := services.SchedulerRPCService{
+srservice := services.SchedulerGRPCService{
 	Scheduler: scheduler,
 	Address:   "127.0.0.1:36360",
 }
@@ -122,7 +123,7 @@ client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)
 ```
 
-## HTTP APIs
+## HTTP API
 
 ```golang
 // Server
@@ -142,27 +143,53 @@ resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json",
 
 ```golang
 // Main Node
-cnMain := &agscheduler.ClusterNodeClusterNode{
-	Endpoint:          "127.0.0.1:36380",
-	EndpointHTTP:      "127.0.0.1:36390",
-	SchedulerEndpoint: "127.0.0.1:36360",
-	Queue:             "default",
+cnMain := &agscheduler.ClusterNode{
+	Endpoint:              "127.0.0.1:36380",
+	EndpointHTTP:          "127.0.0.1:36390",
+	SchedulerEndpoint:     "127.0.0.1:36360",
+	SchedulerEndpointHTTP: "127.0.0.1:36370",
+	Queue:                 "default",
 }
+schedulerMain.SetStore(storeMain)
 schedulerMain.SetClusterNode(ctx, cnMain)
 cserviceMain := &services.ClusterService{Cn: cnMain}
 cserviceMain.Start()
 
-// Node
-cn := &agscheduler.ClusterNode{
-	MainEndpoint:      "127.0.0.1:36380",
-	Endpoint:          "127.0.0.1:36381",
-	EndpointHTTP:      "127.0.0.1:36391",
-	SchedulerEndpoint: "127.0.0.1:36361",
-	Queue:             "node",
+// Worker Node
+cnNode := &agscheduler.ClusterNode{
+	MainEndpoint:          "127.0.0.1:36380",
+	Endpoint:              "127.0.0.1:36381",
+	EndpointHTTP:          "127.0.0.1:36391",
+	SchedulerEndpoint:     "127.0.0.1:36361",
+	SchedulerEndpointHTTP: "127.0.0.1:36371",
+	Queue:                 "node",
 }
-scheduler.SetClusterNode(ctx, cn)
-cservice := &services.ClusterService{Cn: cn}
-cservice.Start()
+schedulerNode.SetStore(storeNode)
+schedulerNode.SetClusterNode(ctx, cnNode)
+cserviceNode := &services.ClusterService{Cn: cnNode}
+cserviceNode.Start()
+```
+
+## Cluster HA(高可用，实验性)
+
+```golang
+
+// HA 需要满足以下条件：
+//
+// 1. 群集中 HA 节点的数量必须为奇数
+// 2. 所有 HA 节点都需要连接到同一个存储，`MemoryStore` 除外
+// 3. `ClusterNode` 的 `Mode` 属性需要设置为 `HA`
+// 4. 主节点必须先启动
+
+// Main Node
+cnMain := &agscheduler.ClusterNode{..., Mode: "HA"}
+
+// HA Node
+cnNode1 := &agscheduler.ClusterNode{..., Mode: "HA"}
+cnNode2 := &agscheduler.ClusterNode{..., Mode: "HA"}
+
+// Worker Node
+cnNode3 := &agscheduler.ClusterNode{...}
 ```
 
 ## Scheduler API
@@ -195,5 +222,7 @@ cservice.Start()
 ## 致谢
 
 [APScheduler](https://github.com/agronholm/apscheduler/tree/3.x)
+
+[simple-raft](https://github.com/chapin666/simple-raft)
 
 [examples]: https://github.com/kwkwc/agscheduler/tree/main/examples

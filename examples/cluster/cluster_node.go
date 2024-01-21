@@ -1,6 +1,16 @@
+// Normal Mode
+//
 // 1. go run examples/cluster/cluster_main.go
 // 2. go run examples/cluster/cluster_node.go -e 127.0.0.1:36381 -eh 127.0.0.1:36391 -se 127.0.0.1:36361 -seh 127.0.0.1:36371
 // 3. go run examples/cluster/cluster_node.go -e 127.0.0.1:36382 -eh 127.0.0.1:36392 -se 127.0.0.1:36362 -seh 127.0.0.1:36372
+// 4. go run examples/rpc/rpc_client.go
+
+// HA Mode
+// NOTE: All HA nodes need to connect to the same Store
+//
+// 1. go run examples/cluster/cluster_main.go -m HA
+// 2. go run examples/cluster/cluster_node.go -e 127.0.0.1:36381 -eh 127.0.0.1:36391 -se 127.0.0.1:36361 -seh 127.0.0.1:36371 -m HA
+// 3. go run examples/cluster/cluster_node.go -e 127.0.0.1:36382 -eh 127.0.0.1:36392 -se 127.0.0.1:36362 -seh 127.0.0.1:36372 -m HA
 // 4. go run examples/rpc/rpc_client.go
 
 package main
@@ -24,7 +34,7 @@ var endpointHTTP = flag.String("eh", "127.0.0.1:36391", "Cluster Node endpoint H
 var schedulerEndpoint = flag.String("se", "127.0.0.1:36361", "Cluster Node Scheduler endpoint")
 var schedulerEndpointHTTP = flag.String("seh", "127.0.0.1:36371", "Cluster Main Node Scheduler endpoint HTTP")
 var queue = flag.String("q", "node", "Cluster Node queue")
-var mode = flag.String("m", "", "Cluster Node mode")
+var mode = flag.String("m", "", "Cluster Node mode, options `HA`")
 
 func main() {
 	agscheduler.RegisterFuncs(examples.PrintMsg)

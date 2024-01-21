@@ -17,9 +17,9 @@ import (
 
 var ctx = context.Background()
 
-func dryRunRPC(ctx context.Context, j agscheduler.Job) {}
+func dryRunGRPC(ctx context.Context, j agscheduler.Job) {}
 
-func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
+func testAGSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	_, err := c.Start(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
 
@@ -27,7 +27,7 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
-		FuncName: "github.com/kwkwc/agscheduler/services.dryRunRPC",
+		FuncName: "github.com/kwkwc/agscheduler/services.dryRunGRPC",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	assert.Empty(t, j.Status)
@@ -82,8 +82,8 @@ func testAGSchedulerRPC(t *testing.T, c pb.SchedulerClient) {
 	assert.NoError(t, err)
 }
 
-func TestRPCService(t *testing.T) {
-	agscheduler.RegisterFuncs(dryRunRPC)
+func TestGRPCService(t *testing.T) {
+	agscheduler.RegisterFuncs(dryRunGRPC)
 
 	store := &stores.MemoryStore{}
 
@@ -91,7 +91,7 @@ func TestRPCService(t *testing.T) {
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
 
-	srservice := SchedulerRPCService{
+	srservice := SchedulerGRPCService{
 		Scheduler: scheduler,
 		// Address:   "127.0.0.1:36360",
 	}
@@ -103,7 +103,7 @@ func TestRPCService(t *testing.T) {
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 
-	testAGSchedulerRPC(t, client)
+	testAGSchedulerGRPC(t, client)
 
 	err = srservice.Stop()
 	assert.NoError(t, err)
