@@ -25,7 +25,7 @@
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
 - 支持远程调用
-  - [x] gRPC
+  - [x] [gRPC](https://grpc.io/)
   - [x] HTTP API
 - 支持集群
   - [x] 远程工作节点
