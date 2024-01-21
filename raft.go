@@ -216,7 +216,7 @@ func (rf *Raft) start(ctx context.Context) {
 				case Follower:
 					select {
 					case <-rf.heartbeatC:
-						slog.Debug(fmt.Sprintf("Follower: `%s` recived heartbeat\n", rf.cn.Endpoint))
+						slog.Debug(fmt.Sprintf("Follower: `%s` received heartbeat\n", rf.cn.Endpoint))
 					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
 						slog.Warn(fmt.Sprintf("Follower: `%s` timeout\n", rf.cn.Endpoint))
 						rf.role = Candidate
