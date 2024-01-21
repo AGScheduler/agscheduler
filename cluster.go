@@ -44,10 +44,10 @@ func (n *Node) toClusterNode() *ClusterNode {
 	}
 }
 
-// Each node provides `RPC`, `HTTP`, `Scheduler gRPC` services,
+// Each node provides `Cluster RPC`, `Cluster HTTP`, `Scheduler gRPC`, `Scheduler HTTP` services,
 // but only the main node starts the scheduler,
 // the other worker nodes register with the main node
-// and then run jobs from the main node via the Scheduler's `RunJob` API.
+// and then run jobs from the main node via the Cluster's `RunJob` API.
 type ClusterNode struct {
 	// Main node RPC listening address.
 	// If you are the main, `MainEndpoint` is the same as `Endpoint`.
@@ -74,7 +74,9 @@ type ClusterNode struct {
 	// A queue can correspond to multiple nodes.
 	// Default: `default`
 	Queue string
-
+	// Node mode, for Scheduler high availability.
+	// If the value is `HA`, the node will join the raft group.
+	// Default: ``, Options `HA`
 	Mode string
 
 	// Stores node information for the entire cluster.
@@ -82,9 +84,11 @@ type ClusterNode struct {
 	// def: map[<endpoint>]map[string]any
 	nodeMap TypeNodeMap
 
-	// Bind to each other and the scheduler.
+	// Bind to each other and the Scheduler.
 	Scheduler *Scheduler
 
+	// Bind to each other and the Raft.
+	// For Scheduler high availability.
 	Raft *Raft
 }
 
@@ -266,6 +270,7 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 
 // Regularly check node,
 // if a node has not been updated for a long time it is marked as unhealthy or the node is deleted.
+// HA nodes are not processed.
 func (cn *ClusterNode) checkNode(ctx context.Context) {
 	interval := 600 * time.Millisecond
 	timer := time.NewTimer(interval)

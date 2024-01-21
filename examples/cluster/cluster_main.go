@@ -1,4 +1,11 @@
+// Normal Mode
+//
 // go run examples/cluster/cluster_main.go
+
+// HA Mode
+// NOTE: All HA nodes need to connect to the same Store
+//
+// go run examples/cluster/cluster_main.go -m HA
 
 package main
 
@@ -20,7 +27,7 @@ var endpointHTTP = flag.String("eh", "127.0.0.1:36390", "Cluster Main Node endpo
 var schedulerEndpoint = flag.String("se", "127.0.0.1:36360", "Cluster Main Node Scheduler endpoint")
 var schedulerEndpointHTTP = flag.String("seh", "127.0.0.1:36370", "Cluster Main Node Scheduler endpoint HTTP")
 var queue = flag.String("q", "default", "Cluster Main Node queue")
-var mode = flag.String("m", "", "Cluster Node mode")
+var mode = flag.String("m", "", "Cluster Node mode, options `HA`")
 
 func main() {
 	agscheduler.RegisterFuncs(examples.PrintMsg)

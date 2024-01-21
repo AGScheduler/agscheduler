@@ -26,9 +26,10 @@ English | [简体中文](README.zh-CN.md)
   - [x] [etcd](https://etcd.io/)
 - Supports remote call
   - [x] gRPC
-  - [x] HTTP APIs
+  - [x] HTTP API
 - Supports cluster
   - [x] Remote worker nodes
+  - [x] Scheduler High Availability(Experimental)
 
 ## Framework
 
@@ -122,7 +123,7 @@ client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)
 ```
 
-## HTTP APIs
+## HTTP API
 
 ```golang
 // Server
@@ -142,27 +143,53 @@ resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json",
 
 ```golang
 // Main Node
-cnMain := &agscheduler.ClusterNodeClusterNode{
-	Endpoint:          "127.0.0.1:36380",
-	EndpointHTTP:      "127.0.0.1:36390",
-	SchedulerEndpoint: "127.0.0.1:36360",
-	Queue:             "default",
+cnMain := &agscheduler.ClusterNode{
+	Endpoint:              "127.0.0.1:36380",
+	EndpointHTTP:          "127.0.0.1:36390",
+	SchedulerEndpoint:     "127.0.0.1:36360",
+	SchedulerEndpointHTTP: "127.0.0.1:36370",
+	Queue:                 "default",
 }
+schedulerMain.SetStore(storeMain)
 schedulerMain.SetClusterNode(ctx, cnMain)
 cserviceMain := &services.ClusterService{Cn: cnMain}
 cserviceMain.Start()
 
-// Node
-cn := &agscheduler.ClusterNode{
-	MainEndpoint:      "127.0.0.1:36380",
-	Endpoint:          "127.0.0.1:36381",
-	EndpointHTTP:      "127.0.0.1:36391",
-	SchedulerEndpoint: "127.0.0.1:36361",
-	Queue:             "node",
+// Worker Node
+cnNode := &agscheduler.ClusterNode{
+	MainEndpoint:          "127.0.0.1:36380",
+	Endpoint:              "127.0.0.1:36381",
+	EndpointHTTP:          "127.0.0.1:36391",
+	SchedulerEndpoint:     "127.0.0.1:36361",
+	SchedulerEndpointHTTP: "127.0.0.1:36371",
+	Queue:                 "node",
 }
-scheduler.SetClusterNode(ctx, cn)
-cservice := &services.ClusterService{Cn: cn}
-cservice.Start()
+schedulerNode.SetStore(storeNode)
+schedulerNode.SetClusterNode(ctx, cnNode)
+cserviceNode := &services.ClusterService{Cn: cnNode}
+cserviceNode.Start()
+```
+
+## Cluster HA(High Availability, experimental)
+
+```golang
+
+// HA requires the following conditions to be met:
+//
+// 1. The number of HA nodes in the cluster must be odd
+// 2. All HA nodes need to connect to the same Store, excluding `MemoryStore`
+// 3. The `Mode` of the `ClusterNode` needs to be set to `HA`
+// 4. The Main node must be started first
+
+// Main Node
+cnMain := &agscheduler.ClusterNode{..., Mode: "HA"}
+
+// HA Node
+cnNode1 := &agscheduler.ClusterNode{..., Mode: "HA"}
+cnNode2 := &agscheduler.ClusterNode{..., Mode: "HA"}
+
+// Worker Node
+cnNode3 := &agscheduler.ClusterNode{...}
 ```
 
 ## Scheduler API
@@ -195,5 +222,7 @@ cservice.Start()
 ## Thanks
 
 [APScheduler](https://github.com/agronholm/apscheduler/tree/3.x)
+
+[simple-raft](https://github.com/chapin666/simple-raft)
 
 [examples]: https://github.com/kwkwc/agscheduler/tree/main/examples
