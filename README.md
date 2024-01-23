@@ -29,7 +29,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] HTTP API
 - Supports cluster
   - [x] Remote worker nodes
-  - [x] Scheduler High Availability(Experimental)
+  - [x] Scheduler High Availability (Experimental)
 
 ## Framework
 
@@ -162,7 +162,7 @@ cnNode := &agscheduler.ClusterNode{
 	EndpointHTTP:          "127.0.0.1:36391",
 	SchedulerEndpoint:     "127.0.0.1:36361",
 	SchedulerEndpointHTTP: "127.0.0.1:36371",
-	Queue:                 "node",
+	Queue:                 "worker",
 }
 schedulerNode.SetStore(storeNode)
 schedulerNode.SetClusterNode(ctx, cnNode)
@@ -170,18 +170,18 @@ cserviceNode := &services.ClusterService{Cn: cnNode}
 cserviceNode.Start()
 ```
 
-## Cluster HA(High Availability, experimental)
+## Cluster HA (High Availability, Experimental)
 
 ```golang
 
 // HA requires the following conditions to be met:
 //
 // 1. The number of HA nodes in the cluster must be odd
-// 2. All HA nodes need to connect to the same Store, excluding `MemoryStore`
+// 2. All HA nodes need to connect to the same Store (excluding `MemoryStore`)
 // 3. The `Mode` of the `ClusterNode` needs to be set to `HA`
-// 4. The Main node must be started first
+// 4. The main HA node must be started first
 
-// Main Node
+// Main HA Node
 cnMain := &agscheduler.ClusterNode{..., Mode: "HA"}
 
 // HA Node

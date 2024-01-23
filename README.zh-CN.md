@@ -162,7 +162,7 @@ cnNode := &agscheduler.ClusterNode{
 	EndpointHTTP:          "127.0.0.1:36391",
 	SchedulerEndpoint:     "127.0.0.1:36361",
 	SchedulerEndpointHTTP: "127.0.0.1:36371",
-	Queue:                 "node",
+	Queue:                 "worker",
 }
 schedulerNode.SetStore(storeNode)
 schedulerNode.SetClusterNode(ctx, cnNode)
@@ -170,18 +170,18 @@ cserviceNode := &services.ClusterService{Cn: cnNode}
 cserviceNode.Start()
 ```
 
-## Cluster HA(高可用，实验性)
+## Cluster HA (高可用，实验性)
 
 ```golang
 
 // HA 需要满足以下条件：
 //
 // 1. 群集中 HA 节点的数量必须为奇数
-// 2. 所有 HA 节点都需要连接到同一个存储，`MemoryStore` 除外
-// 3. `ClusterNode` 的 `Mode` 属性需要设置为 `HA`
-// 4. 主节点必须先启动
+// 2. 所有 HA 节点都需要连接到同一个存储（不包含 MemoryStore）
+// 3. ClusterNode 的 Mode 属性需要设置为 `HA`
+// 4. HA 主节点必须先启动
 
-// Main Node
+// Main HA Node
 cnMain := &agscheduler.ClusterNode{..., Mode: "HA"}
 
 // HA Node
