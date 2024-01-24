@@ -466,5 +466,7 @@ func (s *Scheduler) getNextWakeupInterval() time.Duration {
 }
 
 func (s *Scheduler) wakeup() {
-	s.timer.Reset(0)
+	if s.timer != nil {
+		s.timer.Reset(0)
+	}
 }
