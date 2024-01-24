@@ -80,7 +80,7 @@ func (rf *Raft) sendRequestVote(address string, args VoteArgs, reply *VoteReply)
 }
 
 func (rf *Raft) broadcastRequestVote() {
-	var args = VoteArgs{
+	args := VoteArgs{
 		Term:              rf.currentTerm,
 		CandidateEndpoint: rf.cn.Endpoint,
 	}
@@ -123,7 +123,7 @@ type HeartbeatArgs struct {
 	Term           int
 	LeaderEndpoint string
 
-	MainEndpoint string
+	SchedulerCanStart bool
 }
 
 type HeartbeatReply struct {
@@ -156,6 +156,8 @@ func (rf *Raft) broadcastHeartbeat() {
 	args := HeartbeatArgs{
 		Term:           rf.currentTerm,
 		LeaderEndpoint: rf.cn.Endpoint,
+
+		SchedulerCanStart: rf.cn.Scheduler.IsRunning(),
 	}
 
 	for endpoint := range rf.cn.HANodeMap() {
@@ -182,6 +184,7 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 	reply.Term = rf.currentTerm
 
 	rf.cn.SetMainEndpoint(args.LeaderEndpoint)
+	rf.cn.SchedulerCanStart = args.SchedulerCanStart
 
 	rf.heartbeatC <- true
 
@@ -232,7 +235,9 @@ func (rf *Raft) start(ctx context.Context) {
 
 						rf.cn.SetMainEndpoint(rf.cn.Endpoint)
 						rf.cn.registerNode(rf.cn)
-						rf.cn.Scheduler.Start()
+						if rf.cn.SchedulerCanStart {
+							rf.cn.Scheduler.Start()
+						}
 					}
 				case Leader:
 					rf.broadcastHeartbeat()

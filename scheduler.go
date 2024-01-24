@@ -19,7 +19,7 @@ import (
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 
-var mutexS sync.Mutex
+var mutexS sync.RWMutex
 
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
@@ -35,6 +35,13 @@ type Scheduler struct {
 
 	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
+}
+
+func (s *Scheduler) IsRunning() bool {
+	mutexS.RLock()
+	defer mutexS.RUnlock()
+
+	return s.isRunning
 }
 
 // Bind the store

@@ -27,7 +27,8 @@ type Node struct {
 	SchedulerEndpointHTTP string
 	Queue                 string
 	Mode                  string
-	NodeMap               TypeNodeMap
+
+	NodeMap TypeNodeMap
 }
 
 func (n *Node) toClusterNode() *ClusterNode {
@@ -87,9 +88,11 @@ type ClusterNode struct {
 	// Bind to each other and the Scheduler.
 	Scheduler *Scheduler
 
-	// Bind to each other and the Raft.
 	// For Scheduler high availability.
+	// Bind to each other and the Raft.
 	Raft *Raft
+	// Used to mark the status of Cluster Scheduler operation.
+	SchedulerCanStart bool
 }
 
 func (cn *ClusterNode) toNode() *Node {
@@ -101,7 +104,8 @@ func (cn *ClusterNode) toNode() *Node {
 		SchedulerEndpointHTTP: cn.SchedulerEndpointHTTP,
 		Queue:                 cn.Queue,
 		Mode:                  cn.Mode,
-		NodeMap:               cn.NodeMapCopy(),
+
+		NodeMap: cn.NodeMapCopy(),
 	}
 }
 
