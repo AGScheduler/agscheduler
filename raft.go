@@ -232,7 +232,7 @@ func (rf *Raft) start(ctx context.Context) {
 					go rf.broadcastRequestVote()
 
 					select {
-					case <-time.After(time.Duration(rand.Intn(5000)+500) * time.Millisecond):
+					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
 						rf.role = Follower
 					case <-rf.toLeaderC:
 						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader\n", rf.cn.Endpoint))
