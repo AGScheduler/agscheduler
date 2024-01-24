@@ -71,7 +71,7 @@ func TestRaft(t *testing.T) {
 	err = cserviceNode2.Start()
 	assert.NoError(t, err)
 
-	time.Sleep(10 * time.Second)
+	time.Sleep(4 * time.Second)
 
 	// TODO: Since http.Handle can only be registered once,
 	// starting multiple ClusterServices here won't work,

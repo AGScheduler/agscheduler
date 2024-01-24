@@ -23,7 +23,7 @@ lint:
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
 	go run examples/cluster/cluster_node.go -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 -seh 127.0.0.1:36670 &
-	sleep 6s
+	sleep 2s
 
 .PHONY: down-cluster-ci-service
 down-cluster-ci-service:
