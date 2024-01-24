@@ -10,6 +10,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/kwkwc/agscheduler"
 	pb "github.com/kwkwc/agscheduler/services/proto"
@@ -29,6 +30,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 	pbJob1, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job1))
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", job1))
+
+	c.Start(ctx, &emptypb.Empty{})
 }
 
 func main() {
