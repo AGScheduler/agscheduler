@@ -377,6 +377,7 @@ func (s *Scheduler) run() {
 			js, err := s.GetAllJobs()
 			if err != nil {
 				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s\n", err))
+				s.timer.Reset(time.Second)
 				continue
 			}
 
