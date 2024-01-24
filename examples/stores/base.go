@@ -91,4 +91,6 @@ func runExample(s *agscheduler.Scheduler) {
 	time.Sleep(3 * time.Second)
 
 	s.DeleteAllJobs()
+
+	s.Stop()
 }

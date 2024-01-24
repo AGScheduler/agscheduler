@@ -92,6 +92,7 @@ func TestSchedulerAddJob(t *testing.T) {
 
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
+	s.Start()
 	time.Sleep(500 * time.Millisecond)
 }
 
@@ -105,6 +106,7 @@ func TestSchedulerAddJobDatetime(t *testing.T) {
 	j, err := s.AddJob(j)
 	assert.NoError(t, err)
 
+	s.Start()
 	time.Sleep(50 * time.Millisecond)
 
 	_, err = s.GetJob(j.Id)
@@ -113,7 +115,6 @@ func TestSchedulerAddJobDatetime(t *testing.T) {
 
 func TestSchedulerAddJobUnregisteredError(t *testing.T) {
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJobWithoutFunc()
 
 	_, err := s.AddJob(j)
@@ -122,7 +123,6 @@ func TestSchedulerAddJobUnregisteredError(t *testing.T) {
 
 func TestSchedulerAddJobTimeoutError(t *testing.T) {
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 	j.Timeout = "errorTimeout"
 
@@ -139,12 +139,12 @@ func TestSchedulerRunJobPanic(t *testing.T) {
 	_, err := s.AddJob(j)
 	assert.NoError(t, err)
 
+	s.Start()
 	time.Sleep(50 * time.Millisecond)
 }
 
 func TestSchedulerGetJob(t *testing.T) {
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 
 	assert.Empty(t, j.Id)
@@ -159,7 +159,6 @@ func TestSchedulerGetJob(t *testing.T) {
 
 func TestSchedulerGetAllJobs(t *testing.T) {
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 
 	js, err := s.GetAllJobs()
@@ -176,7 +175,6 @@ func TestSchedulerGetAllJobs(t *testing.T) {
 
 func TestSchedulerUpdateJob(t *testing.T) {
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 
 	j, err := s.AddJob(j)
@@ -192,7 +190,6 @@ func TestSchedulerUpdateJob(t *testing.T) {
 
 func TestSchedulerDeleteJob(t *testing.T) {
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 
 	j, err := s.AddJob(j)
@@ -205,7 +202,6 @@ func TestSchedulerDeleteJob(t *testing.T) {
 
 func TestSchedulerDeleteAllJobs(t *testing.T) {
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 
 	_, err := s.AddJob(j)
@@ -225,6 +221,8 @@ func TestSchedulerPauseJob(t *testing.T) {
 
 	j, err := s.AddJob(j)
 	assert.NoError(t, err)
+
+	s.Start()
 
 	_, err = s.PauseJob(j.Id)
 	assert.NoError(t, err)
@@ -246,6 +244,8 @@ func TestSchedulerResumeJob(t *testing.T) {
 
 	j, err := s.AddJob(j)
 	assert.NoError(t, err)
+
+	s.Start()
 
 	_, err = s.PauseJob(j.Id)
 	assert.NoError(t, err)
@@ -282,7 +282,6 @@ func TestSchedulerRunJob(t *testing.T) {
 func TestSchedulerScheduleJobLocal(t *testing.T) {
 	cn := getClusterNode()
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -291,8 +290,6 @@ func TestSchedulerScheduleJobLocal(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = s.AddJob(j)
 	assert.NoError(t, err)
-
-	time.Sleep(500 * time.Millisecond)
 
 	err = s.ScheduleJob(j)
 	assert.NoError(t, err)
@@ -301,7 +298,6 @@ func TestSchedulerScheduleJobLocal(t *testing.T) {
 func TestSchedulerScheduleJobRemote(t *testing.T) {
 	cn := getClusterNode()
 	s := getSchedulerWithStore()
-	defer s.Stop()
 	j := getJob()
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -310,8 +306,6 @@ func TestSchedulerScheduleJobRemote(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = s.AddJob(j)
 	assert.NoError(t, err)
-
-	time.Sleep(500 * time.Millisecond)
 
 	cn.Endpoint = "test"
 	err = s.ScheduleJob(j)
@@ -332,6 +326,7 @@ func TestSchedulerScheduleJobQueueNotExist(t *testing.T) {
 	_, err = s.AddJob(j)
 	assert.NoError(t, err)
 
+	s.Start()
 	time.Sleep(500 * time.Millisecond)
 
 	err = s.ScheduleJob(j)

@@ -116,10 +116,6 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 		return Job{}, err
 	}
 
-	if !s.isRunning {
-		s.Start()
-	}
-
 	return j, nil
 }
 
@@ -378,13 +374,6 @@ func (s *Scheduler) run() {
 			if err != nil {
 				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s\n", err))
 				s.timer.Reset(time.Second)
-				continue
-			}
-
-			// If there are no job in store,
-			// the scheduler should be stopped to prevent being woken up all the time.
-			if len(js) == 0 {
-				s.Stop()
 				continue
 			}
 
