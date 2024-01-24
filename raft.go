@@ -80,7 +80,7 @@ func (rf *Raft) sendRequestVote(address string, args VoteArgs, reply *VoteReply)
 }
 
 func (rf *Raft) broadcastRequestVote() {
-	var args = VoteArgs{
+	args := VoteArgs{
 		Term:              rf.currentTerm,
 		CandidateEndpoint: rf.cn.Endpoint,
 	}
@@ -123,7 +123,7 @@ type HeartbeatArgs struct {
 	Term           int
 	LeaderEndpoint string
 
-	MainEndpoint string
+	SchedulerCanStart bool
 }
 
 type HeartbeatReply struct {
@@ -153,27 +153,21 @@ func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs, reply *Heartbe
 }
 
 func (rf *Raft) broadcastHeartbeat() {
+	args := HeartbeatArgs{
+		Term:           rf.currentTerm,
+		LeaderEndpoint: rf.cn.Endpoint,
+
+		SchedulerCanStart: rf.cn.Scheduler.IsRunning(),
+	}
+
 	for endpoint := range rf.cn.HANodeMap() {
 		if rf.cn.Endpoint == endpoint {
 			continue
 		}
-		args := HeartbeatArgs{
-			Term:           rf.currentTerm,
-			LeaderEndpoint: rf.cn.Endpoint,
-		}
-		ch := make(chan error, 1)
 		go func(address string) {
 			var reply HeartbeatReply
-			ch <- rf.sendHeartbeat(address, args, &reply)
+			rf.sendHeartbeat(address, args, &reply)
 		}(endpoint)
-		select {
-		case err := <-ch:
-			if err != nil {
-				slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`: %s\n", endpoint, err))
-			}
-		case <-time.After(100 * time.Millisecond):
-			slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`, timeout\n", endpoint))
-		}
 	}
 }
 
@@ -190,6 +184,7 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 	reply.Term = rf.currentTerm
 
 	rf.cn.SetMainEndpoint(args.LeaderEndpoint)
+	rf.cn.SchedulerCanStart = args.SchedulerCanStart
 
 	rf.heartbeatC <- true
 
@@ -232,7 +227,7 @@ func (rf *Raft) start(ctx context.Context) {
 					go rf.broadcastRequestVote()
 
 					select {
-					case <-time.After(time.Duration(rand.Intn(5000)+500) * time.Millisecond):
+					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
 						rf.role = Follower
 					case <-rf.toLeaderC:
 						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader\n", rf.cn.Endpoint))
@@ -240,7 +235,9 @@ func (rf *Raft) start(ctx context.Context) {
 
 						rf.cn.SetMainEndpoint(rf.cn.Endpoint)
 						rf.cn.registerNode(rf.cn)
-						rf.cn.Scheduler.Start()
+						if rf.cn.SchedulerCanStart {
+							rf.cn.Scheduler.Start()
+						}
 					}
 				case Leader:
 					rf.broadcastHeartbeat()

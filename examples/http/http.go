@@ -136,6 +136,8 @@ func runExampleHTTP(baseUrl string) {
 
 	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/jobs", nil)
 	client.Do(req)
+
+	http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
 }
 
 func main() {

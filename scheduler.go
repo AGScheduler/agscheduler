@@ -19,7 +19,7 @@ import (
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 
-var mutexS sync.Mutex
+var mutexS sync.RWMutex
 
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
@@ -35,6 +35,13 @@ type Scheduler struct {
 
 	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
+}
+
+func (s *Scheduler) IsRunning() bool {
+	mutexS.RLock()
+	defer mutexS.RUnlock()
+
+	return s.isRunning
 }
 
 // Bind the store
@@ -114,10 +121,6 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
-	}
-
-	if !s.isRunning {
-		s.Start()
 	}
 
 	return j, nil
@@ -377,13 +380,7 @@ func (s *Scheduler) run() {
 			js, err := s.GetAllJobs()
 			if err != nil {
 				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s\n", err))
-				continue
-			}
-
-			// If there are no job in store,
-			// the scheduler should be stopped to prevent being woken up all the time.
-			if len(js) == 0 {
-				s.Stop()
+				s.timer.Reset(time.Second)
 				continue
 			}
 
@@ -476,5 +473,7 @@ func (s *Scheduler) getNextWakeupInterval() time.Duration {
 }
 
 func (s *Scheduler) wakeup() {
-	s.timer.Reset(0)
+	if s.timer != nil {
+		s.timer.Reset(0)
+	}
 }

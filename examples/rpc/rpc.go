@@ -110,6 +110,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 	time.Sleep(3 * time.Second)
 
 	c.DeleteAllJobs(ctx, &emptypb.Empty{})
+
+	c.Stop(ctx, &emptypb.Empty{})
 }
 
 func main() {

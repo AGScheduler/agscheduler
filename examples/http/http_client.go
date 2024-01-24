@@ -34,6 +34,8 @@ func runExampleHTTP(baseUrl string) {
 	rJob1 := &result{}
 	json.Unmarshal(body, &rJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", rJob1.Data))
+
+	http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
 }
 
 func main() {

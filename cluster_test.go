@@ -50,7 +50,7 @@ func TestClusterNodeToNode(t *testing.T) {
 	valueOfN := reflect.ValueOf(*n)
 	for i := 0; i < valueOfCN.NumField(); i++ {
 		fieldType := typeOfCN.Field(i)
-		if fieldType.Name == "Scheduler" || fieldType.Name == "Raft" {
+		if fieldType.Name == "Scheduler" || fieldType.Name == "Raft" || fieldType.Name == "SchedulerCanStart" {
 			continue
 		}
 		assert.Equal(t, valueOfCN.Field(i).String(), valueOfN.Field(i).String())
