@@ -29,7 +29,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] HTTP API
 - Supports cluster
   - [x] Remote worker nodes
-  - [x] Scheduler High Availability (Experimental)
+  - [x] Scheduler high availability (Experimental)
 
 ## Framework
 
