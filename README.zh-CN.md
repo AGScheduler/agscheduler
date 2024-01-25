@@ -176,7 +176,7 @@ cserviceNode.Start()
 
 // HA 需要满足以下条件：
 //
-// 1. 群集中 HA 节点的数量必须为奇数
+// 1. 集群中 HA 节点的数量必须为奇数
 // 2. 所有 HA 节点都需要连接到同一个存储（不包含 MemoryStore）
 // 3. ClusterNode 的 Mode 属性需要设置为 `HA`
 // 4. HA 主节点必须先启动
