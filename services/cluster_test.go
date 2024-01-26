@@ -2,9 +2,6 @@ package services
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
 	"net/rpc"
 	"testing"
 	"time"
@@ -19,11 +16,6 @@ func TestClusterService(t *testing.T) {
 	store := &stores.MemoryStore{}
 	cnMain := &agscheduler.ClusterNode{
 		MainEndpoint: "127.0.0.1:36380",
-		// Endpoint:              "127.0.0.1:36380",
-		EndpointHTTP: "127.0.0.1:36390",
-		// SchedulerEndpoint:     "127.0.0.1:36360",
-		// SchedulerEndpointHTTP: "127.0.0.1:36370",
-		// Queue:                 "default",
 	}
 	scheduler := &agscheduler.Scheduler{}
 	err := scheduler.SetStore(store)
@@ -42,25 +34,18 @@ func TestClusterService(t *testing.T) {
 
 	assert.Len(t, cnMain.NodeMapCopy(), 1)
 	cn := &agscheduler.ClusterNode{
-		MainEndpoint: cnMain.Endpoint,
-		// Endpoint:          "127.0.0.1:36381",
-		SchedulerEndpoint:     "127.0.0.1:36361",
-		SchedulerEndpointHTTP: "127.0.0.1:36371",
-		Queue:                 "node",
+		MainEndpoint:      cnMain.Endpoint,
+		Endpoint:          "127.0.0.1:36381",
+		SchedulerEndpoint: "127.0.0.1:36361",
+		EndpointHTTP:      "127.0.0.1:36371",
+		Queue:             "node",
 	}
 	err = cn.RegisterNodeRemote(ctx)
 	assert.NoError(t, err)
 	assert.Len(t, cnMain.NodeMapCopy(), 2)
 
-	resp, err := http.Get("http://" + cnMain.EndpointHTTP + "/cluster/nodes")
-	assert.NoError(t, err)
-	assert.Equal(t, 200, resp.StatusCode)
-	body, err := io.ReadAll(resp.Body)
-	assert.NoError(t, err)
-	rJ := &result{}
-	err = json.Unmarshal(body, &rJ)
-	assert.NoError(t, err)
-	assert.Len(t, rJ.Data.(map[string]any), 2)
+	baseUrl := "http://" + cnMain.EndpointHTTP
+	testClusterHTTP(t, baseUrl)
 
 	var nodeMap agscheduler.TypeNodeMap
 	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)

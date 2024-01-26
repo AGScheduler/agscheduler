@@ -12,9 +12,8 @@ type ClusterService struct {
 	Cn *agscheduler.ClusterNode
 
 	srs *SchedulerGRPCService
-	shs *SchedulerHTTPService
+	hs  *HTTPService
 	crs *clusterRPCService
-	chs *clusterHTTPService
 }
 
 func (s *ClusterService) Start() error {
@@ -25,21 +24,15 @@ func (s *ClusterService) Start() error {
 		return err
 	}
 
-	s.shs = &SchedulerHTTPService{Scheduler: s.Cn.Scheduler}
-	s.shs.Address = s.Cn.SchedulerEndpointHTTP
-	err = s.shs.Start()
+	s.hs = &HTTPService{Scheduler: s.Cn.Scheduler}
+	s.hs.Address = s.Cn.EndpointHTTP
+	err = s.hs.Start()
 	if err != nil {
 		return err
 	}
 
 	s.crs = &clusterRPCService{Cn: s.Cn}
 	err = s.crs.Start()
-	if err != nil {
-		return err
-	}
-
-	s.chs = &clusterHTTPService{Cn: s.Cn}
-	err = s.chs.Start()
 	if err != nil {
 		return err
 	}
@@ -62,17 +55,12 @@ func (s *ClusterService) Stop() error {
 		return err
 	}
 
-	err = s.shs.Stop()
+	err = s.hs.Stop()
 	if err != nil {
 		return err
 	}
 
 	err = s.crs.Stop()
-	if err != nil {
-		return err
-	}
-
-	err = s.chs.Stop()
 	if err != nil {
 		return err
 	}

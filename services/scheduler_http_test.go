@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/stores"
 )
 
 const CONTENT_TYPE = "application/json"
@@ -24,7 +23,7 @@ type result struct {
 
 func dryRunHTTP(ctx context.Context, j agscheduler.Job) {}
 
-func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
+func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	client := &http.Client{}
 
 	_, err := http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
@@ -148,34 +147,5 @@ func testAGSchedulerHTTP(t *testing.T, baseUrl string) {
 	assert.Empty(t, rJs.Data)
 
 	_, err = http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
-	assert.NoError(t, err)
-}
-
-func TestHTTPService(t *testing.T) {
-	agscheduler.RegisterFuncs(dryRunHTTP)
-
-	store := &stores.MemoryStore{}
-
-	scheduler := &agscheduler.Scheduler{}
-	err := scheduler.SetStore(store)
-	assert.NoError(t, err)
-
-	shservice := SchedulerHTTPService{
-		Scheduler: scheduler,
-		// Address:   "127.0.0.1:36370",
-	}
-	err = shservice.Start()
-	assert.NoError(t, err)
-
-	time.Sleep(time.Second)
-
-	baseUrl := "http://" + shservice.Address
-
-	testAGSchedulerHTTP(t, baseUrl)
-
-	err = shservice.Stop()
-	assert.NoError(t, err)
-
-	err = store.Clear()
 	assert.NoError(t, err)
 }

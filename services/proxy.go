@@ -40,12 +40,12 @@ func (c *ClusterProxy) GinProxy() gin.HandlerFunc {
 			proxyUrl.Scheme = "https"
 		}
 
-		schedulerEndpointHTTP, ok := cn.MainNode()["scheduler_endpoint_http"].(string)
+		endpointHTTP, ok := cn.MainNode()["endpoint_http"].(string)
 		if !ok {
-			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for scheduler_endpoint_http"})
+			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for endpoint_http"})
 			gc.Abort()
 		}
-		proxyUrl.Host = schedulerEndpointHTTP
+		proxyUrl.Host = endpointHTTP
 
 		proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
 		proxy.ServeHTTP(gc.Writer, gc.Request)

@@ -127,11 +127,11 @@ client.AddJob(ctx, job)
 
 ```golang
 // Server
-shservice := services.SchedulerHTTPService{
+hservice := services.HTTPService{
 	Scheduler: scheduler,
 	Address:   "127.0.0.1:36370",
 }
-shservice.Start()
+hservice.Start()
 
 // Client
 mJob := map[string]any{...}
@@ -144,11 +144,10 @@ resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json",
 ```golang
 // Main Node
 cnMain := &agscheduler.ClusterNode{
-	Endpoint:              "127.0.0.1:36380",
-	EndpointHTTP:          "127.0.0.1:36390",
-	SchedulerEndpoint:     "127.0.0.1:36360",
-	SchedulerEndpointHTTP: "127.0.0.1:36370",
-	Queue:                 "default",
+	Endpoint:          "127.0.0.1:36380",
+	SchedulerEndpoint: "127.0.0.1:36360",
+	EndpointHTTP:      "127.0.0.1:36370",
+	Queue:             "default",
 }
 schedulerMain.SetStore(storeMain)
 schedulerMain.SetClusterNode(ctx, cnMain)
@@ -157,12 +156,11 @@ cserviceMain.Start()
 
 // Worker Node
 cnNode := &agscheduler.ClusterNode{
-	MainEndpoint:          "127.0.0.1:36380",
-	Endpoint:              "127.0.0.1:36381",
-	EndpointHTTP:          "127.0.0.1:36391",
-	SchedulerEndpoint:     "127.0.0.1:36361",
-	SchedulerEndpointHTTP: "127.0.0.1:36371",
-	Queue:                 "worker",
+	MainEndpoint:      "127.0.0.1:36380",
+	Endpoint:          "127.0.0.1:36381",
+	SchedulerEndpoint: "127.0.0.1:36361",
+	EndpointHTTP:      "127.0.0.1:36371",
+	Queue:             "worker",
 }
 schedulerNode.SetStore(storeNode)
 schedulerNode.SetClusterNode(ctx, cnNode)

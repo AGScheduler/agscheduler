@@ -93,7 +93,6 @@ func TestGRPCService(t *testing.T) {
 
 	srservice := SchedulerGRPCService{
 		Scheduler: scheduler,
-		// Address:   "127.0.0.1:36360",
 	}
 	err = srservice.Start()
 	assert.NoError(t, err)

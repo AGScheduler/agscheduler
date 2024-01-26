@@ -19,12 +19,11 @@ func TestRaft(t *testing.T) {
 	store := &stores.MemoryStore{}
 
 	cnMain := &agscheduler.ClusterNode{
-		MainEndpoint:          "127.0.0.1:36387",
-		Endpoint:              "127.0.0.1:36387",
-		EndpointHTTP:          "127.0.0.1:36397",
-		SchedulerEndpoint:     "127.0.0.1:36367",
-		SchedulerEndpointHTTP: "127.0.0.1:36377",
-		Mode:                  "HA",
+		MainEndpoint:      "127.0.0.1:36387",
+		Endpoint:          "127.0.0.1:36387",
+		SchedulerEndpoint: "127.0.0.1:36367",
+		EndpointHTTP:      "127.0.0.1:36377",
+		Mode:              "HA",
 	}
 	schedulerMain := &agscheduler.Scheduler{}
 	err := schedulerMain.SetStore(store)
@@ -38,12 +37,11 @@ func TestRaft(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	cnNode := &agscheduler.ClusterNode{
-		MainEndpoint:          cnMain.Endpoint,
-		Endpoint:              "127.0.0.1:36388",
-		EndpointHTTP:          "127.0.0.1:36398",
-		SchedulerEndpoint:     "127.0.0.1:36368",
-		SchedulerEndpointHTTP: "127.0.0.1:36378",
-		Mode:                  "HA",
+		MainEndpoint:      cnMain.Endpoint,
+		Endpoint:          "127.0.0.1:36388",
+		SchedulerEndpoint: "127.0.0.1:36368",
+		EndpointHTTP:      "127.0.0.1:36378",
+		Mode:              "HA",
 	}
 	schedulerNode := &agscheduler.Scheduler{}
 	err = schedulerNode.SetStore(store)
@@ -55,12 +53,11 @@ func TestRaft(t *testing.T) {
 	assert.NoError(t, err)
 
 	cnNode2 := &agscheduler.ClusterNode{
-		MainEndpoint:          cnMain.Endpoint,
-		Endpoint:              "127.0.0.1:36389",
-		EndpointHTTP:          "127.0.0.1:36399",
-		SchedulerEndpoint:     "127.0.0.1:36369",
-		SchedulerEndpointHTTP: "127.0.0.1:36379",
-		Mode:                  "HA",
+		MainEndpoint:      cnMain.Endpoint,
+		Endpoint:          "127.0.0.1:36389",
+		SchedulerEndpoint: "127.0.0.1:36369",
+		EndpointHTTP:      "127.0.0.1:36379",
+		Mode:              "HA",
 	}
 	schedulerNode2 := &agscheduler.Scheduler{}
 	err = schedulerNode2.SetStore(store)
