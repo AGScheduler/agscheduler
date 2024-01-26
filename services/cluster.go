@@ -11,15 +11,15 @@ import (
 type ClusterService struct {
 	Cn *agscheduler.ClusterNode
 
-	srs *SchedulerGRPCService
+	grs *GRPCService
 	hs  *HTTPService
 	crs *clusterRPCService
 }
 
 func (s *ClusterService) Start() error {
-	s.srs = &SchedulerGRPCService{Scheduler: s.Cn.Scheduler}
-	s.srs.Address = s.Cn.SchedulerEndpoint
-	err := s.srs.Start()
+	s.grs = &GRPCService{Scheduler: s.Cn.Scheduler}
+	s.grs.Address = s.Cn.EndpointGRPC
+	err := s.grs.Start()
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (s *ClusterService) Start() error {
 }
 
 func (s *ClusterService) Stop() error {
-	err := s.srs.Stop()
+	err := s.grs.Stop()
 	if err != nil {
 		return err
 	}

@@ -16,9 +16,9 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
-var ctx = context.Background()
-
 func runExampleRPC(c pb.SchedulerClient) {
+	ctx := context.Background()
+
 	job1 := agscheduler.Job{
 		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,

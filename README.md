@@ -111,11 +111,11 @@ func main() {
 
 ```golang
 // Server
-srservice := services.SchedulerGRPCService{
+grservice := services.GRPCService{
 	Scheduler: scheduler,
 	Address:   "127.0.0.1:36360",
 }
-srservice.Start()
+grservice.Start()
 
 // Client
 conn, _ := grpc.Dial("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -144,10 +144,10 @@ resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json",
 ```golang
 // Main Node
 cnMain := &agscheduler.ClusterNode{
-	Endpoint:          "127.0.0.1:36380",
-	SchedulerEndpoint: "127.0.0.1:36360",
-	EndpointHTTP:      "127.0.0.1:36370",
-	Queue:             "default",
+	Endpoint:     "127.0.0.1:36380",
+	EndpointGRPC: "127.0.0.1:36360",
+	EndpointHTTP: "127.0.0.1:36370",
+	Queue:        "default",
 }
 schedulerMain.SetStore(storeMain)
 schedulerMain.SetClusterNode(ctx, cnMain)
@@ -156,11 +156,11 @@ cserviceMain.Start()
 
 // Worker Node
 cnNode := &agscheduler.ClusterNode{
-	MainEndpoint:      "127.0.0.1:36380",
-	Endpoint:          "127.0.0.1:36381",
-	SchedulerEndpoint: "127.0.0.1:36361",
-	EndpointHTTP:      "127.0.0.1:36371",
-	Queue:             "worker",
+	MainEndpoint: "127.0.0.1:36380",
+	Endpoint:     "127.0.0.1:36381",
+	EndpointGRPC: "127.0.0.1:36361",
+	EndpointHTTP: "127.0.0.1:36371",
+	Queue:        "worker",
 }
 schedulerNode.SetStore(storeNode)
 schedulerNode.SetClusterNode(ctx, cnNode)

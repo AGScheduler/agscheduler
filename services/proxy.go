@@ -67,13 +67,13 @@ func (c *ClusterProxy) GRPCProxyInterceptor(
 		return handler(ctx, req)
 	}
 
-	schedulerEndpoint, ok := cn.MainNode()["scheduler_endpoint"].(string)
+	endpointGRPC, ok := cn.MainNode()["endpoint_grpc"].(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid type for scheduler_endpoint")
+		return nil, fmt.Errorf("invalid type for endpoint_grpc")
 	}
-	conn, err := grpc.Dial(schedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(endpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("dialing %s failure", schedulerEndpoint)
+		return nil, fmt.Errorf("dialing %s failure", endpointGRPC)
 	}
 	defer conn.Close()
 

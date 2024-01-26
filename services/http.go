@@ -30,8 +30,8 @@ func (s *HTTPService) Start() error {
 	r := gin.Default()
 	r.Use(cors.Default())
 
-	chap := &ClusterProxy{Scheduler: s.Scheduler}
-	r.Use(chap.GinProxy())
+	cp := &ClusterProxy{Scheduler: s.Scheduler}
+	r.Use(cp.GinProxy())
 
 	shs := &sHTTPService{scheduler: s.Scheduler}
 	shs.registerRoutes(r)

@@ -1,7 +1,7 @@
 syntax = "proto3";
 
-package scheduler;
-option go_package="./;scheduler";
+package services;
+option go_package="./;services";
 
 import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
@@ -31,7 +31,7 @@ message Job {
 }
 
 message Jobs {
-  repeated Job Jobs = 1;
+  repeated Job jobs = 1;
 }
 
 service Scheduler {

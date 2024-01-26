@@ -2,13 +2,15 @@ package services
 
 import (
 	"context"
-	"net/rpc"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/kwkwc/agscheduler"
+	pb "github.com/kwkwc/agscheduler/services/proto"
 	"github.com/kwkwc/agscheduler/stores"
 )
 
@@ -34,11 +36,11 @@ func TestClusterService(t *testing.T) {
 
 	assert.Len(t, cnMain.NodeMapCopy(), 1)
 	cn := &agscheduler.ClusterNode{
-		MainEndpoint:      cnMain.Endpoint,
-		Endpoint:          "127.0.0.1:36381",
-		SchedulerEndpoint: "127.0.0.1:36361",
-		EndpointHTTP:      "127.0.0.1:36371",
-		Queue:             "node",
+		MainEndpoint: cnMain.Endpoint,
+		Endpoint:     "127.0.0.1:36381",
+		EndpointGRPC: "127.0.0.1:36361",
+		EndpointHTTP: "127.0.0.1:36371",
+		Queue:        "node",
 	}
 	err = cn.RegisterNodeRemote(ctx)
 	assert.NoError(t, err)
@@ -47,13 +49,11 @@ func TestClusterService(t *testing.T) {
 	baseUrl := "http://" + cnMain.EndpointHTTP
 	testClusterHTTP(t, baseUrl)
 
-	var nodeMap agscheduler.TypeNodeMap
-	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)
+	conn, err := grpc.Dial(cnMain.EndpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
-	filters := make(map[string]any)
-	err = rClient.Call("CRPCService.Nodes", filters, &nodeMap)
-	assert.NoError(t, err)
-	assert.Len(t, nodeMap, 2)
+	defer conn.Close()
+	clientC := pb.NewClusterClient(conn)
+	testClusterGRPC(t, clientC)
 
 	time.Sleep(200 * time.Millisecond)
 

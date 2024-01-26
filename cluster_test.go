@@ -12,23 +12,23 @@ import (
 
 func getClusterNode() *ClusterNode {
 	return &ClusterNode{
-		MainEndpoint:      "127.0.0.1:36380",
-		Endpoint:          "127.0.0.1:36380",
-		SchedulerEndpoint: "127.0.0.1:36360",
-		EndpointHTTP:      "127.0.0.1:36370",
-		Queue:             "default",
-		Mode:              "",
+		MainEndpoint: "127.0.0.1:36380",
+		Endpoint:     "127.0.0.1:36380",
+		EndpointGRPC: "127.0.0.1:36360",
+		EndpointHTTP: "127.0.0.1:36370",
+		Queue:        "default",
+		Mode:         "",
 	}
 }
 
 func TestClusterToClusterNode(t *testing.T) {
 	n := Node{
-		MainEndpoint:      "127.0.0.1:36380",
-		Endpoint:          "127.0.0.1:36380",
-		SchedulerEndpoint: "127.0.0.1:36360",
-		EndpointHTTP:      "127.0.0.1:36370",
-		Queue:             "default",
-		Mode:              "",
+		MainEndpoint: "127.0.0.1:36380",
+		Endpoint:     "127.0.0.1:36380",
+		EndpointGRPC: "127.0.0.1:36360",
+		EndpointHTTP: "127.0.0.1:36370",
+		Queue:        "default",
+		Mode:         "",
 	}
 	cn := n.toClusterNode()
 
@@ -66,7 +66,7 @@ func TestClusterInit(t *testing.T) {
 
 	assert.Equal(t, "127.0.0.1:36380", cn.GetMainEndpoint())
 	assert.Equal(t, "127.0.0.1:36380", cn.Endpoint)
-	assert.Equal(t, "127.0.0.1:36360", cn.SchedulerEndpoint)
+	assert.Equal(t, "127.0.0.1:36360", cn.EndpointGRPC)
 	assert.Equal(t, "127.0.0.1:36370", cn.EndpointHTTP)
 	assert.Equal(t, "default", cn.Queue)
 	assert.NotEmpty(t, cn.NodeMapCopy())

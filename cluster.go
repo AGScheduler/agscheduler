@@ -20,30 +20,30 @@ var nodeMapMutexC sync.RWMutex
 var mainEndpointMutexC sync.RWMutex
 
 type Node struct {
-	MainEndpoint      string
-	Endpoint          string
-	SchedulerEndpoint string
-	EndpointHTTP      string
-	Queue             string
-	Mode              string
+	MainEndpoint string
+	Endpoint     string
+	EndpointGRPC string
+	EndpointHTTP string
+	Queue        string
+	Mode         string
 
 	NodeMap TypeNodeMap
 }
 
 func (n *Node) toClusterNode() *ClusterNode {
 	return &ClusterNode{
-		MainEndpoint:      n.MainEndpoint,
-		Endpoint:          n.Endpoint,
-		SchedulerEndpoint: n.SchedulerEndpoint,
-		EndpointHTTP:      n.EndpointHTTP,
-		Queue:             n.Queue,
-		Mode:              n.Mode,
+		MainEndpoint: n.MainEndpoint,
+		Endpoint:     n.Endpoint,
+		EndpointGRPC: n.EndpointGRPC,
+		EndpointHTTP: n.EndpointHTTP,
+		Queue:        n.Queue,
+		Mode:         n.Mode,
 
 		nodeMap: n.NodeMap,
 	}
 }
 
-// Each node provides `Cluster RPC`, `Scheduler gRPC`, `HTTP` services,
+// Each node provides `Cluster RPC`, `gRPC`, `HTTP` services,
 // but only the main node starts the scheduler,
 // the other worker nodes register with the main node
 // and then run jobs from the main node via the RPC's `RunJob` API.
@@ -57,10 +57,10 @@ type ClusterNode struct {
 	// Used to expose the cluster's internal API.
 	// Default: `127.0.0.1:36380`
 	Endpoint string
-	// Scheduler gRPC listening address.
-	// Used to expose the scheduler's external API.
+	// gRPC listening address.
+	// Used to expose the external API.
 	// Default: `127.0.0.1:36360`
-	SchedulerEndpoint string
+	EndpointGRPC string
 	// HTTP listening address.
 	// Used to expose the external API.
 	// Default: `127.0.0.1:36370`
@@ -91,12 +91,12 @@ type ClusterNode struct {
 
 func (cn *ClusterNode) toNode() *Node {
 	return &Node{
-		MainEndpoint:      cn.GetMainEndpoint(),
-		Endpoint:          cn.Endpoint,
-		SchedulerEndpoint: cn.SchedulerEndpoint,
-		EndpointHTTP:      cn.EndpointHTTP,
-		Queue:             cn.Queue,
-		Mode:              cn.Mode,
+		MainEndpoint: cn.GetMainEndpoint(),
+		Endpoint:     cn.Endpoint,
+		EndpointGRPC: cn.EndpointGRPC,
+		EndpointHTTP: cn.EndpointHTTP,
+		Queue:        cn.Queue,
+		Mode:         cn.Mode,
 
 		NodeMap: cn.NodeMapCopy(),
 	}
@@ -176,8 +176,8 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	if cn.GetMainEndpoint() == "" {
 		cn.SetMainEndpoint(cn.Endpoint)
 	}
-	if cn.SchedulerEndpoint == "" {
-		cn.SchedulerEndpoint = "127.0.0.1:36360"
+	if cn.EndpointGRPC == "" {
+		cn.EndpointGRPC = "127.0.0.1:36360"
 	}
 	if cn.EndpointHTTP == "" {
 		cn.EndpointHTTP = "127.0.0.1:36370"
@@ -219,7 +219,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 	cn.nodeMap[n.Endpoint] = map[string]any{
 		"main_endpoint":       n.GetMainEndpoint(),
 		"endpoint":            n.Endpoint,
-		"scheduler_endpoint":  n.SchedulerEndpoint,
+		"endpoint_grpc":       n.EndpointGRPC,
 		"endpoint_http":       n.EndpointHTTP,
 		"queue":               n.Queue,
 		"mode":                n.Mode,
@@ -241,12 +241,12 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 			continue
 		}
 		cns = append(cns, &ClusterNode{
-			MainEndpoint:      v["main_endpoint"].(string),
-			Endpoint:          endpoint,
-			SchedulerEndpoint: v["scheduler_endpoint"].(string),
-			EndpointHTTP:      v["endpoint_http"].(string),
-			Queue:             v["queue"].(string),
-			Mode:              v["mode"].(string),
+			MainEndpoint: v["main_endpoint"].(string),
+			Endpoint:     endpoint,
+			EndpointGRPC: v["endpoint_grpc"].(string),
+			EndpointHTTP: v["endpoint_http"].(string),
+			Queue:        v["queue"].(string),
+			Mode:         v["mode"].(string),
 		})
 	}
 
@@ -305,7 +305,7 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 // RPC API
 func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 	slog.Info(fmt.Sprintf("Register from Cluster Node: `%s`", args.Endpoint))
-	slog.Info(fmt.Sprintf("Cluster Node Scheduler gRPC Service listening at: %s", args.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Node gRPC Service listening at: %s", args.EndpointGRPC))
 	slog.Info(fmt.Sprintf("Cluster Node HTTP Service listening at: %s", args.EndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Node Queue: `%s`", args.Queue))
 
@@ -313,7 +313,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 
 	reply.MainEndpoint = cn.GetMainEndpoint()
 	reply.Endpoint = cn.Endpoint
-	reply.SchedulerEndpoint = cn.SchedulerEndpoint
+	reply.EndpointGRPC = cn.EndpointGRPC
 	reply.EndpointHTTP = cn.EndpointHTTP
 	reply.Queue = cn.Queue
 
@@ -354,7 +354,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	cn.SetMainEndpoint(main.MainEndpoint)
 	cn.setNodeMap(main.NodeMap)
 
-	slog.Info(fmt.Sprintf("Cluster Main Node Scheduler gRPC Service listening at: %s", main.SchedulerEndpoint))
+	slog.Info(fmt.Sprintf("Cluster Main Node gRPC Service listening at: %s", main.EndpointGRPC))
 	slog.Info(fmt.Sprintf("Cluster Main Node HTTP Service listening at: %s", main.EndpointHTTP))
 	slog.Info(fmt.Sprintf("Cluster Main Node Queue: `%s`", main.Queue))
 

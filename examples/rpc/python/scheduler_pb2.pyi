@@ -49,7 +49,7 @@ class Job(_message.Message):
     def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., start_at: _Optional[str] = ..., end_at: _Optional[str] = ..., interval: _Optional[str] = ..., cron_expr: _Optional[str] = ..., timezone: _Optional[str] = ..., func_name: _Optional[str] = ..., args: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., timeout: _Optional[str] = ..., queues: _Optional[_Iterable[str]] = ..., last_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., next_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., status: _Optional[str] = ...) -> None: ...
 
 class Jobs(_message.Message):
-    __slots__ = ["Jobs"]
+    __slots__ = ["jobs"]
     JOBS_FIELD_NUMBER: _ClassVar[int]
-    Jobs: _containers.RepeatedCompositeFieldContainer[Job]
-    def __init__(self, Jobs: _Optional[_Iterable[_Union[Job, _Mapping]]] = ...) -> None: ...
+    jobs: _containers.RepeatedCompositeFieldContainer[Job]
+    def __init__(self, jobs: _Optional[_Iterable[_Union[Job, _Mapping]]] = ...) -> None: ...

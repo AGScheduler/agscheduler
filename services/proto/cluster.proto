@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package services;
+option go_package="./;services";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+message Node {
+  string main_endpoint = 1;
+  string endpoint = 2;
+  string endpoint_grpc = 3;
+  string endpoint_http = 4;
+  string queue = 5;
+  string mode = 6;
+  bool health = 7;
+  google.protobuf.Timestamp  register_time = 8;
+  google.protobuf.Timestamp  last_heartbeat_time = 9;
+}
+
+message Nodes {
+  map<string, Node> nodes = 1;
+}
+
+service Cluster {
+  rpc GetNodes (google.protobuf.Empty) returns (Nodes) {}
+}

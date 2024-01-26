@@ -20,9 +20,9 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-var ctx = context.Background()
-
 func runExampleRPC(c pb.SchedulerClient) {
+	ctx := context.Background()
+
 	job1 := agscheduler.Job{
 		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,
@@ -126,11 +126,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	srservice := services.SchedulerGRPCService{
+	grservice := services.GRPCService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:36360",
 	}
-	err = srservice.Start()
+	err = grservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
 		os.Exit(1)
@@ -142,7 +142,7 @@ func main() {
 
 	runExampleRPC(client)
 
-	err = srservice.Stop()
+	err = grservice.Stop()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to stop service: %s", err))
 		os.Exit(1)
