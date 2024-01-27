@@ -1,4 +1,4 @@
-// go run examples/rpc/rpc_server.go
+// go run examples/grpc/grpc_server.go
 
 package main
 
@@ -25,11 +25,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	srservice := services.SchedulerGRPCService{
+	grservice := services.GRPCService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:36360",
 	}
-	err = srservice.Start()
+	err = grservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
 		os.Exit(1)

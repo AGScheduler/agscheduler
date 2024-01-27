@@ -111,11 +111,11 @@ func main() {
 
 ```golang
 // Server
-srservice := services.SchedulerGRPCService{
+grservice := services.GRPCService{
 	Scheduler: scheduler,
 	Address:   "127.0.0.1:36360",
 }
-srservice.Start()
+grservice.Start()
 
 // Client
 conn, _ := grpc.Dial("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -127,11 +127,11 @@ client.AddJob(ctx, job)
 
 ```golang
 // Server
-shservice := services.SchedulerHTTPService{
+hservice := services.HTTPService{
 	Scheduler: scheduler,
 	Address:   "127.0.0.1:36370",
 }
-shservice.Start()
+hservice.Start()
 
 // Client
 mJob := map[string]any{...}
@@ -144,11 +144,10 @@ resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json",
 ```golang
 // Main Node
 cnMain := &agscheduler.ClusterNode{
-	Endpoint:              "127.0.0.1:36380",
-	EndpointHTTP:          "127.0.0.1:36390",
-	SchedulerEndpoint:     "127.0.0.1:36360",
-	SchedulerEndpointHTTP: "127.0.0.1:36370",
-	Queue:                 "default",
+	Endpoint:     "127.0.0.1:36380",
+	EndpointGRPC: "127.0.0.1:36360",
+	EndpointHTTP: "127.0.0.1:36370",
+	Queue:        "default",
 }
 schedulerMain.SetStore(storeMain)
 schedulerMain.SetClusterNode(ctx, cnMain)
@@ -157,12 +156,11 @@ cserviceMain.Start()
 
 // Worker Node
 cnNode := &agscheduler.ClusterNode{
-	MainEndpoint:          "127.0.0.1:36380",
-	Endpoint:              "127.0.0.1:36381",
-	EndpointHTTP:          "127.0.0.1:36391",
-	SchedulerEndpoint:     "127.0.0.1:36361",
-	SchedulerEndpointHTTP: "127.0.0.1:36371",
-	Queue:                 "worker",
+	EndpointMain: "127.0.0.1:36380",
+	Endpoint:     "127.0.0.1:36381",
+	EndpointGRPC: "127.0.0.1:36361",
+	EndpointHTTP: "127.0.0.1:36371",
+	Queue:        "worker",
 }
 schedulerNode.SetStore(storeNode)
 schedulerNode.SetClusterNode(ctx, cnNode)
@@ -192,6 +190,12 @@ cnNode2 := &agscheduler.ClusterNode{..., Mode: "HA"}
 cnNode3 := &agscheduler.ClusterNode{...}
 ```
 
+## Base API
+
+| gRPC Function | HTTP Method | HTTP Endpoint             |
+|---------------|-------------|---------------------------|
+| GetInfo       | GET         | /info                     |
+
 ## Scheduler API
 
 | gRPC Function | HTTP Method | HTTP Endpoint             |
@@ -211,9 +215,9 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 ## Cluster API
 
-| RPC Function | HTTP Method | HTTP Endpoint             |
+| gRPC Function | HTTP Method | HTTP Endpoint             |
 |---------------|-------------|---------------------------|
-| Nodes         | GET         | /cluster/nodes            |
+| GetNodes      | GET         | /cluster/nodes            |
 
 ## 示例
 

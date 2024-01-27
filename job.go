@@ -53,7 +53,7 @@ type Job struct {
 	// The job actually runs the function,
 	// and you need to register it through 'RegisterFuncs' before using it.
 	// Since it cannot be stored by serialization,
-	// when using RPC or HTTP calls, you should use `FuncName`.
+	// when using gRPC or HTTP calls, you should use `FuncName`.
 	Func func(context.Context, Job) `json:"-"`
 	// The actual path of `Func`.
 	// This field has a higher priority than `Func`
@@ -186,10 +186,13 @@ func StateLoad(state []byte) (Job, error) {
 }
 
 // Used to gRPC Protobuf
-func JobToPbJobPtr(j Job) *pb.Job {
-	args, _ := structpb.NewStruct(j.Args)
+func JobToPbJobPtr(j Job) (*pb.Job, error) {
+	args, err := structpb.NewStruct(j.Args)
+	if err != nil {
+		return &pb.Job{}, err
+	}
 
-	return &pb.Job{
+	pbJ := &pb.Job{
 		Id:       j.Id,
 		Name:     j.Name,
 		Type:     j.Type,
@@ -207,6 +210,8 @@ func JobToPbJobPtr(j Job) *pb.Job {
 		NextRunTime: timestamppb.New(j.NextRunTime),
 		Status:      j.Status,
 	}
+
+	return pbJ, nil
 }
 
 // Used to gRPC Protobuf
@@ -232,14 +237,19 @@ func PbJobPtrToJob(pbJob *pb.Job) Job {
 }
 
 // Used to gRPC Protobuf
-func JobsToPbJobsPtr(js []Job) *pb.Jobs {
-	pbJs := pb.Jobs{}
+func JobsToPbJobsPtr(js []Job) (*pb.Jobs, error) {
+	pbJs := &pb.Jobs{}
 
 	for _, j := range js {
-		pbJs.Jobs = append(pbJs.Jobs, JobToPbJobPtr(j))
+		pbJ, err := JobToPbJobPtr(j)
+		if err != nil {
+			return &pb.Jobs{}, err
+		}
+
+		pbJs.Jobs = append(pbJs.Jobs, pbJ)
 	}
 
-	return &pbJs
+	return pbJs, nil
 }
 
 // Used to gRPC Protobuf

@@ -1,12 +1,6 @@
 package services
 
 import (
-	"context"
-	"fmt"
-	"log/slog"
-	"net/http"
-
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/kwkwc/agscheduler"
@@ -120,16 +114,7 @@ func (shs *sHTTPService) stop(c *gin.Context) {
 	c.JSON(200, gin.H{"data": nil, "error": ""})
 }
 
-type SchedulerHTTPService struct {
-	Scheduler *agscheduler.Scheduler
-
-	// Default: `127.0.0.1:36370`
-	Address string
-
-	srv *http.Server
-}
-
-func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) {
+func (shs *sHTTPService) registerRoutes(r *gin.Engine) {
 	r.POST("/scheduler/job", shs.addJob)
 	r.GET("/scheduler/job/:id", shs.getJob)
 	r.GET("/scheduler/jobs", shs.getAllJobs)
@@ -142,44 +127,4 @@ func (s *SchedulerHTTPService) registerRoutes(r *gin.Engine, shs *sHTTPService) 
 	r.POST("/scheduler/job/schedule", shs.scheduleJob)
 	r.POST("/scheduler/start", shs.start)
 	r.POST("/scheduler/stop", shs.stop)
-}
-
-func (s *SchedulerHTTPService) Start() error {
-	if s.Address == "" {
-		s.Address = "127.0.0.1:36370"
-	}
-
-	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
-	r.Use(cors.Default())
-
-	chap := &ClusterProxy{Scheduler: s.Scheduler}
-	r.Use(chap.GinProxy())
-
-	s.registerRoutes(r, &sHTTPService{scheduler: s.Scheduler})
-
-	slog.Info(fmt.Sprintf("Scheduler HTTP Service listening at: %s", s.Address))
-
-	s.srv = &http.Server{
-		Addr:    s.Address,
-		Handler: r,
-	}
-
-	go func() {
-		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error(fmt.Sprintf("Scheduler HTTP Service Unavailable: %s", err))
-		}
-	}()
-
-	return nil
-}
-
-func (s *SchedulerHTTPService) Stop() error {
-	slog.Info("Scheduler HTTP Service stop")
-
-	if err := s.srv.Shutdown(context.Background()); err != nil {
-		return fmt.Errorf("failed to stop service: %s", err)
-	}
-
-	return nil
 }

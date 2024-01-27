@@ -477,3 +477,24 @@ func (s *Scheduler) wakeup() {
 		s.timer.Reset(0)
 	}
 }
+
+func (s *Scheduler) Info() map[string]any {
+	info := map[string]any{
+		"cluster_main_node": map[string]any{},
+		"is_cluster_mode":   s.IsClusterMode(),
+		"is_running":        s.IsRunning(),
+		"version":           Version,
+	}
+
+	if s.IsClusterMode() {
+		info["cluster_main_node"] = map[string]any{
+			"endpoint_main": s.clusterNode.GetEndpointMain(),
+			"endpoint":      s.clusterNode.Endpoint,
+			"endpoint_grpc": s.clusterNode.EndpointGRPC,
+			"endpoint_http": s.clusterNode.EndpointHTTP,
+			"mode":          s.clusterNode.Mode,
+		}
+	}
+
+	return info
+}

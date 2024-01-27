@@ -40,12 +40,12 @@ func (c *ClusterProxy) GinProxy() gin.HandlerFunc {
 			proxyUrl.Scheme = "https"
 		}
 
-		schedulerEndpointHTTP, ok := cn.MainNode()["scheduler_endpoint_http"].(string)
+		endpointHTTP, ok := cn.MainNode()["endpoint_http"].(string)
 		if !ok {
-			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for scheduler_endpoint_http"})
+			gc.JSON(http.StatusBadRequest, gin.H{"error": "Invalid type for endpoint_http"})
 			gc.Abort()
 		}
-		proxyUrl.Host = schedulerEndpointHTTP
+		proxyUrl.Host = endpointHTTP
 
 		proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
 		proxy.ServeHTTP(gc.Writer, gc.Request)
@@ -67,13 +67,13 @@ func (c *ClusterProxy) GRPCProxyInterceptor(
 		return handler(ctx, req)
 	}
 
-	schedulerEndpoint, ok := cn.MainNode()["scheduler_endpoint"].(string)
+	endpointGRPC, ok := cn.MainNode()["endpoint_grpc"].(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid type for scheduler_endpoint")
+		return nil, fmt.Errorf("invalid type for endpoint_grpc")
 	}
-	conn, err := grpc.Dial(schedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(endpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		return nil, fmt.Errorf("dialing %s failure", schedulerEndpoint)
+		return nil, fmt.Errorf("dialing %s failure", endpointGRPC)
 	}
 	defer conn.Close()
 

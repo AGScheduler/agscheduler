@@ -16,18 +16,18 @@ type CRPCService struct {
 	cn *agscheduler.ClusterNode
 }
 
+func (crs *CRPCService) GetInfo(filters map[string]any, reply *map[string]any) error {
+	*reply = crs.cn.Scheduler.Info()
+	return nil
+}
+
 func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node) error {
 	crs.cn.RPCRegister(args, reply)
 	return nil
 }
 
-func (crs *CRPCService) Ping(args *agscheduler.Node, reply *agscheduler.Node) error {
-	crs.cn.RPCPing(args, reply)
-	return nil
-}
-
-func (crs *CRPCService) Nodes(filters map[string]any, reply *agscheduler.TypeNodeMap) error {
-	*reply = crs.cn.NodeMapCopy()
+func (crs *CRPCService) Heartbeat(args *agscheduler.Node, reply *agscheduler.Node) error {
+	crs.cn.RPCHeartbeat(args, reply)
 	return nil
 }
 

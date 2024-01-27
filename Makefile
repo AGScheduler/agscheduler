@@ -22,17 +22,17 @@ lint:
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
-	go run examples/cluster/cluster_node.go -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 -seh 127.0.0.1:36670 &
+	go run examples/cluster/cluster_node.go -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670 &
 	sleep 2s
 
 .PHONY: down-cluster-ci-service
 down-cluster-ci-service:
-	ps -ef | grep "cluster_node -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 -seh 127.0.0.1:36670" \
+	ps -ef | grep "cluster_node -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
 
 .PHONY: down-cluster-ci-service_second
 down-cluster-ci-service_second:
-	ps -ef | grep "cluster_node -e 127.0.0.1:36680 -eh 127.0.0.1:36690 -se 127.0.0.1:36660 -seh 127.0.0.1:36670" \
+	ps -ef | grep "cluster_node -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
 
 
@@ -66,15 +66,15 @@ protobuf:
 		-I services/proto/ \
 		--go_out=services/proto --go_opt=paths=source_relative \
 		--go-grpc_out=services/proto --go-grpc_opt=paths=source_relative \
-		services/proto/scheduler.proto
+		services/proto/*.proto
 
 	python3 \
 		-m grpc_tools.protoc \
 		-I services/proto/ \
-		--python_out=examples/rpc/python \
-		--pyi_out=examples/rpc/python \
-		--grpc_python_out=examples/rpc/python \
-		services/proto/scheduler.proto
+		--python_out=examples/grpc/python \
+		--pyi_out=examples/grpc/python \
+		--grpc_python_out=examples/grpc/python \
+		services/proto/*.proto
 
 .PHONY: examples
 examples:
@@ -83,5 +83,5 @@ examples:
 	go run examples/stores/base.go examples/stores/redis.go
 	go run examples/stores/base.go examples/stores/mongodb.go
 	go run examples/stores/base.go examples/stores/etcd.go
-	go run examples/rpc/rpc.go
+	go run examples/grpc/grpc.go
 	go run examples/http/http.go

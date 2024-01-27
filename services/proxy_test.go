@@ -23,12 +23,10 @@ func TestClusterProxy(t *testing.T) {
 	store := &stores.MemoryStore{}
 
 	cnMain := &agscheduler.ClusterNode{
-		MainEndpoint:          "127.0.0.1:36380",
-		Endpoint:              "127.0.0.1:36380",
-		EndpointHTTP:          "127.0.0.1:36390",
-		SchedulerEndpoint:     "127.0.0.1:36360",
-		SchedulerEndpointHTTP: "127.0.0.1:36370",
-		// Queue:             "default",
+		EndpointMain: "127.0.0.1:36380",
+		Endpoint:     "127.0.0.1:36380",
+		EndpointGRPC: "127.0.0.1:36360",
+		EndpointHTTP: "127.0.0.1:36370",
 	}
 	schedulerMain := &agscheduler.Scheduler{}
 	err := schedulerMain.SetStore(store)
@@ -42,12 +40,11 @@ func TestClusterProxy(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	cnNode := &agscheduler.ClusterNode{
-		MainEndpoint:          cnMain.Endpoint,
-		Endpoint:              "127.0.0.1:36381",
-		EndpointHTTP:          "127.0.0.1:36391",
-		SchedulerEndpoint:     "127.0.0.1:36361",
-		SchedulerEndpointHTTP: "127.0.0.1:36371",
-		Queue:                 "node",
+		EndpointMain: cnMain.Endpoint,
+		Endpoint:     "127.0.0.1:36381",
+		EndpointGRPC: "127.0.0.1:36361",
+		EndpointHTTP: "127.0.0.1:36371",
+		Queue:        "node",
 	}
 	scheduler := &agscheduler.Scheduler{}
 	err = scheduler.SetStore(store)
@@ -60,12 +57,12 @@ func TestClusterProxy(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
-	baseUrl := "http://" + cnNode.SchedulerEndpointHTTP
+	baseUrl := "http://" + cnNode.EndpointHTTP
 	resp, err := http.Get(baseUrl + "/scheduler/jobs")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	conn, err := grpc.Dial(cnNode.SchedulerEndpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.Dial(cnNode.EndpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)

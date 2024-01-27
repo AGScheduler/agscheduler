@@ -8,29 +8,29 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
 func getClusterNode() *ClusterNode {
 	return &ClusterNode{
-		MainEndpoint:          "127.0.0.1:36380",
-		Endpoint:              "127.0.0.1:36380",
-		EndpointHTTP:          "127.0.0.1:36390",
-		SchedulerEndpoint:     "127.0.0.1:36360",
-		SchedulerEndpointHTTP: "127.0.0.1:36370",
-		Queue:                 "default",
-		Mode:                  "",
+		EndpointMain: "127.0.0.1:36380",
+		Endpoint:     "127.0.0.1:36380",
+		EndpointGRPC: "127.0.0.1:36360",
+		EndpointHTTP: "127.0.0.1:36370",
+		Queue:        "default",
+		Mode:         "",
 	}
 }
 
 func TestClusterToClusterNode(t *testing.T) {
 	n := Node{
-		MainEndpoint:          "127.0.0.1:36380",
-		Endpoint:              "127.0.0.1:36380",
-		EndpointHTTP:          "127.0.0.1:36390",
-		SchedulerEndpoint:     "127.0.0.1:36360",
-		SchedulerEndpointHTTP: "127.0.0.1:36370",
-		Queue:                 "default",
-		Mode:                  "",
+		EndpointMain: "127.0.0.1:36380",
+		Endpoint:     "127.0.0.1:36380",
+		EndpointGRPC: "127.0.0.1:36360",
+		EndpointHTTP: "127.0.0.1:36370",
+		Queue:        "default",
+		Mode:         "",
 	}
 	cn := n.toClusterNode()
 
@@ -66,11 +66,10 @@ func TestClusterInit(t *testing.T) {
 
 	cn.init(ctx)
 
-	assert.Equal(t, "127.0.0.1:36380", cn.GetMainEndpoint())
+	assert.Equal(t, "127.0.0.1:36380", cn.GetEndpointMain())
 	assert.Equal(t, "127.0.0.1:36380", cn.Endpoint)
-	assert.Equal(t, "127.0.0.1:36390", cn.EndpointHTTP)
-	assert.Equal(t, "127.0.0.1:36360", cn.SchedulerEndpoint)
-	assert.Equal(t, "127.0.0.1:36370", cn.SchedulerEndpointHTTP)
+	assert.Equal(t, "127.0.0.1:36360", cn.EndpointGRPC)
+	assert.Equal(t, "127.0.0.1:36370", cn.EndpointHTTP)
 	assert.Equal(t, "default", cn.Queue)
 	assert.NotEmpty(t, cn.NodeMapCopy())
 	assert.NotEmpty(t, cn.Raft)
@@ -86,9 +85,18 @@ func TestClusterRegisterNode(t *testing.T) {
 	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
+func TestNodeMapToPbNodesPtr(t *testing.T) {
+	cn := getClusterNode()
+	cn.registerNode(cn)
+	pbNs := cn.NodeMapToPbNodesPtr()
+
+	assert.IsType(t, &pb.Nodes{}, pbNs)
+	assert.NotEmpty(t, pbNs)
+}
+
 func TestClusterMainNode(t *testing.T) {
 	cn := getClusterNode()
-	cn.SetMainEndpoint("EndpointHA")
+	cn.SetEndpointMain("EndpointHA")
 	cn.Endpoint = "EndpointTest"
 	cn.Mode = "HA"
 
@@ -143,6 +151,19 @@ func TestClusterChoiceNodeQueueNotExist(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestClusterHeartbeat(t *testing.T) {
+	gob.Register(time.Time{})
+
+	cn := getClusterNode()
+	cn.SetEndpointMain("127.0.0.1:36680")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go cn.heartbeat(ctx)
+
+	time.Sleep(200 * time.Millisecond)
+}
+
 func TestClusterCheckNode(t *testing.T) {
 	cn := getClusterNode()
 	endpointBak := cn.Endpoint
@@ -177,12 +198,12 @@ func TestClusterRPCRegister(t *testing.T) {
 	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
-func TestClusterRPCPing(t *testing.T) {
+func TestClusterRPCHeartbeat(t *testing.T) {
 	cn := getClusterNode()
 
 	assert.Len(t, cn.NodeMapCopy(), 0)
 
-	cn.RPCPing(cn.toNode(), &Node{})
+	cn.RPCHeartbeat(cn.toNode(), &Node{})
 
 	assert.Len(t, cn.NodeMapCopy(), 1)
 }
@@ -191,7 +212,7 @@ func TestClusterRegisterNodeRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.SetMainEndpoint("127.0.0.1:36680")
+	cn.SetEndpointMain("127.0.0.1:36680")
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -205,21 +226,8 @@ func TestClusterHeartbeatRemote(t *testing.T) {
 	gob.Register(time.Time{})
 
 	cn := getClusterNode()
-	cn.SetMainEndpoint("127.0.0.1:36680")
+	cn.SetEndpointMain("127.0.0.1:36680")
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go cn.heartbeatRemote(ctx)
-
-	time.Sleep(200 * time.Millisecond)
-}
-
-func TestClusterPingRemote(t *testing.T) {
-	gob.Register(time.Time{})
-
-	cn := getClusterNode()
-	cn.SetMainEndpoint("127.0.0.1:36680")
-
-	err := cn.pingRemote(context.TODO())
+	err := cn.heartbeatRemote(context.TODO())
 	assert.NoError(t, err)
 }

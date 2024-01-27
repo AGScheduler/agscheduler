@@ -1,4 +1,4 @@
-// go run examples/rpc/rpc.go
+// go run examples/grpc/grpc.go
 
 package main
 
@@ -20,9 +20,9 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
-var ctx = context.Background()
+func runExampleGRPC(c pb.SchedulerClient) {
+	ctx := context.Background()
 
-func runExampleRPC(c pb.SchedulerClient) {
 	job1 := agscheduler.Job{
 		Name:     "Job1",
 		Type:     agscheduler.TYPE_INTERVAL,
@@ -31,7 +31,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
-	pbJob1, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job1))
+	pbJob1, _ := agscheduler.JobToPbJobPtr(job1)
+	pbJob1, _ = c.AddJob(ctx, pbJob1)
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", job1))
 
@@ -43,7 +44,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
-	pbJob2, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job2))
+	pbJob2, _ := agscheduler.JobToPbJobPtr(job2)
+	pbJob2, _ = c.AddJob(ctx, pbJob2)
 	job2 = agscheduler.PbJobPtrToJob(pbJob2)
 	slog.Info(fmt.Sprintf("%s.\n\n", job2))
 
@@ -57,7 +59,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 	}
-	pbJob3, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job3))
+	pbJob3, _ := agscheduler.JobToPbJobPtr(job3)
+	pbJob3, _ = c.AddJob(ctx, pbJob3)
 	job3 = agscheduler.PbJobPtrToJob(pbJob3)
 	slog.Info(fmt.Sprintf("%s.\n\n", job3))
 
@@ -74,7 +77,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 
 	job2.Type = agscheduler.TYPE_INTERVAL
 	job2.Interval = "3s"
-	pbJob2, _ = c.UpdateJob(ctx, agscheduler.JobToPbJobPtr(job2))
+	pbJob2, _ = agscheduler.JobToPbJobPtr(job2)
+	pbJob2, _ = c.UpdateJob(ctx, pbJob2)
 	job2 = agscheduler.PbJobPtrToJob(pbJob2)
 	slog.Info(fmt.Sprintf("Scheduler update job `%s` %s.\n\n", job2.FullName(), job2))
 
@@ -126,11 +130,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	srservice := services.SchedulerGRPCService{
+	grservice := services.GRPCService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:36360",
 	}
-	err = srservice.Start()
+	err = grservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
 		os.Exit(1)
@@ -140,9 +144,9 @@ func main() {
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 
-	runExampleRPC(client)
+	runExampleGRPC(client)
 
-	err = srservice.Stop()
+	err = grservice.Stop()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to stop service: %s", err))
 		os.Exit(1)

@@ -4,7 +4,7 @@
 // - protoc             v4.24.4
 // source: scheduler.proto
 
-package scheduler
+package services
 
 import (
 	context "context"
@@ -20,18 +20,18 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Scheduler_AddJob_FullMethodName        = "/scheduler.Scheduler/AddJob"
-	Scheduler_GetJob_FullMethodName        = "/scheduler.Scheduler/GetJob"
-	Scheduler_GetAllJobs_FullMethodName    = "/scheduler.Scheduler/GetAllJobs"
-	Scheduler_UpdateJob_FullMethodName     = "/scheduler.Scheduler/UpdateJob"
-	Scheduler_DeleteJob_FullMethodName     = "/scheduler.Scheduler/DeleteJob"
-	Scheduler_DeleteAllJobs_FullMethodName = "/scheduler.Scheduler/DeleteAllJobs"
-	Scheduler_PauseJob_FullMethodName      = "/scheduler.Scheduler/PauseJob"
-	Scheduler_ResumeJob_FullMethodName     = "/scheduler.Scheduler/ResumeJob"
-	Scheduler_RunJob_FullMethodName        = "/scheduler.Scheduler/RunJob"
-	Scheduler_ScheduleJob_FullMethodName   = "/scheduler.Scheduler/ScheduleJob"
-	Scheduler_Start_FullMethodName         = "/scheduler.Scheduler/Start"
-	Scheduler_Stop_FullMethodName          = "/scheduler.Scheduler/Stop"
+	Scheduler_AddJob_FullMethodName        = "/services.Scheduler/AddJob"
+	Scheduler_GetJob_FullMethodName        = "/services.Scheduler/GetJob"
+	Scheduler_GetAllJobs_FullMethodName    = "/services.Scheduler/GetAllJobs"
+	Scheduler_UpdateJob_FullMethodName     = "/services.Scheduler/UpdateJob"
+	Scheduler_DeleteJob_FullMethodName     = "/services.Scheduler/DeleteJob"
+	Scheduler_DeleteAllJobs_FullMethodName = "/services.Scheduler/DeleteAllJobs"
+	Scheduler_PauseJob_FullMethodName      = "/services.Scheduler/PauseJob"
+	Scheduler_ResumeJob_FullMethodName     = "/services.Scheduler/ResumeJob"
+	Scheduler_RunJob_FullMethodName        = "/services.Scheduler/RunJob"
+	Scheduler_ScheduleJob_FullMethodName   = "/services.Scheduler/ScheduleJob"
+	Scheduler_Start_FullMethodName         = "/services.Scheduler/Start"
+	Scheduler_Stop_FullMethodName          = "/services.Scheduler/Stop"
 )
 
 // SchedulerClient is the client API for Scheduler service.
@@ -460,7 +460,7 @@ func _Scheduler_Stop_Handler(srv interface{}, ctx context.Context, dec func(inte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Scheduler_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "scheduler.Scheduler",
+	ServiceName: "services.Scheduler",
 	HandlerType: (*SchedulerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

@@ -68,7 +68,8 @@ func TestJobStateLoadError(t *testing.T) {
 
 func TestJobToPbJobPtr(t *testing.T) {
 	j := getJob()
-	pbJ := JobToPbJobPtr(j)
+	pbJ, err := JobToPbJobPtr(j)
+	assert.NoError(t, err)
 
 	assert.IsType(t, &pb.Job{}, pbJ)
 	assert.NotEmpty(t, pbJ)
@@ -76,7 +77,8 @@ func TestJobToPbJobPtr(t *testing.T) {
 
 func TestPbJobPtrToJob(t *testing.T) {
 	j := getJob()
-	pbJ := JobToPbJobPtr(j)
+	pbJ, err := JobToPbJobPtr(j)
+	assert.NoError(t, err)
 	j = PbJobPtrToJob(pbJ)
 
 	assert.IsType(t, Job{}, j)
@@ -87,7 +89,8 @@ func TestJobsToPbJobsPtr(t *testing.T) {
 	js := make([]Job, 0)
 	js = append(js, getJob())
 	js = append(js, getJob())
-	pbJs := JobsToPbJobsPtr(js)
+	pbJs, err := JobsToPbJobsPtr(js)
+	assert.NoError(t, err)
 
 	assert.IsType(t, &pb.Jobs{}, pbJs)
 	assert.Len(t, pbJs.Jobs, 2)
@@ -97,7 +100,8 @@ func TestPbJobsPtrToJobs(t *testing.T) {
 	js := make([]Job, 0)
 	js = append(js, getJob())
 	js = append(js, getJob())
-	pbJs := JobsToPbJobsPtr(js)
+	pbJs, err := JobsToPbJobsPtr(js)
+	assert.NoError(t, err)
 	js = PbJobsPtrToJobs(pbJs)
 
 	assert.IsType(t, []Job{}, js)
