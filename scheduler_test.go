@@ -447,3 +447,18 @@ func TestCalcNextRunTimeIntervalError(t *testing.T) {
 	_, err := agscheduler.CalcNextRunTime(j)
 	assert.Error(t, err)
 }
+
+func TestInfo(t *testing.T) {
+	cn := getClusterNode()
+	s := &agscheduler.Scheduler{}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	err := s.SetClusterNode(ctx, cn)
+	assert.NoError(t, err)
+
+	info := s.Info()
+
+	assert.Len(t, info, 4)
+	assert.Equal(t, info["version"], agscheduler.Version)
+}
