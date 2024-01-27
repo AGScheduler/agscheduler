@@ -140,6 +140,19 @@ func TestClusterChoiceNodeQueueNotExist(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestClusterHeartbeat(t *testing.T) {
+	gob.Register(time.Time{})
+
+	cn := getClusterNode()
+	cn.SetEndpointMain("127.0.0.1:36680")
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go cn.heartbeat(ctx)
+
+	time.Sleep(200 * time.Millisecond)
+}
+
 func TestClusterCheckNode(t *testing.T) {
 	cn := getClusterNode()
 	endpointBak := cn.Endpoint
@@ -174,12 +187,12 @@ func TestClusterRPCRegister(t *testing.T) {
 	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
-func TestClusterRPCPing(t *testing.T) {
+func TestClusterRPCHeartbeat(t *testing.T) {
 	cn := getClusterNode()
 
 	assert.Len(t, cn.NodeMapCopy(), 0)
 
-	cn.RPCPing(cn.toNode(), &Node{})
+	cn.RPCHeartbeat(cn.toNode(), &Node{})
 
 	assert.Len(t, cn.NodeMapCopy(), 1)
 }
@@ -204,19 +217,6 @@ func TestClusterHeartbeatRemote(t *testing.T) {
 	cn := getClusterNode()
 	cn.SetEndpointMain("127.0.0.1:36680")
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go cn.heartbeatRemote(ctx)
-
-	time.Sleep(200 * time.Millisecond)
-}
-
-func TestClusterPingRemote(t *testing.T) {
-	gob.Register(time.Time{})
-
-	cn := getClusterNode()
-	cn.SetEndpointMain("127.0.0.1:36680")
-
-	err := cn.pingRemote(context.TODO())
+	err := cn.heartbeatRemote(context.TODO())
 	assert.NoError(t, err)
 }

@@ -189,7 +189,7 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 
 	cn.registerNode(cn)
 
-	go cn.heartbeatRemote(ctx)
+	go cn.heartbeat(ctx)
 	go cn.checkNode(ctx)
 
 	if cn.Mode == "HA" {
@@ -260,9 +260,31 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 	return &ClusterNode{}, fmt.Errorf("cluster node not found")
 }
 
+// Maintaining node health.
+// Started when the node init.
+func (cn *ClusterNode) heartbeat(ctx context.Context) {
+	interval := 400 * time.Millisecond
+	timer := time.NewTimer(interval)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			if err := cn.heartbeatRemote(ctx); err != nil {
+				slog.Info(fmt.Sprintf("Send heartbeat remote error: %s", err))
+				timer.Reset(time.Second)
+			} else {
+				timer.Reset(interval)
+			}
+		}
+	}
+}
+
 // Regularly check node,
 // if a node has not been updated for a long time it is marked as unhealthy or the node is deleted.
 // HA nodes are not processed.
+// Started when the node init.
 func (cn *ClusterNode) checkNode(ctx context.Context) {
 	interval := 600 * time.Millisecond
 	timer := time.NewTimer(interval)
@@ -321,7 +343,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 }
 
 // RPC API
-func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
+func (cn *ClusterNode) RPCHeartbeat(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
 	reply.EndpointMain = cn.GetEndpointMain()
@@ -363,30 +385,8 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 
 // Used for worker node
 //
-// Started when the node run `RegisterNodeRemote`.
-func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
-	interval := 400 * time.Millisecond
-	timer := time.NewTimer(interval)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-			if err := cn.pingRemote(ctx); err != nil {
-				slog.Info(fmt.Sprintf("Ping remote error: %s", err))
-				timer.Reset(time.Second)
-			} else {
-				timer.Reset(interval)
-			}
-		}
-	}
-}
-
-// Used for worker node
-//
 // Update and synchronize cluster node information.
-func (cn *ClusterNode) pingRemote(ctx context.Context) error {
+func (cn *ClusterNode) heartbeatRemote(ctx context.Context) error {
 	rClient, err := rpc.DialHTTP("tcp", cn.GetEndpointMain())
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.GetEndpointMain(), err)
@@ -395,14 +395,14 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 
 	var main Node
 	ch := make(chan error, 1)
-	go func() { ch <- rClient.Call("CRPCService.Ping", cn.toNode(), &main) }()
+	go func() { ch <- rClient.Call("CRPCService.Heartbeat", cn.toNode(), &main) }()
 	select {
 	case err := <-ch:
 		if err != nil {
-			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
+			return fmt.Errorf("failed to send heartbeat to cluster main node, error: %s", err)
 		}
 	case <-time.After(300 * time.Millisecond):
-		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.GetEndpointMain())
+		return fmt.Errorf("send heartbeat to cluster main node `%s` timeout", cn.GetEndpointMain())
 	}
 	cn.SetEndpointMain(main.EndpointMain)
 	cn.setNodeMap(main.NodeMap)

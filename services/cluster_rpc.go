@@ -21,8 +21,8 @@ func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node
 	return nil
 }
 
-func (crs *CRPCService) Ping(args *agscheduler.Node, reply *agscheduler.Node) error {
-	crs.cn.RPCPing(args, reply)
+func (crs *CRPCService) Heartbeat(args *agscheduler.Node, reply *agscheduler.Node) error {
+	crs.cn.RPCHeartbeat(args, reply)
 	return nil
 }
 
