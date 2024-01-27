@@ -29,14 +29,18 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	}
 	assert.Empty(t, j.Status)
 
-	pbJ, err := c.AddJob(ctx, agscheduler.JobToPbJobPtr(j))
+	pbJ, err := agscheduler.JobToPbJobPtr(j)
+	assert.NoError(t, err)
+	pbJ, err = c.AddJob(ctx, pbJ)
 	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 
 	j.Type = agscheduler.TYPE_CRON
 	j.CronExpr = "*/1 * * * *"
-	pbJ, err = c.UpdateJob(ctx, agscheduler.JobToPbJobPtr(j))
+	pbJ, err = agscheduler.JobToPbJobPtr(j)
+	assert.NoError(t, err)
+	pbJ, err = c.UpdateJob(ctx, pbJ)
 	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.Equal(t, agscheduler.TYPE_CRON, j.Type)

@@ -18,23 +18,39 @@ type sGRPCService struct {
 func (sgrs *sGRPCService) AddJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
 	j, err := sgrs.scheduler.AddJob(j)
-	return agscheduler.JobToPbJobPtr(j), err
+	if err != nil {
+		return &pb.Job{}, err
+	}
+
+	return agscheduler.JobToPbJobPtr(j)
 }
 
 func (sgrs *sGRPCService) GetJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
 	j, err := sgrs.scheduler.GetJob(jobId.GetId())
-	return agscheduler.JobToPbJobPtr(j), err
+	if err != nil {
+		return &pb.Job{}, err
+	}
+
+	return agscheduler.JobToPbJobPtr(j)
 }
 
 func (sgrs *sGRPCService) GetAllJobs(ctx context.Context, in *emptypb.Empty) (*pb.Jobs, error) {
 	js, err := sgrs.scheduler.GetAllJobs()
-	return agscheduler.JobsToPbJobsPtr(js), err
+	if err != nil {
+		return &pb.Jobs{}, err
+	}
+
+	return agscheduler.JobsToPbJobsPtr(js)
 }
 
 func (sgrs *sGRPCService) UpdateJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
 	j := agscheduler.PbJobPtrToJob(pbJob)
 	j, err := sgrs.scheduler.UpdateJob(j)
-	return agscheduler.JobToPbJobPtr(j), err
+	if err != nil {
+		return &pb.Job{}, err
+	}
+
+	return agscheduler.JobToPbJobPtr(j)
 }
 
 func (sgrs *sGRPCService) DeleteJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
@@ -49,12 +65,20 @@ func (sgrs *sGRPCService) DeleteAllJobs(ctx context.Context, in *emptypb.Empty) 
 
 func (sgrs *sGRPCService) PauseJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
 	j, err := sgrs.scheduler.PauseJob(jobId.GetId())
-	return agscheduler.JobToPbJobPtr(j), err
+	if err != nil {
+		return &pb.Job{}, err
+	}
+
+	return agscheduler.JobToPbJobPtr(j)
 }
 
 func (sgrs *sGRPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
 	j, err := sgrs.scheduler.ResumeJob(jobId.GetId())
-	return agscheduler.JobToPbJobPtr(j), err
+	if err != nil {
+		return &pb.Job{}, err
+	}
+
+	return agscheduler.JobToPbJobPtr(j)
 }
 
 func (sgrs *sGRPCService) RunJob(ctx context.Context, pbJob *pb.Job) (*emptypb.Empty, error) {

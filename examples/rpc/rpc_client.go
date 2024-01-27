@@ -27,7 +27,8 @@ func runExampleRPC(c pb.SchedulerClient) {
 		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
-	pbJob1, _ := c.AddJob(ctx, agscheduler.JobToPbJobPtr(job1))
+	pbJob1, _ := agscheduler.JobToPbJobPtr(job1)
+	pbJob1, _ = c.AddJob(ctx, pbJob1)
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", job1))
 
