@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"net/rpc"
 	"testing"
 	"time"
 
@@ -54,6 +55,11 @@ func TestClusterService(t *testing.T) {
 	defer conn.Close()
 	clientC := pb.NewClusterClient(conn)
 	testClusterGRPC(t, clientC)
+
+	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)
+	assert.NoError(t, err)
+	defer rClient.Close()
+	testClusterRPC(t, rClient)
 
 	time.Sleep(200 * time.Millisecond)
 

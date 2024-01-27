@@ -12,6 +12,18 @@ import (
 	"github.com/kwkwc/agscheduler"
 )
 
+type bHTTPService struct {
+	scheduler *agscheduler.Scheduler
+}
+
+func (bhs *bHTTPService) info(c *gin.Context) {
+	c.JSON(200, gin.H{"data": bhs.scheduler.Info(), "error": ""})
+}
+
+func (bhs *bHTTPService) registerRoutes(r *gin.Engine) {
+	r.GET("/info", bhs.info)
+}
+
 type HTTPService struct {
 	Scheduler *agscheduler.Scheduler
 
@@ -32,6 +44,9 @@ func (s *HTTPService) Start() error {
 
 	cp := &ClusterProxy{Scheduler: s.Scheduler}
 	r.Use(cp.GinProxy())
+
+	bhs := &bHTTPService{scheduler: s.Scheduler}
+	bhs.registerRoutes(r)
 
 	shs := &sHTTPService{scheduler: s.Scheduler}
 	shs.registerRoutes(r)

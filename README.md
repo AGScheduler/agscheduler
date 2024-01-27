@@ -190,6 +190,12 @@ cnNode2 := &agscheduler.ClusterNode{..., Mode: "HA"}
 cnNode3 := &agscheduler.ClusterNode{...}
 ```
 
+## Base API
+
+| gRPC Function | HTTP Method | HTTP Endpoint             |
+|---------------|-------------|---------------------------|
+| GetInfo       | GET         | /info                     |
+
 ## Scheduler API
 
 | gRPC Function | HTTP Method | HTTP Endpoint             |

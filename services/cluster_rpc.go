@@ -16,6 +16,11 @@ type CRPCService struct {
 	cn *agscheduler.ClusterNode
 }
 
+func (crs *CRPCService) GetInfo(filters map[string]any, reply *map[string]any) error {
+	*reply = crs.cn.Scheduler.Info()
+	return nil
+}
+
 func (crs *CRPCService) Register(args *agscheduler.Node, reply *agscheduler.Node) error {
 	crs.cn.RPCRegister(args, reply)
 	return nil
