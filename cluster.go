@@ -17,10 +17,10 @@ import (
 type TypeNodeMap map[string]map[string]any
 
 var nodeMapMutexC sync.RWMutex
-var mainEndpointMutexC sync.RWMutex
+var endpointMainMutexC sync.RWMutex
 
 type Node struct {
-	MainEndpoint string
+	EndpointMain string
 	Endpoint     string
 	EndpointGRPC string
 	EndpointHTTP string
@@ -32,7 +32,7 @@ type Node struct {
 
 func (n *Node) toClusterNode() *ClusterNode {
 	return &ClusterNode{
-		MainEndpoint: n.MainEndpoint,
+		EndpointMain: n.EndpointMain,
 		Endpoint:     n.Endpoint,
 		EndpointGRPC: n.EndpointGRPC,
 		EndpointHTTP: n.EndpointHTTP,
@@ -49,9 +49,9 @@ func (n *Node) toClusterNode() *ClusterNode {
 // and then run jobs from the main node via the RPC's `RunJob` API.
 type ClusterNode struct {
 	// Main node RPC listening address.
-	// If you are the main, `MainEndpoint` is the same as `Endpoint`.
+	// If you are the main, `EndpointMain` is the same as `Endpoint`.
 	// Default: `127.0.0.1:36380`
-	MainEndpoint string
+	EndpointMain string
 	// The unique identifier of this node.
 	// RPC listening address.
 	// Used to expose the cluster's internal API.
@@ -91,7 +91,7 @@ type ClusterNode struct {
 
 func (cn *ClusterNode) toNode() *Node {
 	return &Node{
-		MainEndpoint: cn.GetMainEndpoint(),
+		EndpointMain: cn.GetEndpointMain(),
 		Endpoint:     cn.Endpoint,
 		EndpointGRPC: cn.EndpointGRPC,
 		EndpointHTTP: cn.EndpointHTTP,
@@ -134,7 +134,7 @@ func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
 }
 
 func (cn *ClusterNode) MainNode() map[string]any {
-	return cn.NodeMapCopy()[cn.GetMainEndpoint()]
+	return cn.NodeMapCopy()[cn.GetEndpointMain()]
 }
 
 func (cn *ClusterNode) HANodeMap() TypeNodeMap {
@@ -149,22 +149,22 @@ func (cn *ClusterNode) HANodeMap() TypeNodeMap {
 	return HANodeMap
 }
 
-func (cn *ClusterNode) SetMainEndpoint(endpoint string) {
-	mainEndpointMutexC.Lock()
-	defer mainEndpointMutexC.Unlock()
+func (cn *ClusterNode) SetEndpointMain(endpoint string) {
+	endpointMainMutexC.Lock()
+	defer endpointMainMutexC.Unlock()
 
-	cn.MainEndpoint = endpoint
+	cn.EndpointMain = endpoint
 }
 
-func (cn *ClusterNode) GetMainEndpoint() string {
-	mainEndpointMutexC.RLock()
-	defer mainEndpointMutexC.RUnlock()
+func (cn *ClusterNode) GetEndpointMain() string {
+	endpointMainMutexC.RLock()
+	defer endpointMainMutexC.RUnlock()
 
-	return cn.MainEndpoint
+	return cn.EndpointMain
 }
 
 func (cn *ClusterNode) IsMainNode() bool {
-	return cn.GetMainEndpoint() == cn.Endpoint
+	return cn.GetEndpointMain() == cn.Endpoint
 }
 
 // Initialization functions for each node,
@@ -173,8 +173,8 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 	if cn.Endpoint == "" {
 		cn.Endpoint = "127.0.0.1:36380"
 	}
-	if cn.GetMainEndpoint() == "" {
-		cn.SetMainEndpoint(cn.Endpoint)
+	if cn.GetEndpointMain() == "" {
+		cn.SetEndpointMain(cn.Endpoint)
 	}
 	if cn.EndpointGRPC == "" {
 		cn.EndpointGRPC = "127.0.0.1:36360"
@@ -217,7 +217,7 @@ func (cn *ClusterNode) registerNode(n *ClusterNode) {
 		register_time = now
 	}
 	cn.nodeMap[n.Endpoint] = map[string]any{
-		"main_endpoint":       n.GetMainEndpoint(),
+		"endpoint_main":       n.GetEndpointMain(),
 		"endpoint":            n.Endpoint,
 		"endpoint_grpc":       n.EndpointGRPC,
 		"endpoint_http":       n.EndpointHTTP,
@@ -241,7 +241,7 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 			continue
 		}
 		cns = append(cns, &ClusterNode{
-			MainEndpoint: v["main_endpoint"].(string),
+			EndpointMain: v["endpoint_main"].(string),
 			Endpoint:     endpoint,
 			EndpointGRPC: v["endpoint_grpc"].(string),
 			EndpointHTTP: v["endpoint_http"].(string),
@@ -311,7 +311,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 
 	cn.registerNode(args.toClusterNode())
 
-	reply.MainEndpoint = cn.GetMainEndpoint()
+	reply.EndpointMain = cn.GetEndpointMain()
 	reply.Endpoint = cn.Endpoint
 	reply.EndpointGRPC = cn.EndpointGRPC
 	reply.EndpointHTTP = cn.EndpointHTTP
@@ -324,7 +324,7 @@ func (cn *ClusterNode) RPCRegister(args *Node, reply *Node) {
 func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 	cn.registerNode(args.toClusterNode())
 
-	reply.MainEndpoint = cn.GetMainEndpoint()
+	reply.EndpointMain = cn.GetEndpointMain()
 	reply.NodeMap = cn.NodeMapCopy()
 }
 
@@ -332,11 +332,11 @@ func (cn *ClusterNode) RPCPing(args *Node, reply *Node) {
 //
 // After initialization, node need to register with the main node and synchronize cluster node information.
 func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
-	slog.Info(fmt.Sprintf("Register to Cluster Main Node: `%s`", cn.GetMainEndpoint()))
+	slog.Info(fmt.Sprintf("Register to Cluster Main Node: `%s`", cn.GetEndpointMain()))
 
-	rClient, err := rpc.DialHTTP("tcp", cn.GetMainEndpoint())
+	rClient, err := rpc.DialHTTP("tcp", cn.GetEndpointMain())
 	if err != nil {
-		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.GetMainEndpoint(), err)
+		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.GetEndpointMain(), err)
 	}
 	defer rClient.Close()
 
@@ -349,9 +349,9 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 			return fmt.Errorf("failed to register to cluster main node, error: %s", err)
 		}
 	case <-time.After(3 * time.Second):
-		return fmt.Errorf("register to cluster main node `%s` timeout", cn.GetMainEndpoint())
+		return fmt.Errorf("register to cluster main node `%s` timeout", cn.GetEndpointMain())
 	}
-	cn.SetMainEndpoint(main.MainEndpoint)
+	cn.SetEndpointMain(main.EndpointMain)
 	cn.setNodeMap(main.NodeMap)
 
 	slog.Info(fmt.Sprintf("Cluster Main Node gRPC Service listening at: %s", main.EndpointGRPC))
@@ -387,9 +387,9 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) {
 //
 // Update and synchronize cluster node information.
 func (cn *ClusterNode) pingRemote(ctx context.Context) error {
-	rClient, err := rpc.DialHTTP("tcp", cn.GetMainEndpoint())
+	rClient, err := rpc.DialHTTP("tcp", cn.GetEndpointMain())
 	if err != nil {
-		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.GetMainEndpoint(), err)
+		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.GetEndpointMain(), err)
 	}
 	defer rClient.Close()
 
@@ -402,9 +402,9 @@ func (cn *ClusterNode) pingRemote(ctx context.Context) error {
 			return fmt.Errorf("failed to ping to cluster main node, error: %s", err)
 		}
 	case <-time.After(300 * time.Millisecond):
-		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.GetMainEndpoint())
+		return fmt.Errorf("ping to cluster main node `%s` timeout", cn.GetEndpointMain())
 	}
-	cn.SetMainEndpoint(main.MainEndpoint)
+	cn.SetEndpointMain(main.EndpointMain)
 	cn.setNodeMap(main.NodeMap)
 
 	return nil

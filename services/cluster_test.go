@@ -17,7 +17,7 @@ import (
 func TestClusterService(t *testing.T) {
 	store := &stores.MemoryStore{}
 	cnMain := &agscheduler.ClusterNode{
-		MainEndpoint: "127.0.0.1:36380",
+		EndpointMain: "127.0.0.1:36380",
 	}
 	scheduler := &agscheduler.Scheduler{}
 	err := scheduler.SetStore(store)
@@ -36,7 +36,7 @@ func TestClusterService(t *testing.T) {
 
 	assert.Len(t, cnMain.NodeMapCopy(), 1)
 	cn := &agscheduler.ClusterNode{
-		MainEndpoint: cnMain.Endpoint,
+		EndpointMain: cnMain.Endpoint,
 		Endpoint:     "127.0.0.1:36381",
 		EndpointGRPC: "127.0.0.1:36361",
 		EndpointHTTP: "127.0.0.1:36371",

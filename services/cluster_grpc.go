@@ -23,7 +23,7 @@ func (cgrs *cGRPCService) GetNodes(ctx context.Context, in *emptypb.Empty) (*pb.
 
 	for k, v := range cgrs.cn.NodeMapCopy() {
 		pbN.Nodes[k] = &pb.Node{
-			MainEndpoint:      v["main_endpoint"].(string),
+			EndpointMain:      v["endpoint_main"].(string),
 			Endpoint:          v["endpoint"].(string),
 			EndpointGrpc:      v["endpoint_grpc"].(string),
 			EndpointHttp:      v["endpoint_http"].(string),

@@ -156,7 +156,7 @@ cserviceMain.Start()
 
 // Worker Node
 cnNode := &agscheduler.ClusterNode{
-	MainEndpoint: "127.0.0.1:36380",
+	EndpointMain: "127.0.0.1:36380",
 	Endpoint:     "127.0.0.1:36381",
 	EndpointGRPC: "127.0.0.1:36361",
 	EndpointHTTP: "127.0.0.1:36371",
@@ -209,9 +209,9 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 ## Cluster API
 
-| RPC Function | HTTP Method | HTTP Endpoint             |
+| gRPC Function | HTTP Method | HTTP Endpoint             |
 |---------------|-------------|---------------------------|
-| Nodes         | GET         | /cluster/nodes            |
+| GetNodes      | GET         | /cluster/nodes            |
 
 ## 示例
 

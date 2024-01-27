@@ -23,7 +23,7 @@ func TestClusterProxy(t *testing.T) {
 	store := &stores.MemoryStore{}
 
 	cnMain := &agscheduler.ClusterNode{
-		MainEndpoint: "127.0.0.1:36380",
+		EndpointMain: "127.0.0.1:36380",
 		Endpoint:     "127.0.0.1:36380",
 		EndpointGRPC: "127.0.0.1:36360",
 		EndpointHTTP: "127.0.0.1:36370",
@@ -40,7 +40,7 @@ func TestClusterProxy(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	cnNode := &agscheduler.ClusterNode{
-		MainEndpoint: cnMain.Endpoint,
+		EndpointMain: cnMain.Endpoint,
 		Endpoint:     "127.0.0.1:36381",
 		EndpointGRPC: "127.0.0.1:36361",
 		EndpointHTTP: "127.0.0.1:36371",
