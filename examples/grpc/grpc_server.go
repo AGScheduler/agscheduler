@@ -1,4 +1,4 @@
-// go run examples/rpc/rpc_server.go
+// go run examples/grpc/grpc_server.go
 
 package main
 

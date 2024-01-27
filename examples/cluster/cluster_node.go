@@ -3,7 +3,7 @@
 // 1. go run examples/cluster/cluster_node.go -e 127.0.0.1:36380
 // 2. go run examples/cluster/cluster_node.go -em 127.0.0.1:36380 -e 127.0.0.1:36381 -egr 127.0.0.1:36361 -eh 127.0.0.1:36371
 // 3. go run examples/cluster/cluster_node.go -em 127.0.0.1:36380 -e 127.0.0.1:36382 -egr 127.0.0.1:36362 -eh 127.0.0.1:36372
-// 4. go run examples/rpc/rpc_client.go
+// 4. go run examples/grpc/grpc_client.go
 
 // HA Mode
 // NOTE: All HA nodes need to connect to the same Store (excluding `MemoryStore`)
@@ -11,7 +11,7 @@
 // 1. go run examples/cluster/cluster_node.go -e 127.0.0.1:36380 -m HA
 // 2. go run examples/cluster/cluster_node.go -em 127.0.0.1:36380 -e 127.0.0.1:36381 -egr 127.0.0.1:36361 -eh 127.0.0.1:36371 -m HA
 // 3. go run examples/cluster/cluster_node.go -em 127.0.0.1:36380 -e 127.0.0.1:36382 -egr 127.0.0.1:36362 -eh 127.0.0.1:36372 -m HA
-// 4. go run examples/rpc/rpc_client.go
+// 4. go run examples/grpc/grpc_client.go
 
 package main
 

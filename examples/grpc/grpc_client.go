@@ -1,5 +1,5 @@
-// 1. go run examples/rpc/rpc_server.go
-// 2. go run examples/rpc/rpc_client.go
+// 1. go run examples/grpc/grpc_server.go
+// 2. go run examples/grpc/grpc_client.go
 
 package main
 
@@ -16,7 +16,7 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
-func runExampleRPC(c pb.SchedulerClient) {
+func runExampleGRPC(c pb.SchedulerClient) {
 	ctx := context.Background()
 
 	job1 := agscheduler.Job{
@@ -40,5 +40,5 @@ func main() {
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 
-	runExampleRPC(client)
+	runExampleGRPC(client)
 }

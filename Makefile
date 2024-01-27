@@ -71,9 +71,9 @@ protobuf:
 	python3 \
 		-m grpc_tools.protoc \
 		-I services/proto/ \
-		--python_out=examples/rpc/python \
-		--pyi_out=examples/rpc/python \
-		--grpc_python_out=examples/rpc/python \
+		--python_out=examples/grpc/python \
+		--pyi_out=examples/grpc/python \
+		--grpc_python_out=examples/grpc/python \
 		services/proto/*.proto
 
 .PHONY: examples
@@ -83,5 +83,5 @@ examples:
 	go run examples/stores/base.go examples/stores/redis.go
 	go run examples/stores/base.go examples/stores/mongodb.go
 	go run examples/stores/base.go examples/stores/etcd.go
-	go run examples/rpc/rpc.go
+	go run examples/grpc/grpc.go
 	go run examples/http/http.go

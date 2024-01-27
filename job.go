@@ -53,7 +53,7 @@ type Job struct {
 	// The job actually runs the function,
 	// and you need to register it through 'RegisterFuncs' before using it.
 	// Since it cannot be stored by serialization,
-	// when using RPC or HTTP calls, you should use `FuncName`.
+	// when using gRPC or HTTP calls, you should use `FuncName`.
 	Func func(context.Context, Job) `json:"-"`
 	// The actual path of `Func`.
 	// This field has a higher priority than `Func`
