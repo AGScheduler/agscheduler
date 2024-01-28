@@ -83,5 +83,6 @@ examples:
 	go run examples/stores/base.go examples/stores/redis.go
 	go run examples/stores/base.go examples/stores/mongodb.go
 	go run examples/stores/base.go examples/stores/etcd.go
+	go run examples/stores/base.go examples/stores/elasticsearch.go
 	go run examples/grpc/grpc.go
 	go run examples/http/http.go

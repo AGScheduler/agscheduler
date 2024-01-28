@@ -24,6 +24,7 @@
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
+  - [x] [Elasticsearch](https://www.elastic.co/elasticsearch)
 - 支持远程调用
   - [x] [gRPC](https://grpc.io/)
   - [x] HTTP API

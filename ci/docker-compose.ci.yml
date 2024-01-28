@@ -24,3 +24,12 @@ services:
       - ALLOW_NONE_AUTHENTICATION=yes
     ports:
       - 127.0.0.1:2379:2379
+
+  elasticsearch:
+    image: elasticsearch:8.12.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - 127.0.0.1:9200:9200
