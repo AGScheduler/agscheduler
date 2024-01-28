@@ -24,6 +24,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
+  - [x] [Elasticsearch](https://www.elastic.co/elasticsearch)
 - Supports remote call
   - [x] [gRPC](https://grpc.io/)
   - [x] HTTP API

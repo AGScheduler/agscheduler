@@ -32,6 +32,10 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 	assert.NotEmpty(t, j.FuncName)
 
+	js, err := s.GetAllJobs()
+	assert.NoError(t, err)
+	assert.Len(t, js, 1)
+
 	j.Type = agscheduler.TYPE_CRON
 	j.CronExpr = "*/1 * * * *"
 	j, err = s.UpdateJob(j)
@@ -62,7 +66,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 
 	err = s.DeleteAllJobs()
 	assert.NoError(t, err)
-	js, err := s.GetAllJobs()
+	js, err = s.GetAllJobs()
 	assert.NoError(t, err)
 	assert.Len(t, js, 0)
 
