@@ -4,6 +4,7 @@ SHELL=/bin/bash
 install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 	go mod tidy
 
 	pip3 install grpcio-tools
@@ -18,7 +19,7 @@ format-check:
 
 .PHONY: lint
 lint:
-	go vet .
+	golangci-lint run
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
