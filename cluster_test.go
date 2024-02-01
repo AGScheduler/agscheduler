@@ -64,7 +64,8 @@ func TestClusterInit(t *testing.T) {
 	cn := &ClusterNode{}
 	cn.Mode = "HA"
 
-	cn.init(ctx)
+	err := cn.init(ctx)
+	assert.NoError(t, err)
 
 	assert.Equal(t, "127.0.0.1:36380", cn.GetEndpointMain())
 	assert.Equal(t, "127.0.0.1:36380", cn.Endpoint)

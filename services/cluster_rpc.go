@@ -36,17 +36,19 @@ func (crs *CRPCService) RunJob(j agscheduler.Job, reply *any) error {
 }
 
 func (crs *CRPCService) RaftRequestVote(args agscheduler.VoteArgs, reply *agscheduler.VoteReply) error {
+	var err error
 	if crs.cn.Raft != nil {
-		crs.cn.Raft.RPCRequestVote(args, reply)
+		err = crs.cn.Raft.RPCRequestVote(args, reply)
 	}
-	return nil
+	return err
 }
 
 func (crs *CRPCService) RaftHeartbeat(args agscheduler.HeartbeatArgs, reply *agscheduler.HeartbeatReply) error {
+	var err error
 	if crs.cn.Raft != nil {
-		crs.cn.Raft.RPCHeartbeat(args, reply)
+		err = crs.cn.Raft.RPCHeartbeat(args, reply)
 	}
-	return nil
+	return err
 }
 
 type clusterRPCService struct {
@@ -60,7 +62,10 @@ func (s *clusterRPCService) Start() error {
 
 	crs := &CRPCService{cn: s.Cn}
 	rpcServer := rpc.NewServer()
-	rpcServer.Register(crs)
+	err := rpcServer.Register(crs)
+	if err != nil {
+		return fmt.Errorf("failed to register service: %s", err)
+	}
 
 	go func() {
 		defer func() {
