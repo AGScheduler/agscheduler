@@ -122,7 +122,9 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 
 	req, err = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
 	assert.NoError(t, err)
-	client.Do(req)
+	resp, err = client.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
 	resp, err = http.Get(baseUrl + "/scheduler/job" + "/" + id)
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
@@ -135,7 +137,9 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 
 	req, err = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/jobs", nil)
 	assert.NoError(t, err)
-	client.Do(req)
+	resp, err = client.Do(req)
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
 	resp, err = http.Get(baseUrl + "/scheduler/jobs")
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)

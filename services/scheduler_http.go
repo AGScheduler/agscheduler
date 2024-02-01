@@ -66,8 +66,8 @@ func (shs *sHTTPService) deleteJob(c *gin.Context) {
 }
 
 func (shs *sHTTPService) deleteAllJobs(c *gin.Context) {
-	shs.scheduler.DeleteAllJobs()
-	c.JSON(200, gin.H{"data": nil, "error": ""})
+	err := shs.scheduler.DeleteAllJobs()
+	c.JSON(200, gin.H{"data": nil, "error": shs.handleErr(err)})
 }
 
 func (shs *sHTTPService) pauseJob(c *gin.Context) {
