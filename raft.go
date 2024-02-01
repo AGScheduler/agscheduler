@@ -50,7 +50,7 @@ type VoteReply struct {
 	VoteGranted bool
 }
 
-func (rf *Raft) sendRequestVote(address string, args VoteArgs, reply *VoteReply) {
+func (rf *Raft) sendRequestVote(address string, args VoteArgs) {
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftRequestVote error: %s\n", address, err))
@@ -65,7 +65,13 @@ func (rf *Raft) sendRequestVote(address string, args VoteArgs, reply *VoteReply)
 	}
 	defer rClient.Close()
 
-	rClient.Call("CRPCService.RaftRequestVote", args, reply)
+	var reply VoteReply
+	err = rClient.Call("CRPCService.RaftRequestVote", args, &reply)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to send request vote to cluster node: `%s`, error: %s\n", address, err))
+		return
+	}
+
 	if reply.Term > rf.currentTerm {
 		rf.toFollower(reply.Term)
 		return
@@ -93,8 +99,7 @@ func (rf *Raft) broadcastRequestVote() {
 			continue
 		}
 		go func(address string) {
-			var reply VoteReply
-			rf.sendRequestVote(address, args, &reply)
+			rf.sendRequestVote(address, args)
 		}(endpoint)
 	}
 }
@@ -130,7 +135,7 @@ type HeartbeatReply struct {
 	Term int
 }
 
-func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs, reply *HeartbeatReply) error {
+func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs) {
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftHeartbeat error: %s\n", address, err))
@@ -140,16 +145,21 @@ func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs, reply *Heartbe
 
 	rClient, err := rpc.DialHTTP("tcp", address)
 	if err != nil {
-		return fmt.Errorf("failed to connect to cluster node: `%s`, error: %s", address, err)
+		slog.Debug(fmt.Sprintf("Failed to connect to cluster node while sending heartbeat: `%s`, error: %s\n", address, err))
+		return
 	}
 	defer rClient.Close()
 
-	rClient.Call("CRPCService.RaftHeartbeat", args, reply)
+	var reply HeartbeatReply
+	err = rClient.Call("CRPCService.RaftHeartbeat", args, &reply)
+	if err != nil {
+		slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`, error: %s\n", address, err))
+		return
+	}
+
 	if reply.Term > rf.currentTerm {
 		rf.toFollower(reply.Term)
 	}
-
-	return nil
 }
 
 func (rf *Raft) broadcastHeartbeat() {
@@ -165,8 +175,7 @@ func (rf *Raft) broadcastHeartbeat() {
 			continue
 		}
 		go func(address string) {
-			var reply HeartbeatReply
-			rf.sendHeartbeat(address, args, &reply)
+			rf.sendHeartbeat(address, args)
 		}(endpoint)
 	}
 }
