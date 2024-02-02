@@ -27,7 +27,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [Elasticsearch](https://www.elastic.co/elasticsearch)
 - Supports remote call
   - [x] [gRPC](https://grpc.io/)
-  - [x] HTTP API
+  - [x] HTTP
 - Supports cluster
   - [x] Remote worker nodes
   - [x] Scheduler high availability (Experimental)
@@ -124,7 +124,7 @@ client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)
 ```
 
-## HTTP API
+## HTTP
 
 ```golang
 // Server
@@ -136,7 +136,7 @@ hservice.Start()
 
 // Client
 mJob := map[string]any{...}
-bJob, _ := json.Marshal(bJob)
+bJob, _ := json.Marshal(mJob)
 resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json", bytes.NewReader(bJob))
 ```
 
