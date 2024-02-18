@@ -19,7 +19,7 @@ format-check:
 
 .PHONY: lint
 lint:
-	golangci-lint run
+	golangci-lint run --timeout=5m
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
