@@ -20,7 +20,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] Cron-style scheduling
 - Supports multiple job store methods
   - [x] Memory
-  - [x] [GROM](https://gorm.io/)(any RDBMS supported by GROM works)
+  - [x] [GORM](https://gorm.io/)(any RDBMS supported by GORM works)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
