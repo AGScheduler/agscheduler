@@ -20,7 +20,7 @@
   - [x] Cron 式调度
 - 支持多种作业存储方式
   - [x] Memory
-  - [x] [GROM](https://gorm.io/)(任何 GROM 支持的 RDBMS 都能运行)
+  - [x] [GORM](https://gorm.io/)(任何 GORM 支持的 RDBMS 都能运行)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
