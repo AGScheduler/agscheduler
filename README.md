@@ -224,6 +224,25 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 [Complete example][examples]
 
+## Development
+
+```bash
+# Clone code
+git clone git@github.com:kwkwc/agscheduler.git
+
+# Working directory
+cd agscheduler
+
+# Install dependencies
+make install
+
+# Up CI services
+make up-ci-services
+
+# Run check
+make check-all
+```
+
 ## Thanks
 
 [APScheduler](https://github.com/agronholm/apscheduler/tree/3.x)
