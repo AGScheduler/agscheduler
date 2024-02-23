@@ -224,6 +224,25 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 [完整示例][examples]
 
+## 开发
+
+```bash
+# 克隆代码
+git clone git@github.com:kwkwc/agscheduler.git
+
+# 工作目录
+cd agscheduler
+
+# 安装依赖
+make install
+
+# 启动 CI 服务
+make up-ci-services
+
+# 运行检查
+make check-all
+```
+
 ## 致谢
 
 [APScheduler](https://github.com/agronholm/apscheduler/tree/3.x)
