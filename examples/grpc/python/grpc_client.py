@@ -2,6 +2,7 @@
 # 2. python3 examples/grpc/python/grpc_client.py
 
 import grpc
+from google.protobuf.empty_pb2 import Empty
 from google.protobuf.struct_pb2 import Struct
 
 import scheduler_pb2
@@ -24,6 +25,8 @@ def run():
             )
         )
         print(pb_job)
+
+        stub.Start(Empty())
 
 
 if __name__ == "__main__":
