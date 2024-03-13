@@ -71,10 +71,11 @@ protobuf:
 	python3 \
 		-m grpc_tools.protoc \
 		-I services/proto/ \
-		--python_out=examples/grpc/python \
-		--pyi_out=examples/grpc/python \
-		--grpc_python_out=examples/grpc/python \
-		services/proto/*.proto
+		--python_out=examples/grpc/python/proto \
+		--pyi_out=examples/grpc/python/proto \
+		--grpc_python_out=examples/grpc/python/proto \
+		services/proto/*.proto && \
+	sed -i 's/^\(import.*pb2\)/from proto \1/g' examples/grpc/python/proto/*pb2_grpc.py
 
 .PHONY: examples
 examples:

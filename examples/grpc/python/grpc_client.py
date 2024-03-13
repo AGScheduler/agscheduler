@@ -5,8 +5,8 @@ import grpc
 from google.protobuf.empty_pb2 import Empty
 from google.protobuf.struct_pb2 import Struct
 
-import scheduler_pb2
-import scheduler_pb2_grpc
+from proto import scheduler_pb2
+from proto import scheduler_pb2_grpc
 
 
 def run():
