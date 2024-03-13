@@ -8,7 +8,7 @@ from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Opti
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Node(_message.Message):
-    __slots__ = ["endpoint_main", "endpoint", "endpoint_grpc", "endpoint_http", "queue", "mode", "health", "register_time", "last_heartbeat_time"]
+    __slots__ = ("endpoint_main", "endpoint", "endpoint_grpc", "endpoint_http", "queue", "mode", "health", "register_time", "last_heartbeat_time")
     ENDPOINT_MAIN_FIELD_NUMBER: _ClassVar[int]
     ENDPOINT_FIELD_NUMBER: _ClassVar[int]
     ENDPOINT_GRPC_FIELD_NUMBER: _ClassVar[int]
@@ -30,9 +30,9 @@ class Node(_message.Message):
     def __init__(self, endpoint_main: _Optional[str] = ..., endpoint: _Optional[str] = ..., endpoint_grpc: _Optional[str] = ..., endpoint_http: _Optional[str] = ..., queue: _Optional[str] = ..., mode: _Optional[str] = ..., health: bool = ..., register_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., last_heartbeat_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class Nodes(_message.Message):
-    __slots__ = ["nodes"]
+    __slots__ = ("nodes",)
     class NodesEntry(_message.Message):
-        __slots__ = ["key", "value"]
+        __slots__ = ("key", "value")
         KEY_FIELD_NUMBER: _ClassVar[int]
         VALUE_FIELD_NUMBER: _ClassVar[int]
         key: str

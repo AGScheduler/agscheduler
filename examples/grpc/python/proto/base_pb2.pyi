@@ -7,7 +7,7 @@ from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Opti
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Info(_message.Message):
-    __slots__ = ["info"]
+    __slots__ = ("info",)
     INFO_FIELD_NUMBER: _ClassVar[int]
     info: _struct_pb2.Struct
     def __init__(self, info: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ...) -> None: ...
