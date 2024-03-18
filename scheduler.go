@@ -315,27 +315,20 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 }
 
 func (s *Scheduler) _scheduleJob(j Job) error {
-	isRunJobLocal := false
-
 	// In standalone mode.
 	if !s.IsClusterMode() {
-		isRunJobLocal = true
+		s._runJob(j)
 	} else {
 		// In cluster mode, all nodes are equal and may pick myself.
 		node, err := s.clusterNode.choiceNode(j.Queues)
 		if err != nil || s.clusterNode.Endpoint == node.Endpoint {
-			isRunJobLocal = true
+			if len(j.Queues) == 0 || slices.Contains(j.Queues, s.clusterNode.Queue) {
+				s._runJob(j)
+			} else {
+				return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
+			}
 		} else {
 			s._runJobRemote(node, j)
-			return nil
-		}
-	}
-
-	if isRunJobLocal {
-		if len(j.Queues) == 0 || slices.Contains(j.Queues, s.clusterNode.Queue) {
-			s._runJob(j)
-		} else {
-			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 		}
 	}
 
