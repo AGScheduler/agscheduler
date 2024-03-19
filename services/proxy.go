@@ -48,6 +48,10 @@ func (c *ClusterProxy) GinProxy() gin.HandlerFunc {
 		proxyUrl.Host = endpointHTTP
 
 		proxy := httputil.NewSingleHostReverseProxy(proxyUrl)
+		proxy.ModifyResponse = func(resp *http.Response) error {
+			resp.Header.Del("Access-Control-Allow-Origin")
+			return nil
+		}
 		proxy.ServeHTTP(gc.Writer, gc.Request)
 	}
 }
