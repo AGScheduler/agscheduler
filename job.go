@@ -149,6 +149,14 @@ func (j *Job) NextRunTimeWithTimezone() time.Time {
 	return j.NextRunTime.In(timezone)
 }
 
+func GetNextRunTimeMax() (time.Time, error) {
+	return time.ParseInLocation(
+		time.DateTime,
+		"9999-09-09 09:09:09",
+		time.Now().UTC().Location(),
+	)
+}
+
 func (j Job) String() string {
 	return fmt.Sprintf(
 		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+

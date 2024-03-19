@@ -70,7 +70,7 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 
 	timezone, err := time.LoadLocation(rJ.Data.(map[string]any)["timezone"].(string))
 	assert.NoError(t, err)
-	nextRunTimeMax, err := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	nextRunTimeMax, err := agscheduler.GetNextRunTimeMax()
 	assert.NoError(t, err)
 
 	resp, err = http.Post(baseUrl+"/scheduler/job/"+id+"/pause", CONTENT_TYPE, nil)

@@ -411,7 +411,7 @@ func TestCalcNextRunTime(t *testing.T) {
 	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0).UTC(), nextRunTimeNew)
 
 	j.Status = agscheduler.STATUS_PAUSED
-	nextRunTimeMax, err := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	nextRunTimeMax, err := agscheduler.GetNextRunTimeMax()
 	assert.NoError(t, err)
 	nextRunTimeNew, err = agscheduler.CalcNextRunTime(j)
 	assert.NoError(t, err)
