@@ -3,7 +3,6 @@ package stores
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -42,9 +41,8 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	assert.NoError(t, err)
 	assert.Equal(t, agscheduler.TYPE_CRON, j.Type)
 
-	timezone, err := time.LoadLocation(j.Timezone)
 	assert.NoError(t, err)
-	nextRunTimeMax, err := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	nextRunTimeMax, err := agscheduler.GetNextRunTimeMax()
 	assert.NoError(t, err)
 
 	j, err = s.PauseJob(j.Id)

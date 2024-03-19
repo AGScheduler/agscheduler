@@ -86,7 +86,7 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 	}
 
 	if j.Status == STATUS_PAUSED {
-		nextRunTimeMax, _ := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+		nextRunTimeMax, _ := GetNextRunTimeMax()
 		return time.Unix(nextRunTimeMax.Unix(), 0).UTC(), nil
 	}
 

@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -45,9 +44,8 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.Equal(t, agscheduler.TYPE_CRON, j.Type)
 
-	timezone, err := time.LoadLocation(j.Timezone)
 	assert.NoError(t, err)
-	nextRunTimeMax, err := time.ParseInLocation(time.DateTime, "9999-09-09 09:09:09", timezone)
+	nextRunTimeMax, err := agscheduler.GetNextRunTimeMax()
 	assert.NoError(t, err)
 
 	pbJ, err = c.PauseJob(ctx, &pb.JobId{Id: j.Id})
