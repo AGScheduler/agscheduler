@@ -10,7 +10,9 @@ import (
 )
 
 func runExample(s *agscheduler.Scheduler) {
-	agscheduler.RegisterFuncs(examples.PrintMsg)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: examples.PrintMsg},
+	)
 
 	job1 := agscheduler.Job{
 		Name:     "Job1",

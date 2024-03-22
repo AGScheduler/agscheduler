@@ -271,18 +271,24 @@ func PbJobsPtrToJobs(pbJs *pb.Jobs) []Job {
 	return js
 }
 
+type FuncPkg struct {
+	Func func(context.Context, Job)
+	// About this function.
+	Info string
+}
+
 // Record the actual path of function and the corresponding function.
 // Since golang can't serialize functions,
 // need to register them with `RegisterFuncs` before using it.
-var funcMap = make(map[string]func(context.Context, Job))
+var funcMap = make(map[string]FuncPkg)
 
 func getFuncName(f func(context.Context, Job)) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
 
-func RegisterFuncs(fs ...func(context.Context, Job)) {
-	for _, f := range fs {
-		fName := getFuncName(f)
-		funcMap[fName] = f
+func RegisterFuncs(fps ...FuncPkg) {
+	for _, fp := range fps {
+		fName := getFuncName(fp.Func)
+		funcMap[fName] = fp
 	}
 }

@@ -14,7 +14,9 @@ import (
 )
 
 func main() {
-	agscheduler.RegisterFuncs(examples.PrintMsg)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: examples.PrintMsg},
+	)
 
 	store := &stores.MemoryStore{}
 

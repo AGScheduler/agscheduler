@@ -28,7 +28,9 @@ func testHTTP(t *testing.T, baseUrl string) {
 }
 
 func TestHTTPService(t *testing.T) {
-	agscheduler.RegisterFuncs(dryRunHTTP)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: dryRunHTTP},
+	)
 
 	store := &stores.MemoryStore{}
 

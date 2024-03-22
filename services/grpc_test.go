@@ -25,7 +25,9 @@ func testGRPC(t *testing.T, c pb.BaseClient) {
 }
 
 func TestGRPCService(t *testing.T) {
-	agscheduler.RegisterFuncs(dryRunGRPC)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: dryRunGRPC},
+	)
 
 	store := &stores.MemoryStore{}
 

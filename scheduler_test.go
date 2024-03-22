@@ -26,7 +26,10 @@ func getSchedulerWithStore(t *testing.T) *agscheduler.Scheduler {
 }
 
 func getJob() agscheduler.Job {
-	agscheduler.RegisterFuncs(dryRunScheduler, runSchedulerPanic)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: dryRunScheduler},
+		agscheduler.FuncPkg{Func: runSchedulerPanic},
+	)
 
 	return agscheduler.Job{
 		Name:     "Job",
