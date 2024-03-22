@@ -53,6 +53,8 @@ func (c *ClusterProxy) GinProxy() gin.HandlerFunc {
 			return nil
 		}
 		proxy.ServeHTTP(gc.Writer, gc.Request)
+
+		gc.Abort()
 	}
 }
 
