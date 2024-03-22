@@ -109,11 +109,20 @@ func TestPbJobsPtrToJobs(t *testing.T) {
 }
 
 func TestRegisterFuncs(t *testing.T) {
-	assert.Empty(t, funcMap)
+	assert.Empty(t, FuncMap)
 
 	RegisterFuncs(
 		FuncPkg{Func: func(ctx context.Context, j Job) {}},
 	)
 
-	assert.Len(t, funcMap, 1)
+	assert.Len(t, FuncMap, 1)
+}
+
+func TestFuncMapReadable(t *testing.T) {
+	RegisterFuncs(
+		FuncPkg{Func: func(ctx context.Context, j Job) {}},
+	)
+	funcLen := len(FuncMap)
+
+	assert.Len(t, FuncMapReadable(), funcLen)
 }

@@ -198,6 +198,7 @@ cnNode3 := &agscheduler.ClusterNode{...}
 | gRPC Function | HTTP Method | HTTP Endpoint             |
 |---------------|-------------|---------------------------|
 | GetInfo       | GET         | /info                     |
+| GetFuncs      | GET         | /funcs                    |
 
 ## Scheduler API
 

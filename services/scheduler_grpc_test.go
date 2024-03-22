@@ -11,8 +11,6 @@ import (
 	pb "github.com/kwkwc/agscheduler/services/proto"
 )
 
-func dryRunGRPC(ctx context.Context, j agscheduler.Job) {}
-
 func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	ctx := context.Background()
 

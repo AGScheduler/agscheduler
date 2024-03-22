@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -13,6 +14,13 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
+type result struct {
+	Data  any    `json:"data"`
+	Error string `json:"error"`
+}
+
+func dryRunHTTP(ctx context.Context, j agscheduler.Job) {}
+
 func testHTTP(t *testing.T, baseUrl string) {
 	resp, err := http.Get(baseUrl + "/info")
 	assert.NoError(t, err)
@@ -23,8 +31,18 @@ func testHTTP(t *testing.T, baseUrl string) {
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
 	assert.Len(t, rJ.Data.(map[string]any), 4)
-
 	assert.Equal(t, agscheduler.Version, rJ.Data.(map[string]any)["version"])
+
+	resp, err = http.Get(baseUrl + "/funcs")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	rJ = &result{}
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
+	funcLen := len(agscheduler.FuncMap)
+	assert.Len(t, rJ.Data, funcLen)
 }
 
 func TestHTTPService(t *testing.T) {

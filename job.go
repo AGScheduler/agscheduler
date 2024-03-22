@@ -121,7 +121,7 @@ func (j *Job) init() error {
 
 // Called when the job run `init` or scheduler run `UpdateJob`.
 func (j *Job) check() error {
-	if _, ok := funcMap[j.FuncName]; !ok {
+	if _, ok := FuncMap[j.FuncName]; !ok {
 		return FuncUnregisteredError(j.FuncName)
 	}
 
@@ -280,7 +280,19 @@ type FuncPkg struct {
 // Record the actual path of function and the corresponding function.
 // Since golang can't serialize functions,
 // need to register them with `RegisterFuncs` before using it.
-var funcMap = make(map[string]FuncPkg)
+var FuncMap = make(map[string]FuncPkg)
+
+func FuncMapReadable() []map[string]string {
+	funcs := []map[string]string{}
+
+	for fName, fPkg := range FuncMap {
+		funcs = append(funcs, map[string]string{
+			"name": fName, "info": fPkg.Info,
+		})
+	}
+
+	return funcs
+}
 
 func getFuncName(f func(context.Context, Job)) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
@@ -289,6 +301,6 @@ func getFuncName(f func(context.Context, Job)) string {
 func RegisterFuncs(fps ...FuncPkg) {
 	for _, fp := range fps {
 		fName := getFuncName(fp.Func)
-		funcMap[fName] = fp
+		FuncMap[fName] = fp
 	}
 }

@@ -14,14 +14,20 @@ import (
 	"github.com/kwkwc/agscheduler/stores"
 )
 
+func dryRunGRPC(ctx context.Context, j agscheduler.Job) {}
+
 func testGRPC(t *testing.T, c pb.BaseClient) {
 	ctx := context.Background()
 
 	pbI, err := c.GetInfo(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
 	assert.Len(t, pbI.Info.AsMap(), 4)
-
 	assert.Equal(t, pbI.Info.AsMap()["version"], agscheduler.Version)
+
+	pbFS, err := c.GetFuncs(ctx, &emptypb.Empty{})
+	assert.NoError(t, err)
+	funcLen := len(agscheduler.FuncMap)
+	assert.Len(t, pbFS.Funcs, funcLen)
 }
 
 func TestGRPCService(t *testing.T) {

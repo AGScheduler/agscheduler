@@ -29,6 +29,18 @@ func (bgrs *bGRPCService) GetInfo(ctx context.Context, in *emptypb.Empty) (*pb.I
 	return &pb.Info{Info: info}, nil
 }
 
+func (bgrs *bGRPCService) GetFuncs(ctx context.Context, in *emptypb.Empty) (*pb.Funcs, error) {
+	pbFs := &pb.Funcs{}
+
+	fs := agscheduler.FuncMapReadable()
+	for _, f := range fs {
+		pbF := &pb.Func{Name: f["name"], Info: f["Info"]}
+		pbFs.Funcs = append(pbFs.Funcs, pbF)
+	}
+
+	return pbFs, nil
+}
+
 func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	defer func() {
 		if err := recover(); err != nil {

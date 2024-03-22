@@ -20,8 +20,13 @@ func (bhs *bHTTPService) info(c *gin.Context) {
 	c.JSON(200, gin.H{"data": bhs.scheduler.Info(), "error": ""})
 }
 
+func (bhs *bHTTPService) funcs(c *gin.Context) {
+	c.JSON(200, gin.H{"data": agscheduler.FuncMapReadable(), "error": ""})
+}
+
 func (bhs *bHTTPService) registerRoutes(r *gin.Engine) {
 	r.GET("/info", bhs.info)
+	r.GET("/funcs", bhs.funcs)
 }
 
 type HTTPService struct {
