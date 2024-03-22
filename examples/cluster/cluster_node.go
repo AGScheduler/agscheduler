@@ -36,7 +36,9 @@ var queue = flag.String("q", "default", "Cluster Node queue")
 var mode = flag.String("m", "", "Cluster Node mode, options `HA`")
 
 func main() {
-	agscheduler.RegisterFuncs(examples.PrintMsg)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: examples.PrintMsg},
+	)
 
 	flag.Parse()
 

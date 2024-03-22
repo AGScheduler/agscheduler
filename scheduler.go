@@ -221,7 +221,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 
 // Used in standalone mode.
 func (s *Scheduler) _runJob(j Job) {
-	f := reflect.ValueOf(funcMap[j.FuncName])
+	f := reflect.ValueOf(funcMap[j.FuncName].Func)
 	if f.IsNil() {
 		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.FullName(), j.FuncName))
 	} else {

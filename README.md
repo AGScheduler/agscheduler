@@ -56,7 +56,9 @@ func printMsg(ctx context.Context, j agscheduler.Job) {
 }
 
 func main() {
-	agscheduler.RegisterFuncs(printMsg)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: printMsg},
+	)
 
 	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}

@@ -12,7 +12,9 @@ import (
 func dryRunStores(ctx context.Context, j agscheduler.Job) {}
 
 func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
-	agscheduler.RegisterFuncs(dryRunStores)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: dryRunStores},
+	)
 
 	s.Start()
 

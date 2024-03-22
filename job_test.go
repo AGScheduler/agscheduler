@@ -111,7 +111,9 @@ func TestPbJobsPtrToJobs(t *testing.T) {
 func TestRegisterFuncs(t *testing.T) {
 	assert.Empty(t, funcMap)
 
-	RegisterFuncs(func(ctx context.Context, j Job) {})
+	RegisterFuncs(
+		FuncPkg{Func: func(ctx context.Context, j Job) {}},
+	)
 
 	assert.Len(t, funcMap, 1)
 }
