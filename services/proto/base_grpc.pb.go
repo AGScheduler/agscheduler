@@ -20,7 +20,8 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Base_GetInfo_FullMethodName = "/services.Base/GetInfo"
+	Base_GetInfo_FullMethodName  = "/services.Base/GetInfo"
+	Base_GetFuncs_FullMethodName = "/services.Base/GetFuncs"
 )
 
 // BaseClient is the client API for Base service.
@@ -28,6 +29,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BaseClient interface {
 	GetInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Info, error)
+	GetFuncs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Funcs, error)
 }
 
 type baseClient struct {
@@ -47,11 +49,21 @@ func (c *baseClient) GetInfo(ctx context.Context, in *emptypb.Empty, opts ...grp
 	return out, nil
 }
 
+func (c *baseClient) GetFuncs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Funcs, error) {
+	out := new(Funcs)
+	err := c.cc.Invoke(ctx, Base_GetFuncs_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BaseServer is the server API for Base service.
 // All implementations must embed UnimplementedBaseServer
 // for forward compatibility
 type BaseServer interface {
 	GetInfo(context.Context, *emptypb.Empty) (*Info, error)
+	GetFuncs(context.Context, *emptypb.Empty) (*Funcs, error)
 	mustEmbedUnimplementedBaseServer()
 }
 
@@ -61,6 +73,9 @@ type UnimplementedBaseServer struct {
 
 func (UnimplementedBaseServer) GetInfo(context.Context, *emptypb.Empty) (*Info, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInfo not implemented")
+}
+func (UnimplementedBaseServer) GetFuncs(context.Context, *emptypb.Empty) (*Funcs, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFuncs not implemented")
 }
 func (UnimplementedBaseServer) mustEmbedUnimplementedBaseServer() {}
 
@@ -93,6 +108,24 @@ func _Base_GetInfo_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Base_GetFuncs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BaseServer).GetFuncs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Base_GetFuncs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BaseServer).GetFuncs(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Base_ServiceDesc is the grpc.ServiceDesc for Base service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -103,6 +136,10 @@ var Base_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetInfo",
 			Handler:    _Base_GetInfo_Handler,
+		},
+		{
+			MethodName: "GetFuncs",
+			Handler:    _Base_GetFuncs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

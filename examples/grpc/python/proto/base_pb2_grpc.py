@@ -20,12 +20,23 @@ class BaseStub(object):
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
                 response_deserializer=base__pb2.Info.FromString,
                 )
+        self.GetFuncs = channel.unary_unary(
+                '/services.Base/GetFuncs',
+                request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+                response_deserializer=base__pb2.Funcs.FromString,
+                )
 
 
 class BaseServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def GetInfo(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetFuncs(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -38,6 +49,11 @@ def add_BaseServicer_to_server(servicer, server):
                     servicer.GetInfo,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                     response_serializer=base__pb2.Info.SerializeToString,
+            ),
+            'GetFuncs': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetFuncs,
+                    request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
+                    response_serializer=base__pb2.Funcs.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -63,5 +79,22 @@ class Base(object):
         return grpc.experimental.unary_unary(request, target, '/services.Base/GetInfo',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             base__pb2.Info.FromString,
+            options, channel_credentials,
+            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+
+    @staticmethod
+    def GetFuncs(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(request, target, '/services.Base/GetFuncs',
+            google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
+            base__pb2.Funcs.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

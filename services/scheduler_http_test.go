@@ -2,7 +2,6 @@ package services
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -15,13 +14,6 @@ import (
 )
 
 const CONTENT_TYPE = "application/json"
-
-type result struct {
-	Data  any    `json:"data"`
-	Error string `json:"error"`
-}
-
-func dryRunHTTP(ctx context.Context, j agscheduler.Job) {}
 
 func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	client := &http.Client{}
