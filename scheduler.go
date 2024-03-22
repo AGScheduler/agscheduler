@@ -104,7 +104,11 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 		}
 		nextRunTime = time.Now().In(timezone).Add(i)
 	case TYPE_CRON:
-		nextRunTime = cronexpr.MustParse(j.CronExpr).Next(time.Now().In(timezone))
+		expr, err := cronexpr.Parse(j.CronExpr)
+		if err != nil {
+			return time.Time{}, fmt.Errorf("job `%s` CronExpr `%s` error: %s", j.FullName(), j.CronExpr, err)
+		}
+		nextRunTime = expr.Next(time.Now().In(timezone))
 	default:
 		return time.Time{}, fmt.Errorf("job `%s` Type `%s` unknown", j.FullName(), j.Type)
 	}

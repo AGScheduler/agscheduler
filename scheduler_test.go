@@ -405,7 +405,9 @@ func TestCalcNextRunTime(t *testing.T) {
 	j.Type = agscheduler.TYPE_CRON
 	cronExpr := "*/1 * * * *"
 	j.CronExpr = cronExpr
-	nextRunTime = cronexpr.MustParse(cronExpr).Next(time.Now().In(timezone))
+	expr, err := cronexpr.Parse(cronExpr)
+	assert.NoError(t, err)
+	nextRunTime = expr.Next(time.Now().In(timezone))
 	nextRunTimeNew, err = agscheduler.CalcNextRunTime(j)
 	assert.NoError(t, err)
 	assert.Equal(t, time.Unix(nextRunTime.Unix(), 0).UTC(), nextRunTimeNew)
@@ -444,6 +446,16 @@ func TestCalcNextRunTimeIntervalError(t *testing.T) {
 	j := agscheduler.Job{
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "2",
+	}
+
+	_, err := agscheduler.CalcNextRunTime(j)
+	assert.Error(t, err)
+}
+
+func TestCalcNextRunTimeCronExprError(t *testing.T) {
+	j := agscheduler.Job{
+		Type:     agscheduler.TYPE_CRON,
+		Interval: "*/1 * * * * * * * *",
 	}
 
 	_, err := agscheduler.CalcNextRunTime(j)
