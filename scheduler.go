@@ -139,8 +139,15 @@ func (s *Scheduler) GetAllJobs() ([]Job, error) {
 }
 
 func (s *Scheduler) UpdateJob(j Job) (Job, error) {
-	if _, err := s.GetJob(j.Id); err != nil {
+	oJ, err := s.GetJob(j.Id)
+	if err != nil {
 		return Job{}, err
+	}
+
+	j.LastRunTime = oJ.LastRunTime
+	if j.Status == "" ||
+		(j.Status != STATUS_RUNNING && j.Status != STATUS_PAUSED) {
+		j.Status = oJ.Status
 	}
 
 	if err := j.check(); err != nil {
