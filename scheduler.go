@@ -144,7 +144,6 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 		return Job{}, err
 	}
 
-	j.LastRunTime = oJ.LastRunTime
 	if j.Status == "" ||
 		(j.Status != STATUS_RUNNING && j.Status != STATUS_PAUSED) {
 		j.Status = oJ.Status
