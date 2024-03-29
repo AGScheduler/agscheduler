@@ -6,7 +6,7 @@ import (
 	es8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kwkwc/agscheduler"
+	"github.com/agscheduler/agscheduler"
 )
 
 func TestElasticsearchStore(t *testing.T) {

@@ -11,9 +11,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/kwkwc/agscheduler"
-	pb "github.com/kwkwc/agscheduler/services/proto"
-	"github.com/kwkwc/agscheduler/stores"
+	"github.com/agscheduler/agscheduler"
+	pb "github.com/agscheduler/agscheduler/services/proto"
+	"github.com/agscheduler/agscheduler/stores"
 )
 
 func TestClusterProxy(t *testing.T) {

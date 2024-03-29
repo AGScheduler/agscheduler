@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/examples"
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/examples"
 )
 
 func runExample(s *agscheduler.Scheduler) {
@@ -30,7 +30,7 @@ func runExample(s *agscheduler.Scheduler) {
 		Type:     agscheduler.TYPE_CRON,
 		CronExpr: "*/1 * * * *",
 		Timezone: "Asia/Shanghai",
-		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
+		FuncName: "github.com/agscheduler/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	job2, _ = s.AddJob(job2)

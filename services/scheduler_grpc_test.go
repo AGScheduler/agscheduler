@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/kwkwc/agscheduler"
-	pb "github.com/kwkwc/agscheduler/services/proto"
+	"github.com/agscheduler/agscheduler"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
@@ -21,7 +21,7 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 		Name:     "Job",
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "1s",
-		FuncName: "github.com/kwkwc/agscheduler/services.dryRunGRPC",
+		FuncName: "github.com/agscheduler/agscheduler/services.dryRunGRPC",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	assert.Empty(t, j.Status)

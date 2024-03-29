@@ -1,4 +1,4 @@
-module github.com/kwkwc/agscheduler
+module github.com/agscheduler/agscheduler
 
 go 1.22.1
 

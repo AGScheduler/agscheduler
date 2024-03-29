@@ -12,10 +12,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/examples"
-	"github.com/kwkwc/agscheduler/services"
-	"github.com/kwkwc/agscheduler/stores"
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/examples"
+	"github.com/agscheduler/agscheduler/services"
+	"github.com/agscheduler/agscheduler/stores"
 )
 
 const CONTENT_TYPE = "application/json"
@@ -33,7 +33,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "interval",
 		"interval":  "2s",
 		"timezone":  "UTC",
-		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
+		"func_name": "github.com/agscheduler/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	bJob1, _ := json.Marshal(mJob1)
@@ -48,7 +48,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "cron",
 		"cron_expr": "*/1 * * * *",
 		"timezone":  "Asia/Shanghai",
-		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
+		"func_name": "github.com/agscheduler/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
 	bJob2, _ := json.Marshal(mJob2)
@@ -65,7 +65,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "datetime",
 		"start_at":  "2023-09-22 07:30:08",
 		"timezone":  "America/New_York",
-		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
+		"func_name": "github.com/agscheduler/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg8": "8", "arg9": "9"},
 	}
 	bJob3, _ := json.Marshal(mJob3)

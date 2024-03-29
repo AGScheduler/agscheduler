@@ -4,7 +4,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/kwkwc/agscheduler"
+	"github.com/agscheduler/agscheduler"
 )
 
 // Stores jobs in an array in RAM. Provides no persistence support.

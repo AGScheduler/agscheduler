@@ -15,7 +15,7 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/kwkwc/agscheduler/services/proto"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 type TypeNodeMap map[string]map[string]any
