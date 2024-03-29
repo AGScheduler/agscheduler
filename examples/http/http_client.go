@@ -25,7 +25,7 @@ func runExampleHTTP(baseUrl string) {
 		"type":      "interval",
 		"interval":  "2s",
 		"timezone":  "UTC",
-		"func_name": "github.com/kwkwc/agscheduler/examples.PrintMsg",
+		"func_name": "github.com/agscheduler/agscheduler/examples.PrintMsg",
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	bJob1, _ := json.Marshal(mJob1)

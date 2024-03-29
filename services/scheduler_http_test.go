@@ -10,7 +10,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kwkwc/agscheduler"
+	"github.com/agscheduler/agscheduler"
 )
 
 const CONTENT_TYPE = "application/json"
@@ -25,7 +25,7 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 		"name":      "Job",
 		"type":      agscheduler.TYPE_INTERVAL,
 		"interval":  "1s",
-		"func_name": "github.com/kwkwc/agscheduler/services.dryRunHTTP",
+		"func_name": "github.com/agscheduler/agscheduler/services.dryRunHTTP",
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	bJ, err := json.Marshal(mJ)

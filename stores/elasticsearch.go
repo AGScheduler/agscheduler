@@ -11,7 +11,7 @@ import (
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/refresh"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types/enums/sortorder"
 
-	"github.com/kwkwc/agscheduler"
+	"github.com/agscheduler/agscheduler"
 )
 
 const (

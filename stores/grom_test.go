@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/kwkwc/agscheduler"
+	"github.com/agscheduler/agscheduler"
 )
 
 func TestGORMStore(t *testing.T) {

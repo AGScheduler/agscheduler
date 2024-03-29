@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pb "github.com/kwkwc/agscheduler/services/proto"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func testClusterGRPC(t *testing.T, c pb.ClusterClient) {

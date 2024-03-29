@@ -3,7 +3,7 @@ package services
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/kwkwc/agscheduler"
+	"github.com/agscheduler/agscheduler"
 )
 
 type cHTTPService struct {

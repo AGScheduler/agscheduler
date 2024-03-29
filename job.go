@@ -14,7 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/kwkwc/agscheduler/services/proto"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 // constant indicating a job's type

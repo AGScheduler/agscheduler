@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/kwkwc/agscheduler"
-	pb "github.com/kwkwc/agscheduler/services/proto"
+	"github.com/agscheduler/agscheduler"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func runExampleGRPC(c pb.SchedulerClient) {
@@ -24,7 +24,7 @@ func runExampleGRPC(c pb.SchedulerClient) {
 		Type:     agscheduler.TYPE_INTERVAL,
 		Interval: "2s",
 		Timezone: "UTC",
-		FuncName: "github.com/kwkwc/agscheduler/examples.PrintMsg",
+		FuncName: "github.com/agscheduler/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	pbJob1, _ := agscheduler.JobToPbJobPtr(job1)

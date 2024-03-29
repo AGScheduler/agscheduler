@@ -10,8 +10,8 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
-	"github.com/kwkwc/agscheduler"
-	pb "github.com/kwkwc/agscheduler/services/proto"
+	"github.com/agscheduler/agscheduler"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 type bGRPCService struct {

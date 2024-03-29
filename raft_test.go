@@ -7,9 +7,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/services"
-	"github.com/kwkwc/agscheduler/stores"
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/services"
+	"github.com/agscheduler/agscheduler/stores"
 )
 
 func TestRaft(t *testing.T) {

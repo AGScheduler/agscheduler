@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	pb "github.com/kwkwc/agscheduler/services/proto"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func getJob() Job {

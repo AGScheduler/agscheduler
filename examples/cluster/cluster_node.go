@@ -22,10 +22,10 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/examples"
-	"github.com/kwkwc/agscheduler/services"
-	"github.com/kwkwc/agscheduler/stores"
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/examples"
+	"github.com/agscheduler/agscheduler/services"
+	"github.com/agscheduler/agscheduler/stores"
 )
 
 var endpointMain = flag.String("em", "", "Cluster Main Node endpoint")

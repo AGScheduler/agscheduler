@@ -10,8 +10,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/stores"
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/stores"
 )
 
 func main() {

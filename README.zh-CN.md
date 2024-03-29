@@ -1,12 +1,12 @@
 # AGScheduler
 
-[![test](https://github.com/kwkwc/agscheduler/actions/workflows/test.yml/badge.svg)](https://github.com/kwkwc/agscheduler/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/kwkwc/agscheduler/graph/badge.svg?token=CL5P4VYQTU)](https://codecov.io/gh/kwkwc/agscheduler)
-[![Go Report Card](https://goreportcard.com/badge/github.com/kwkwc/agscheduler)](https://goreportcard.com/report/github.com/kwkwc/agscheduler)
-[![Go Reference](https://pkg.go.dev/badge/github.com/kwkwc/agscheduler.svg)](https://pkg.go.dev/github.com/kwkwc/agscheduler)
-![GitHub release (with filter)](https://img.shields.io/github/v/release/kwkwc/agscheduler)
-![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/kwkwc/agscheduler)
-[![license](https://img.shields.io/github/license/kwkwc/agscheduler)](https://github.com/kwkwc/agscheduler/blob/main/LICENSE)
+[![test](https://github.com/agscheduler/agscheduler/actions/workflows/test.yml/badge.svg)](https://github.com/agscheduler/agscheduler/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/agscheduler/agscheduler/graph/badge.svg?token=CL5P4VYQTU)](https://codecov.io/gh/agscheduler/agscheduler)
+[![Go Report Card](https://goreportcard.com/badge/github.com/agscheduler/agscheduler)](https://goreportcard.com/report/github.com/agscheduler/agscheduler)
+[![Go Reference](https://pkg.go.dev/badge/github.com/agscheduler/agscheduler.svg)](https://pkg.go.dev/github.com/agscheduler/agscheduler)
+![GitHub release (with filter)](https://img.shields.io/github/v/release/agscheduler/agscheduler)
+![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/agscheduler/agscheduler)
+[![license](https://img.shields.io/github/license/agscheduler/agscheduler)](https://github.com/agscheduler/agscheduler/blob/main/LICENSE)
 
 > Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度库，支持多种调度类型，支持动态更改和持久化作业，支持远程调用，支持集群
 
@@ -47,8 +47,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/kwkwc/agscheduler"
-	"github.com/kwkwc/agscheduler/stores"
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/stores"
 )
 
 func printMsg(ctx context.Context, j agscheduler.Job) {
@@ -231,7 +231,7 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 ```bash
 # 克隆代码
-git clone git@github.com:kwkwc/agscheduler.git
+git clone git@github.com:agscheduler/agscheduler.git
 
 # 工作目录
 cd agscheduler
@@ -252,4 +252,4 @@ make check-all
 
 [simple-raft](https://github.com/chapin666/simple-raft)
 
-[examples]: https://github.com/kwkwc/agscheduler/tree/main/examples
+[examples]: https://github.com/agscheduler/agscheduler/tree/main/examples
