@@ -195,14 +195,14 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 ## Base API
 
-| gRPC Function | HTTP Method | HTTP Endpoint             |
+| gRPC Function | HTTP Method | HTTP Path                 |
 |---------------|-------------|---------------------------|
 | GetInfo       | GET         | /info                     |
 | GetFuncs      | GET         | /funcs                    |
 
 ## Scheduler API
 
-| gRPC Function | HTTP Method | HTTP Endpoint             |
+| gRPC Function | HTTP Method | HTTP Path                 |
 |---------------|-------------|---------------------------|
 | AddJob        | POST        | /scheduler/job            |
 | GetJob        | GET         | /scheduler/job/:id        |
@@ -219,7 +219,7 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 ## Cluster API
 
-| gRPC Function | HTTP Method | HTTP Endpoint             |
+| gRPC Function | HTTP Method | HTTP Path                 |
 |---------------|-------------|---------------------------|
 | GetNodes      | GET         | /cluster/nodes            |
 
