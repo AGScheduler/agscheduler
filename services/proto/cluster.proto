@@ -13,9 +13,10 @@ message Node {
   string endpoint_http = 4;
   string queue = 5;
   string mode = 6;
-  bool health = 7;
-  google.protobuf.Timestamp  register_time = 8;
-  google.protobuf.Timestamp  last_heartbeat_time = 9;
+  string version = 7;
+  bool health = 8;
+  google.protobuf.Timestamp  register_time = 9;
+  google.protobuf.Timestamp  last_heartbeat_time = 10;
 }
 
 message Nodes {
