@@ -8,13 +8,14 @@ from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Opti
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Node(_message.Message):
-    __slots__ = ("endpoint_main", "endpoint", "endpoint_grpc", "endpoint_http", "queue", "mode", "health", "register_time", "last_heartbeat_time")
+    __slots__ = ("endpoint_main", "endpoint", "endpoint_grpc", "endpoint_http", "queue", "mode", "version", "health", "register_time", "last_heartbeat_time")
     ENDPOINT_MAIN_FIELD_NUMBER: _ClassVar[int]
     ENDPOINT_FIELD_NUMBER: _ClassVar[int]
     ENDPOINT_GRPC_FIELD_NUMBER: _ClassVar[int]
     ENDPOINT_HTTP_FIELD_NUMBER: _ClassVar[int]
     QUEUE_FIELD_NUMBER: _ClassVar[int]
     MODE_FIELD_NUMBER: _ClassVar[int]
+    VERSION_FIELD_NUMBER: _ClassVar[int]
     HEALTH_FIELD_NUMBER: _ClassVar[int]
     REGISTER_TIME_FIELD_NUMBER: _ClassVar[int]
     LAST_HEARTBEAT_TIME_FIELD_NUMBER: _ClassVar[int]
@@ -24,10 +25,11 @@ class Node(_message.Message):
     endpoint_http: str
     queue: str
     mode: str
+    version: str
     health: bool
     register_time: _timestamp_pb2.Timestamp
     last_heartbeat_time: _timestamp_pb2.Timestamp
-    def __init__(self, endpoint_main: _Optional[str] = ..., endpoint: _Optional[str] = ..., endpoint_grpc: _Optional[str] = ..., endpoint_http: _Optional[str] = ..., queue: _Optional[str] = ..., mode: _Optional[str] = ..., health: bool = ..., register_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., last_heartbeat_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+    def __init__(self, endpoint_main: _Optional[str] = ..., endpoint: _Optional[str] = ..., endpoint_grpc: _Optional[str] = ..., endpoint_http: _Optional[str] = ..., queue: _Optional[str] = ..., mode: _Optional[str] = ..., version: _Optional[str] = ..., health: bool = ..., register_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., last_heartbeat_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class Nodes(_message.Message):
     __slots__ = ("nodes",)
