@@ -5,6 +5,7 @@ install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+	go install golang.org/x/tools/cmd/goimports@v0.20.0
 	go mod tidy
 
 	pip3 install grpcio-tools
@@ -16,6 +17,14 @@ format:
 .PHONY: format-check
 format-check:
 	diff -u <(echo -n) <(gofmt -d .)
+
+.PHONY: goimports
+goimports:
+	find . -type f -name '*.go' -not -name '*.pb.go' | xargs goimports -l -w -local github.com/agscheduler/agscheduler
+
+.PHONY: goimports-check
+goimports-check:
+	diff -u <(echo -n) <(find . -type f -name '*.go' -not -name '*.pb.go' | xargs goimports -d -local github.com/agscheduler/agscheduler)
 
 .PHONY: lint
 lint:
