@@ -36,6 +36,10 @@ English | [简体中文](README.zh-CN.md)
 
 ![Framework](assets/framework.png)
 
+## Installation
+
+`go get -u github.com/agscheduler/agscheduler`
+
 ## Usage
 
 ```golang
