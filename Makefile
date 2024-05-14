@@ -59,7 +59,7 @@ test: down-cluster-ci-service up-cluster-ci-service
 	go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: check-all
-check-all: format-check lint test down-cluster-ci-service_second
+check-all: format-check goimports-check lint test down-cluster-ci-service_second
 
 .PHONY: up-ci-services
 up-ci-services:

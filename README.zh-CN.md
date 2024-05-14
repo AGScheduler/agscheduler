@@ -36,6 +36,10 @@
 
 ![Framework](assets/framework.png)
 
+## 安装
+
+`go get -u github.com/agscheduler/agscheduler`
+
 ## 使用
 
 ```golang
