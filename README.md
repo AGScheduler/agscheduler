@@ -38,7 +38,9 @@ English | [简体中文](README.zh-CN.md)
 
 ## Installation
 
-`go get -u github.com/agscheduler/agscheduler`
+```bash
+go get -u github.com/agscheduler/agscheduler
+```
 
 ## Usage
 
@@ -248,6 +250,18 @@ make up-ci-services
 
 # Run check
 make check-all
+```
+
+## [Cli](https://github.com/AGScheduler/agscheduler-cli)
+
+```bash
+cargo install agscheduler-cli
+```
+
+## [Web](https://github.com/AGScheduler/agscheduler-web)
+
+```bash
+docker run --rm -p 8080:80 ghcr.io/agscheduler/agscheduler-web:latest
 ```
 
 ## Thanks
