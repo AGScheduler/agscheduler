@@ -38,7 +38,9 @@
 
 ## 安装
 
-`go get -u github.com/agscheduler/agscheduler`
+```bash
+go get -u github.com/agscheduler/agscheduler
+```
 
 ## 使用
 
@@ -248,6 +250,18 @@ make up-ci-services
 
 # 运行检查
 make check-all
+```
+
+## [Cli](https://github.com/AGScheduler/agscheduler-cli)
+
+```bash
+cargo install agscheduler-cli
+```
+
+## [Web](https://github.com/AGScheduler/agscheduler-web)
+
+```bash
+docker run --rm -p 8080:80 ghcr.io/agscheduler/agscheduler-web:latest
 ```
 
 ## 致谢
