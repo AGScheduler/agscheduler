@@ -31,7 +31,7 @@ type Raft struct {
 }
 
 func (rf *Raft) toFollower(term int) {
-	slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm Follower\n", rf.cn.Endpoint))
+	slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm Follower", rf.cn.Endpoint))
 
 	rf.currentTerm = term
 	rf.role = Follower
@@ -53,14 +53,14 @@ type VoteReply struct {
 func (rf *Raft) sendRequestVote(address string, args VoteArgs) {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftRequestVote error: %s\n", address, err))
-			slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftRequestVote error: %s", address, err))
+			slog.Debug(string(debug.Stack()))
 		}
 	}()
 
 	rClient, err := rpc.DialHTTP("tcp", address)
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to connect to cluster node while sending request vote: `%s`, error: %s\n", address, err))
+		slog.Error(fmt.Sprintf("Failed to connect to cluster node while sending request vote: `%s`, error: %s", address, err))
 		return
 	}
 	defer rClient.Close()
@@ -68,7 +68,7 @@ func (rf *Raft) sendRequestVote(address string, args VoteArgs) {
 	var reply VoteReply
 	err = rClient.Call("CRPCService.RaftRequestVote", args, &reply)
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to send request vote to cluster node: `%s`, error: %s\n", address, err))
+		slog.Error(fmt.Sprintf("Failed to send request vote to cluster node: `%s`, error: %s", address, err))
 		return
 	}
 
@@ -138,14 +138,14 @@ type HeartbeatReply struct {
 func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs) {
 	defer func() {
 		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftHeartbeat error: %s\n", address, err))
-			slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+			slog.Error(fmt.Sprintf("Address `%s` CRPCService.RaftHeartbeat error: %s", address, err))
+			slog.Debug(string(debug.Stack()))
 		}
 	}()
 
 	rClient, err := rpc.DialHTTP("tcp", address)
 	if err != nil {
-		slog.Debug(fmt.Sprintf("Failed to connect to cluster node while sending heartbeat: `%s`, error: %s\n", address, err))
+		slog.Debug(fmt.Sprintf("Failed to connect to cluster node while sending heartbeat: `%s`, error: %s", address, err))
 		return
 	}
 	defer rClient.Close()
@@ -153,7 +153,7 @@ func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs) {
 	var reply HeartbeatReply
 	err = rClient.Call("CRPCService.RaftHeartbeat", args, &reply)
 	if err != nil {
-		slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`, error: %s\n", address, err))
+		slog.Debug(fmt.Sprintf("Failed to send heartbeat to cluster node: `%s`, error: %s", address, err))
 		return
 	}
 
@@ -220,13 +220,13 @@ func (rf *Raft) start(ctx context.Context) {
 				case Follower:
 					select {
 					case <-rf.heartbeatC:
-						slog.Debug(fmt.Sprintf("Follower: `%s` received heartbeat\n", rf.cn.Endpoint))
+						slog.Debug(fmt.Sprintf("Follower: `%s` received heartbeat", rf.cn.Endpoint))
 					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
-						slog.Warn(fmt.Sprintf("Follower: `%s` timeout\n", rf.cn.Endpoint))
+						slog.Warn(fmt.Sprintf("Follower: `%s` timeout", rf.cn.Endpoint))
 						rf.role = Candidate
 					}
 				case Candidate:
-					slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm candidate\n", rf.cn.Endpoint))
+					slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm candidate", rf.cn.Endpoint))
 
 					rf.cn.Scheduler.Stop()
 
@@ -239,7 +239,7 @@ func (rf *Raft) start(ctx context.Context) {
 					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
 						rf.role = Follower
 					case <-rf.toLeaderC:
-						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader\n", rf.cn.Endpoint))
+						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader", rf.cn.Endpoint))
 						rf.role = Leader
 
 						rf.cn.SetEndpointMain(rf.cn.Endpoint)

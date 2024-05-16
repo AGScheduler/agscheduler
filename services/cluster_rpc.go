@@ -70,7 +70,7 @@ func (s *clusterRPCService) Start() error {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Warn(fmt.Sprintf("Handle registered error: %s\n", err))
+				slog.Warn(fmt.Sprintf("Handle registered error: %s", err))
 			}
 		}()
 

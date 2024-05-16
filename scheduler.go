@@ -121,7 +121,7 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 		return Job{}, err
 	}
 
-	slog.Info(fmt.Sprintf("Scheduler add job `%s`.\n", j.FullName()))
+	slog.Info(fmt.Sprintf("Scheduler add job `%s`.", j.FullName()))
 
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
@@ -174,7 +174,7 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
-	slog.Info(fmt.Sprintf("Scheduler delete jobId `%s`.\n", id))
+	slog.Info(fmt.Sprintf("Scheduler delete jobId `%s`.", id))
 
 	if _, err := s.GetJob(id); err != nil {
 		return err
@@ -184,13 +184,13 @@ func (s *Scheduler) DeleteJob(id string) error {
 }
 
 func (s *Scheduler) DeleteAllJobs() error {
-	slog.Info("Scheduler delete all jobs.\n")
+	slog.Info("Scheduler delete all jobs.")
 
 	return s.store.DeleteAllJobs()
 }
 
 func (s *Scheduler) PauseJob(id string) (Job, error) {
-	slog.Info(fmt.Sprintf("Scheduler pause jobId `%s`.\n", id))
+	slog.Info(fmt.Sprintf("Scheduler pause jobId `%s`.", id))
 
 	j, err := s.GetJob(id)
 	if err != nil {
@@ -208,7 +208,7 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 }
 
 func (s *Scheduler) ResumeJob(id string) (Job, error) {
-	slog.Info(fmt.Sprintf("Scheduler resume jobId `%s`.\n", id))
+	slog.Info(fmt.Sprintf("Scheduler resume jobId `%s`.", id))
 
 	j, err := s.GetJob(id)
 	if err != nil {
@@ -229,9 +229,9 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 func (s *Scheduler) _runJob(j Job) {
 	f := reflect.ValueOf(FuncMap[j.FuncName].Func)
 	if f.IsNil() {
-		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered\n", j.FullName(), j.FuncName))
+		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered", j.FullName(), j.FuncName))
 	} else {
-		slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`\n", j.FullName(), j.NextRunTimeWithTimezone().String()))
+		slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`", j.FullName(), j.NextRunTimeWithTimezone().String()))
 		go func() {
 			timeout, err := time.ParseDuration(j.Timeout)
 			if err != nil {
@@ -248,8 +248,8 @@ func (s *Scheduler) _runJob(j Job) {
 				defer close(ch)
 				defer func() {
 					if err := recover(); err != nil {
-						slog.Error(fmt.Sprintf("Job `%s` run error: %s\n", j.FullName(), err))
-						slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+						slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
+						slog.Debug(string(debug.Stack()))
 					}
 				}()
 
@@ -260,7 +260,7 @@ func (s *Scheduler) _runJob(j Job) {
 			case <-ch:
 				return
 			case <-ctx.Done():
-				slog.Warn(fmt.Sprintf("Job `%s` run timeout\n", j.FullName()))
+				slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
 			}
 		}()
 	}
@@ -272,8 +272,8 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Error(fmt.Sprintf("Job `%s` _runJobRemote error: %s\n", j.FullName(), err))
-				slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+				slog.Error(fmt.Sprintf("Job `%s` _runJobRemote error: %s", j.FullName(), err))
+				slog.Debug(string(debug.Stack()))
 			}
 		}()
 
@@ -288,8 +288,8 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		go func() {
 			defer func() {
 				if err := recover(); err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` CRPCService.RunJob error: %s\n", j.FullName(), err))
-					slog.Debug(fmt.Sprintf("%s\n", string(debug.Stack())))
+					slog.Error(fmt.Sprintf("Job `%s` CRPCService.RunJob error: %s", j.FullName(), err))
+					slog.Debug(string(debug.Stack()))
 				}
 			}()
 
@@ -298,10 +298,10 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		select {
 		case err := <-ch:
 			if err != nil {
-				slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s\n", j.FullName(), err))
+				slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s", j.FullName(), err))
 			}
 		case <-time.After(3 * time.Second):
-			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote timeout %s\n", j.FullName(), err))
+			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote timeout %s", j.FullName(), err))
 		}
 	}()
 }
@@ -346,7 +346,7 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 }
 
 func (s *Scheduler) RunJob(j Job) error {
-	slog.Info(fmt.Sprintf("Scheduler run job `%s`.\n", j.FullName()))
+	slog.Info(fmt.Sprintf("Scheduler run job `%s`.", j.FullName()))
 
 	s._runJob(j)
 
@@ -356,7 +356,7 @@ func (s *Scheduler) RunJob(j Job) error {
 // Used in cluster mode.
 // Select a worker node
 func (s *Scheduler) ScheduleJob(j Job) error {
-	slog.Info(fmt.Sprintf("Scheduler schedule job `%s`.\n", j.FullName()))
+	slog.Info(fmt.Sprintf("Scheduler schedule job `%s`.", j.FullName()))
 
 	err := s._scheduleJob(j)
 	if err != nil {
@@ -370,7 +370,7 @@ func (s *Scheduler) run() {
 	for {
 		select {
 		case <-s.quitChan:
-			slog.Info("Scheduler quit.\n")
+			slog.Info("Scheduler quit.")
 			return
 		case <-s.timer.C:
 			if s.IsClusterMode() && !s.clusterNode.IsMainNode() {
@@ -382,7 +382,7 @@ func (s *Scheduler) run() {
 
 			js, err := s.GetAllJobs()
 			if err != nil {
-				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s\n", err))
+				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s", err))
 				s.timer.Reset(time.Second)
 				continue
 			}
@@ -393,19 +393,19 @@ func (s *Scheduler) run() {
 				if j.NextRunTime.Before(now) {
 					nextRunTime, err := CalcNextRunTime(j)
 					if err != nil {
-						slog.Error(fmt.Sprintf("Scheduler calc next run time error: %s\n", err))
+						slog.Error(fmt.Sprintf("Scheduler calc next run time error: %s", err))
 						continue
 					}
 					j.NextRunTime = nextRunTime
 
 					err = s._scheduleJob(j)
 					if err != nil {
-						slog.Error(fmt.Sprintf("Scheduler schedule job `%s` error: %s\n", j.FullName(), err))
+						slog.Error(fmt.Sprintf("Scheduler schedule job `%s` error: %s", j.FullName(), err))
 					}
 
 					err = s._flushJob(j, now)
 					if err != nil {
-						slog.Error(fmt.Sprintf("Scheduler %s\n", err))
+						slog.Error(fmt.Sprintf("Scheduler %s", err))
 						continue
 					}
 				} else {
@@ -414,7 +414,7 @@ func (s *Scheduler) run() {
 			}
 
 			nextWakeupInterval := s.getNextWakeupInterval()
-			slog.Debug(fmt.Sprintf("Scheduler next wakeup interval %s\n", nextWakeupInterval))
+			slog.Debug(fmt.Sprintf("Scheduler next wakeup interval %s", nextWakeupInterval))
 
 			s.timer.Reset(nextWakeupInterval)
 		}
@@ -428,7 +428,7 @@ func (s *Scheduler) Start() {
 	defer mutexS.Unlock()
 
 	if s.isRunning {
-		slog.Info("Scheduler is running.\n")
+		slog.Info("Scheduler is running.")
 		return
 	}
 
@@ -438,7 +438,7 @@ func (s *Scheduler) Start() {
 
 	go s.run()
 
-	slog.Info("Scheduler start.\n")
+	slog.Info("Scheduler start.")
 }
 
 // In addition to being called manually,
@@ -448,21 +448,21 @@ func (s *Scheduler) Stop() {
 	defer mutexS.Unlock()
 
 	if !s.isRunning {
-		slog.Info("Scheduler has stopped.\n")
+		slog.Info("Scheduler has stopped.")
 		return
 	}
 
 	s.quitChan <- struct{}{}
 	s.isRunning = false
 
-	slog.Info("Scheduler stop.\n")
+	slog.Info("Scheduler stop.")
 }
 
 // Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler
 func (s *Scheduler) getNextWakeupInterval() time.Duration {
 	nextRunTimeMin, err := s.store.GetNextRunTime()
 	if err != nil {
-		slog.Error(fmt.Sprintf("Scheduler get next wakeup interval error: %s\n", err))
+		slog.Error(fmt.Sprintf("Scheduler get next wakeup interval error: %s", err))
 		nextRunTimeMin = time.Now().UTC().Add(1 * time.Second)
 	}
 
