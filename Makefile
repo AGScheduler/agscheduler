@@ -18,12 +18,12 @@ format:
 format-check:
 	diff -u <(echo -n) <(gofmt -d .)
 
-.PHONY: goimports
-goimports:
+.PHONY: isort
+isort:
 	find . -type f -name '*.go' -not -name '*.pb.go' | xargs goimports -l -w -local github.com/agscheduler/agscheduler
 
-.PHONY: goimports-check
-goimports-check:
+.PHONY: isort-check
+isort-check:
 	diff -u <(echo -n) <(find . -type f -name '*.go' -not -name '*.pb.go' | xargs goimports -d -local github.com/agscheduler/agscheduler)
 
 .PHONY: lint
@@ -59,7 +59,7 @@ test: down-cluster-ci-service up-cluster-ci-service
 	go tool cover -html=coverage.out -o coverage.html
 
 .PHONY: check-all
-check-all: format-check goimports-check lint test down-cluster-ci-service_second
+check-all: format-check isort-check lint test down-cluster-ci-service_second
 
 .PHONY: up-ci-services
 up-ci-services:

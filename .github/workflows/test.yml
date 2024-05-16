@@ -37,7 +37,7 @@ jobs:
 
     - name: Import sorting with goimports
       run: |
-        make goimports-check
+        make isort-check
 
     - name: Lint with golangci-lint
       run: |
