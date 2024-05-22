@@ -14,7 +14,7 @@ services:
       - 127.0.0.1:6379:6379
 
   mongodb:
-    image: mongo
+    image: mongo:4.4.29
     ports:
       - 127.0.0.1:27017:27017
 
