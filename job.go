@@ -170,6 +170,18 @@ func (j Job) String() string {
 	)
 }
 
+func (j Job) DeepCopy() (Job, error) {
+	bJ, err := StateDump(j)
+	if err != nil {
+		return Job{}, err
+	}
+	cJ, err := StateLoad(bJ)
+	if err != nil {
+		return Job{}, err
+	}
+	return cJ, nil
+}
+
 // Serialize Job and convert to Bytes
 func StateDump(j Job) ([]byte, error) {
 	var buf bytes.Buffer

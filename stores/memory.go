@@ -24,21 +24,27 @@ func (s *MemoryStore) AddJob(j agscheduler.Job) error {
 func (s *MemoryStore) GetJob(id string) (agscheduler.Job, error) {
 	for _, j := range s.jobs {
 		if j.Id == id {
-			return j, nil
+			cJ, err := j.DeepCopy()
+			if err != nil {
+				return agscheduler.Job{}, err
+			}
+			return cJ, nil
 		}
 	}
 	return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 }
 
 func (s *MemoryStore) GetAllJobs() ([]agscheduler.Job, error) {
-	return s.jobs, nil
+	js := make([]agscheduler.Job, len(s.jobs))
+	copy(js, s.jobs)
+
+	return js, nil
 }
 
 func (s *MemoryStore) UpdateJob(j agscheduler.Job) error {
-	for i, sj := range s.jobs {
-		if sj.Id == j.Id {
+	for i, sJ := range s.jobs {
+		if sJ.Id == j.Id {
 			s.jobs[i] = j
-
 			return nil
 		}
 	}
@@ -66,8 +72,10 @@ func (s *MemoryStore) GetNextRunTime() (time.Time, error) {
 		return time.Time{}, nil
 	}
 
-	js := make([]agscheduler.Job, len(s.jobs))
-	copy(js, s.jobs)
+	js, err := s.GetAllJobs()
+	if err != nil {
+		return time.Time{}, nil
+	}
 	sort.Sort(agscheduler.JobSlice(js))
 
 	nextRunTimeMin := js[0].NextRunTime

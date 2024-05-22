@@ -39,6 +39,16 @@ func TestJobString(t *testing.T) {
 	}
 }
 
+func TestJobDeepCopy(t *testing.T) {
+	j := getJob()
+	cJ, err := j.DeepCopy()
+	assert.NoError(t, err)
+
+	cJ.Args["name"] = "test"
+	assert.NotEmpty(t, cJ.Args)
+	assert.Empty(t, j.Args)
+}
+
 func TestJobStateDump(t *testing.T) {
 	j := getJob()
 	state, err := StateDump(j)
