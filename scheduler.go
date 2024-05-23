@@ -18,6 +18,7 @@ import (
 
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
+var GetBroker = (*Scheduler).getBroker
 
 var mutexS sync.RWMutex
 
@@ -35,6 +36,9 @@ type Scheduler struct {
 
 	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
+
+	// Used in broker mode, bind to each other and the broker.
+	broker *Broker
 }
 
 func (s *Scheduler) IsRunning() bool {
@@ -75,6 +79,25 @@ func (s *Scheduler) IsClusterMode() bool {
 
 func (s *Scheduler) getClusterNode() *ClusterNode {
 	return s.clusterNode
+}
+
+// Bind the broker
+func (s *Scheduler) SetBroker(brk *Broker) error {
+	s.broker = brk
+	brk.scheduler = s
+	if err := s.broker.init(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Scheduler) getBroker() *Broker {
+	return s.broker
+}
+
+func (s *Scheduler) IsBrokerMode() bool {
+	return s.broker != nil
 }
 
 // Calculate the next run time, different job type will be calculated in different ways,
@@ -225,6 +248,21 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	return j, nil
 }
 
+// Used in broker mode.
+// Push job to queue to run the `RunJob`.
+func (s *Scheduler) pushJob(queue string, j Job) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("Job `%s` push to queue:`%s` error: %s", j.FullName(), queue, err))
+			slog.Debug(string(debug.Stack()))
+		}
+	}()
+
+	if err := s.broker.Queues[queue].PushJob(j); err != nil {
+		panic(err)
+	}
+}
+
 // Used in standalone mode.
 func (s *Scheduler) _runJob(j Job) {
 	f := reflect.ValueOf(FuncMap[j.FuncName].Func)
@@ -232,78 +270,76 @@ func (s *Scheduler) _runJob(j Job) {
 		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered", j.FullName(), j.FuncName))
 	} else {
 		slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`", j.FullName(), j.NextRunTimeWithTimezone().String()))
+
+		timeout, err := time.ParseDuration(j.Timeout)
+		if err != nil {
+			e := &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+			slog.Error(e.Error())
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+
+		ch := make(chan error, 1)
 		go func() {
-			timeout, err := time.ParseDuration(j.Timeout)
-			if err != nil {
-				e := &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
-				slog.Error(e.Error())
-				return
-			}
-
-			ctx, cancel := context.WithTimeout(context.Background(), timeout)
-			defer cancel()
-
-			ch := make(chan error, 1)
-			go func() {
-				defer close(ch)
-				defer func() {
-					if err := recover(); err != nil {
-						slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
-						slog.Debug(string(debug.Stack()))
-					}
-				}()
-
-				f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
+			defer close(ch)
+			defer func() {
+				if err := recover(); err != nil {
+					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
+					slog.Debug(string(debug.Stack()))
+				}
 			}()
 
-			select {
-			case <-ch:
-				return
-			case <-ctx.Done():
-				slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
-			}
+			f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
 		}()
+
+		select {
+		case <-ch:
+			return
+		case <-ctx.Done():
+			slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
+		}
 	}
 }
 
 // Used in cluster mode.
 // Call the RPC API of the other node to run the `RunJob`.
 func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("Job `%s` _runJobRemote error: %s", j.FullName(), err))
+			slog.Debug(string(debug.Stack()))
+		}
+	}()
+
+	rClient, err := rpc.DialHTTP("tcp", node.Endpoint)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to connect to cluster node: `%s`, error: %s", node.Endpoint, err))
+		return
+	}
+	defer rClient.Close()
+
+	var r any
+	ch := make(chan error, 1)
 	go func() {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Error(fmt.Sprintf("Job `%s` _runJobRemote error: %s", j.FullName(), err))
+				slog.Error(fmt.Sprintf("Job `%s` CRPCService.RunJob error: %s", j.FullName(), err))
 				slog.Debug(string(debug.Stack()))
 			}
 		}()
 
-		rClient, err := rpc.DialHTTP("tcp", node.Endpoint)
-		if err != nil {
-			slog.Error(fmt.Sprintf("Failed to connect to cluster node: `%s`, error: %s", node.Endpoint, err))
-		}
-		defer rClient.Close()
-
-		var r any
-		ch := make(chan error, 1)
-		go func() {
-			defer func() {
-				if err := recover(); err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` CRPCService.RunJob error: %s", j.FullName(), err))
-					slog.Debug(string(debug.Stack()))
-				}
-			}()
-
-			ch <- rClient.Call("CRPCService.RunJob", j, &r)
-		}()
-		select {
-		case err := <-ch:
-			if err != nil {
-				slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s", j.FullName(), err))
-			}
-		case <-time.After(3 * time.Second):
-			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote timeout %s", j.FullName(), err))
-		}
+		ch <- rClient.Call("CRPCService.RunJob", j, &r)
 	}()
+	select {
+	case err := <-ch:
+		if err != nil {
+			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s", j.FullName(), err))
+		}
+	case <-time.After(3 * time.Second):
+		slog.Error(fmt.Sprintf("Scheduler run job `%s` remote timeout %s", j.FullName(), err))
+	}
 }
 
 func (s *Scheduler) _flushJob(j Job, now time.Time) error {
@@ -325,20 +361,29 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 }
 
 func (s *Scheduler) _scheduleJob(j Job) error {
-	// In standalone mode.
-	if !s.IsClusterMode() {
-		s._runJob(j)
-	} else {
+	if s.IsClusterMode() {
 		// In cluster mode, all nodes are equal and may pick myself.
 		node, err := s.clusterNode.choiceNode(j.Queues)
 		if err != nil || s.clusterNode.Endpoint == node.Endpoint {
 			if len(j.Queues) == 0 || slices.Contains(j.Queues, s.clusterNode.Queue) {
-				s._runJob(j)
+				go s._runJob(j)
 			} else {
 				return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 			}
 		} else {
-			s._runJobRemote(node, j)
+			go s._runJobRemote(node, j)
+		}
+	} else {
+		// In standalone mode.
+		if s.IsBrokerMode() {
+			// In broker mode.
+			queue, err := s.broker.choiceQueue(j.Queues)
+			if err != nil {
+				return fmt.Errorf("broker's queues with queue `%s` does not exist", j.Queues)
+			}
+			go s.pushJob(queue, j)
+		} else {
+			go s._runJob(j)
 		}
 	}
 
@@ -348,7 +393,7 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 func (s *Scheduler) RunJob(j Job) error {
 	slog.Info(fmt.Sprintf("Scheduler run job `%s`.", j.FullName()))
 
-	s._runJob(j)
+	go s._runJob(j)
 
 	return nil
 }

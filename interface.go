@@ -35,3 +35,19 @@ type Store interface {
 	// Clear all resources bound to this store.
 	Clear() error
 }
+
+// Defines the interface that each queue must implement.
+type Queue interface {
+	// Initialization functions for each queue,
+	// called when the scheduler run `SetBroker`.
+	Init() error
+
+	// Push job to this queue.
+	PushJob(j Job) error
+
+	// Pull job from this queue.
+	PullJob() <-chan []byte
+
+	// Clear all resources bound to this queue.
+	Clear() error
+}

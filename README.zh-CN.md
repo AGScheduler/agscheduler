@@ -31,6 +31,14 @@
 - 支持集群
   - [x] 远程工作节点
   - [x] 调度器高可用（实验性）
+- 支持多种作业队列
+  - [x] Memory (不支持集群)
+  - [ ] [NSQ](https://nsq.io/)
+  - [ ] [RabbitMQ](https://www.rabbitmq.com/)
+  - [ ] [Redis](https://redis.io/)
+  - [ ] [MQTT](https://mqtt.org/)
+  - [ ] [Kafka](https://kafka.apache.org/)
+  - [ ] [Pulsar](https://pulsar.apache.org/)
 
 ## 架构
 
@@ -197,6 +205,34 @@ cnNode2 := &agscheduler.ClusterNode{..., Mode: "HA"}
 
 // Worker Node
 cnNode3 := &agscheduler.ClusterNode{...}
+```
+
+## Queue
+
+```golang
+package main
+
+import (
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/queues"
+	"github.com/agscheduler/agscheduler/stores"
+)
+
+func main() {
+	store := &stores.MemoryStore{}
+
+	mq := &queues.MemoryQueue{}
+	brk := &agscheduler.Broker{
+		Queues: map[string]agscheduler.Queue{
+			"default": mq,
+		},
+		MaxWorkers: 2,
+	}
+
+	scheduler := &agscheduler.Scheduler{}
+	scheduler.SetStore(store)
+	scheduler.SetBroker(brk)
+}
 ```
 
 ## Base API
