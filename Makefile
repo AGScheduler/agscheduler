@@ -2,10 +2,10 @@ SHELL=/bin/bash
 
 .PHONY: install
 install:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.31
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.1
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.3
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
-	go install golang.org/x/tools/cmd/goimports@v0.20.0
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.58.2
+	go install golang.org/x/tools/cmd/goimports@v0.21.0
 	go mod tidy
 
 	pip3 install grpcio-tools
