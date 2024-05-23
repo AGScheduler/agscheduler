@@ -7,7 +7,6 @@ import (
 	"net/rpc"
 	"reflect"
 	"runtime/debug"
-	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -343,8 +342,6 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 }
 
 func (s *Scheduler) _flushJob(j Job, now time.Time) error {
-	j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
-
 	if j.Type == TYPE_DATETIME {
 		if j.NextRunTime.Before(now) {
 			if err := s.DeleteJob(j.Id); err != nil {
@@ -352,6 +349,11 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 			}
 		}
 	} else {
+		j, err := s.GetJob(j.Id)
+		if err != nil {
+			return fmt.Errorf("get job `%s` error: %s", j.FullName(), err)
+		}
+		j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
 		if _, err := s.UpdateJob(j); err != nil {
 			return fmt.Errorf("update job `%s` error: %s", j.FullName(), err)
 		}
@@ -364,15 +366,10 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 	if s.IsClusterMode() {
 		// In cluster mode, all nodes are equal and may pick myself.
 		node, err := s.clusterNode.choiceNode(j.Queues)
-		if err != nil || s.clusterNode.Endpoint == node.Endpoint {
-			if len(j.Queues) == 0 || slices.Contains(j.Queues, s.clusterNode.Queue) {
-				go s._runJob(j)
-			} else {
-				return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
-			}
-		} else {
-			go s._runJobRemote(node, j)
+		if err != nil {
+			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 		}
+		go s._runJobRemote(node, j)
 	} else {
 		// In standalone mode.
 		if s.IsBrokerMode() {
