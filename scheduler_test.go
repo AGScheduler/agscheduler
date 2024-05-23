@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/queues"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
@@ -56,6 +57,17 @@ func getClusterNode() *agscheduler.ClusterNode {
 	}
 }
 
+func getBroker() *agscheduler.Broker {
+	mq := &queues.MemoryQueue{}
+
+	return &agscheduler.Broker{
+		Queues: map[string]agscheduler.Queue{
+			"default": mq,
+		},
+		MaxWorkers: 2,
+	}
+}
+
 func TestSchedulerSetStore(t *testing.T) {
 	store := &stores.MemoryStore{}
 	s := &agscheduler.Scheduler{}
@@ -80,6 +92,18 @@ func TestSchedulerSetClusterNode(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, agscheduler.GetClusterNode(s))
+}
+
+func TestSchedulerSetBroker(t *testing.T) {
+	brk := &agscheduler.Broker{}
+	s := &agscheduler.Scheduler{}
+
+	assert.Nil(t, agscheduler.GetBroker(s))
+
+	err := s.SetBroker(brk)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, agscheduler.GetBroker(s))
 }
 
 func TestSchedulerAddJob(t *testing.T) {
@@ -317,7 +341,7 @@ func TestSchedulerScheduleJobRemote(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestSchedulerScheduleJobQueueNotExist(t *testing.T) {
+func TestSchedulerScheduleJobClusterQueueNotExist(t *testing.T) {
 	cn := getClusterNode()
 	s := getSchedulerWithStore(t)
 	defer s.Stop()
@@ -333,6 +357,35 @@ func TestSchedulerScheduleJobQueueNotExist(t *testing.T) {
 
 	s.Start()
 	time.Sleep(500 * time.Millisecond)
+
+	err = s.ScheduleJob(j)
+	assert.Error(t, err)
+}
+
+func TestSchedulerScheduleJobBrokerQueue(t *testing.T) {
+	brk := getBroker()
+	s := getSchedulerWithStore(t)
+	j := getJob()
+
+	err := s.SetBroker(brk)
+	assert.NoError(t, err)
+	_, err = s.AddJob(j)
+	assert.NoError(t, err)
+
+	err = s.ScheduleJob(j)
+	assert.NoError(t, err)
+}
+
+func TestSchedulerScheduleJobBrokerQueueNotExist(t *testing.T) {
+	brk := getBroker()
+	brk.Queues = nil
+	s := getSchedulerWithStore(t)
+	j := getJob()
+
+	err := s.SetBroker(brk)
+	assert.NoError(t, err)
+	_, err = s.AddJob(j)
+	assert.NoError(t, err)
 
 	err = s.ScheduleJob(j)
 	assert.Error(t, err)

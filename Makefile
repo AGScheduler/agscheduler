@@ -52,6 +52,7 @@ test: down-cluster-ci-service up-cluster-ci-service
 		-covermode=set \
 		-coverprofile=coverage.out \
 		. \
+		./queues \
 		./services \
 		./stores \
 		-v
@@ -96,3 +97,4 @@ examples:
 	go run examples/stores/base.go examples/stores/elasticsearch.go
 	go run examples/grpc/grpc.go
 	go run examples/http/http.go
+	go run examples/queues/base.go examples/queues/memory.go
