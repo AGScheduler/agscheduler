@@ -343,8 +343,6 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 }
 
 func (s *Scheduler) _flushJob(j Job, now time.Time) error {
-	j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
-
 	if j.Type == TYPE_DATETIME {
 		if j.NextRunTime.Before(now) {
 			if err := s.DeleteJob(j.Id); err != nil {
@@ -352,6 +350,11 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 			}
 		}
 	} else {
+		j, err := s.GetJob(j.Id)
+		if err != nil {
+			return fmt.Errorf("get job `%s` error: %s", j.FullName(), err)
+		}
+		j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
 		if _, err := s.UpdateJob(j); err != nil {
 			return fmt.Errorf("update job `%s` error: %s", j.FullName(), err)
 		}
