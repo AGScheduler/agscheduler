@@ -10,6 +10,8 @@ import (
 	"github.com/agscheduler/agscheduler/examples"
 )
 
+var exampleQueue = "example_default"
+
 func runExample(s *agscheduler.Scheduler) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: examples.PrintMsgSleep},

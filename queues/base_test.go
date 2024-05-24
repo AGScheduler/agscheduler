@@ -11,6 +11,8 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
+var testQueue = "test_default"
+
 func runQueuesSleep(ctx context.Context, j agscheduler.Job) {
 	time.Sleep(1 * time.Second)
 }
@@ -32,7 +34,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	}
 
 	brk := agscheduler.GetBroker(s)
-	ch := brk.Queues[queue].PullJob()
+	ch := brk.Queues[testQueue].PullJob()
 	assert.Len(t, ch, 0)
 
 	s.Start()

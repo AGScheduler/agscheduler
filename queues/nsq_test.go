@@ -24,7 +24,7 @@ func TestNsqQueue(t *testing.T) {
 	err = producer.Ping()
 	assert.NoError(t, err)
 
-	consumer, err := nsq.NewConsumer(queue, queue, config)
+	consumer, err := nsq.NewConsumer(testQueue, testQueue, config)
 	assert.NoError(t, err)
 	consumer.AddHandler(messageHandler)
 	err = consumer.ConnectToNSQD(addr)
@@ -34,11 +34,11 @@ func TestNsqQueue(t *testing.T) {
 		Producer: producer,
 		Consumer: consumer,
 		Mh:       messageHandler,
-		Topic:    queue,
+		Topic:    testQueue,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
-			queue: nq,
+			testQueue: nq,
 		},
 		MaxWorkers: 2,
 	}
@@ -54,6 +54,6 @@ func TestNsqQueue(t *testing.T) {
 
 	err = store.Clear()
 	assert.NoError(t, err)
-	err = brk.Queues[queue].Clear()
+	err = brk.Queues[testQueue].Clear()
 	assert.NoError(t, err)
 }
