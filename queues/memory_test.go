@@ -10,16 +10,15 @@ import (
 )
 
 func TestMemoryQueue(t *testing.T) {
-	store := &stores.MemoryStore{}
-
 	mq := &MemoryQueue{}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
-			"default": mq,
+			queue: mq,
 		},
 		MaxWorkers: 2,
 	}
 
+	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
@@ -30,6 +29,6 @@ func TestMemoryQueue(t *testing.T) {
 
 	err = store.Clear()
 	assert.NoError(t, err)
-	err = brk.Queues["default"].Clear()
+	err = brk.Queues[queue].Clear()
 	assert.NoError(t, err)
 }

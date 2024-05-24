@@ -33,7 +33,7 @@
   - [x] 调度器高可用（实验性）
 - 支持多种作业队列
   - [x] Memory (不支持集群)
-  - [ ] [NSQ](https://nsq.io/)
+  - [x] [NSQ](https://nsq.io/)
   - [ ] [RabbitMQ](https://www.rabbitmq.com/)
   - [ ] [Redis](https://redis.io/)
   - [ ] [MQTT](https://mqtt.org/)

@@ -1,0 +1,7 @@
+version: "3"
+services:
+  nsqd:
+    image: nsqio/nsq
+    command: /nsqd
+    ports:
+      - 127.0.0.1:4150:4150
