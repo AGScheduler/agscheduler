@@ -219,8 +219,6 @@ import (
 )
 
 func main() {
-	store := &stores.MemoryStore{}
-
 	mq := &queues.MemoryQueue{}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
@@ -229,6 +227,7 @@ func main() {
 		MaxWorkers: 2,
 	}
 
+	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
 	scheduler.SetStore(store)
 	scheduler.SetBroker(brk)
