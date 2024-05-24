@@ -43,7 +43,7 @@ type Queue interface {
 	Init() error
 
 	// Push job to this queue.
-	PushJob(j Job) error
+	PushJob(bJ []byte) error
 
 	// Pull job from this queue.
 	PullJob() <-chan []byte

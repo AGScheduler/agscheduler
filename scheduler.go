@@ -257,7 +257,11 @@ func (s *Scheduler) pushJob(queue string, j Job) {
 		}
 	}()
 
-	if err := s.broker.Queues[queue].PushJob(j); err != nil {
+	bJ, err := StateDump(j)
+	if err != nil {
+		panic(err)
+	}
+	if err := s.broker.Queues[queue].PushJob(bJ); err != nil {
 		panic(err)
 	}
 }

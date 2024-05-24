@@ -1,9 +1,5 @@
 package queues
 
-import (
-	"github.com/agscheduler/agscheduler"
-)
-
 // Queue jobs in an channel in RAM. Provides no persistence support.
 type MemoryQueue struct {
 	// Size of the queue.
@@ -22,12 +18,7 @@ func (q *MemoryQueue) Init() error {
 	return nil
 }
 
-func (q *MemoryQueue) PushJob(j agscheduler.Job) error {
-	bJ, err := agscheduler.StateDump(j)
-	if err != nil {
-		return err
-	}
-
+func (q *MemoryQueue) PushJob(bJ []byte) error {
 	q.jobC <- bJ
 
 	return nil
@@ -39,5 +30,6 @@ func (q *MemoryQueue) PullJob() <-chan []byte {
 
 func (q *MemoryQueue) Clear() error {
 	close(q.jobC)
+
 	return nil
 }
