@@ -16,20 +16,21 @@ import (
 
 func main() {
 	var err error
-	nsqAddr := "127.0.0.1:4150"
-	queue := "default"
+
+	addr := "127.0.0.1:4150"
 	config := nsq.NewConfig()
 
+	queue := "default"
 	messageHandler := &queues.NsqMessageHandler{}
 
-	producer, err := nsq.NewProducer(nsqAddr, config)
+	producer, err := nsq.NewProducer(addr, config)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to create producer: %s", err))
 		os.Exit(1)
 	}
 	err = producer.Ping()
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to connect to mq: %s", err))
+		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
 	}
 
@@ -39,9 +40,9 @@ func main() {
 		os.Exit(1)
 	}
 	consumer.AddHandler(messageHandler)
-	err = consumer.ConnectToNSQD(nsqAddr)
+	err = consumer.ConnectToNSQD(addr)
 	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to connect to mq: %s", err))
+		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
 	}
 
