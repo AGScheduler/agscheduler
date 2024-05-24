@@ -13,7 +13,7 @@ func TestMemoryQueue(t *testing.T) {
 	mq := &MemoryQueue{}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
-			queue: mq,
+			testQueue: mq,
 		},
 		MaxWorkers: 2,
 	}
@@ -29,6 +29,6 @@ func TestMemoryQueue(t *testing.T) {
 
 	err = store.Clear()
 	assert.NoError(t, err)
-	err = brk.Queues[queue].Clear()
+	err = brk.Queues[testQueue].Clear()
 	assert.NoError(t, err)
 }

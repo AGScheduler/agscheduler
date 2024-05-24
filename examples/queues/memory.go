@@ -16,7 +16,7 @@ func main() {
 	mq := &queues.MemoryQueue{}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
-			"default": mq,
+			exampleQueue: mq,
 		},
 		MaxWorkers: 2,
 	}
