@@ -15,8 +15,6 @@ import (
 )
 
 func main() {
-	store := &stores.MemoryStore{}
-
 	var err error
 	nsqAddr := "127.0.0.1:4150"
 	queue := "default"
@@ -60,6 +58,7 @@ func main() {
 		MaxWorkers: 2,
 	}
 
+	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
 	err = scheduler.SetStore(store)
 	if err != nil {
