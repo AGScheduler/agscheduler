@@ -64,11 +64,13 @@ check-all: format-check isort-check lint test down-cluster-ci-service_second
 
 .PHONY: up-ci-services
 up-ci-services:
-	docker compose -f ci/docker-compose.ci.yml up -d
+	docker compose -f ci/docker-compose.store.ci.yml up -d
+	docker compose -f ci/docker-compose.queue.ci.yml up -d
 
 .PHONY: down-ci-services
 down-ci-services:
-	docker compose -f ci/docker-compose.ci.yml down
+	docker compose -f ci/docker-compose.store.ci.yml down
+	docker compose -f ci/docker-compose.queue.ci.yml down
 
 .PHONY: protobuf
 protobuf:
@@ -98,3 +100,4 @@ examples:
 	go run examples/grpc/grpc.go
 	go run examples/http/http.go
 	go run examples/queues/base.go examples/queues/memory.go
+	go run examples/queues/base.go examples/queues/nsq.go

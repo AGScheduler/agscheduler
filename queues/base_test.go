@@ -32,7 +32,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	}
 
 	brk := agscheduler.GetBroker(s)
-	ch := brk.Queues["default"].PullJob()
+	ch := brk.Queues[queue].PullJob()
 	assert.Len(t, ch, 0)
 
 	s.Start()

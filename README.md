@@ -33,7 +33,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] Scheduler high availability (Experimental)
 - Supports multiple job queues
   - [x] Memory (Cluster mode is not supported)
-  - [ ] [NSQ](https://nsq.io/)
+  - [x] [NSQ](https://nsq.io/)
   - [ ] [RabbitMQ](https://www.rabbitmq.com/)
   - [ ] [Redis](https://redis.io/)
   - [ ] [MQTT](https://mqtt.org/)
