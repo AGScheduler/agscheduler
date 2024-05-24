@@ -23,6 +23,7 @@ type NsqQueue struct {
 	// Topic of the MQ.
 	// Default: `default`
 	Topic string
+
 	// Size of the queue.
 	// Default: `32`
 	Size int

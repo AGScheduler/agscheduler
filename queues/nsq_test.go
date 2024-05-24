@@ -13,12 +13,13 @@ import (
 
 func TestNsqQueue(t *testing.T) {
 	var err error
-	nsqAddr := "127.0.0.1:4150"
+
+	addr := "127.0.0.1:4150"
 	config := nsq.NewConfig()
 
 	messageHandler := &NsqMessageHandler{}
 
-	producer, err := nsq.NewProducer(nsqAddr, config)
+	producer, err := nsq.NewProducer(addr, config)
 	assert.NoError(t, err)
 	err = producer.Ping()
 	assert.NoError(t, err)
@@ -26,7 +27,7 @@ func TestNsqQueue(t *testing.T) {
 	consumer, err := nsq.NewConsumer(queue, queue, config)
 	assert.NoError(t, err)
 	consumer.AddHandler(messageHandler)
-	err = consumer.ConnectToNSQD(nsqAddr)
+	err = consumer.ConnectToNSQD(addr)
 	assert.NoError(t, err)
 
 	nq := &NsqQueue{
