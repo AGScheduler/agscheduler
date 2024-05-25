@@ -89,15 +89,24 @@ protobuf:
 		services/proto/*.proto && \
 	sed -i 's/^\(import.*pb2\)/from proto \1/g' examples/grpc/python/proto/*pb2_grpc.py
 
-.PHONY: examples
-examples:
+.PHONY: examples-store
+examples-store:
 	go run examples/stores/base.go examples/stores/memory.go
 	go run examples/stores/base.go examples/stores/gorm.go
 	go run examples/stores/base.go examples/stores/redis.go
 	go run examples/stores/base.go examples/stores/mongodb.go
 	go run examples/stores/base.go examples/stores/etcd.go
 	go run examples/stores/base.go examples/stores/elasticsearch.go
-	go run examples/grpc/grpc.go
-	go run examples/http/http.go
+
+.PHONY: examples-queue
+examples-queue:
 	go run examples/queues/base.go examples/queues/memory.go
 	go run examples/queues/base.go examples/queues/nsq.go
+
+.PHONY: examples-api
+examples-api:
+	go run examples/grpc/grpc.go
+	go run examples/http/http.go
+
+.PHONY: examples-all
+examples-all: examples-store examples-queue examples-api
