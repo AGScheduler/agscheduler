@@ -15,6 +15,9 @@ func TestRedisStore(t *testing.T) {
 	assert.NoError(t, err)
 	rdb := redis.NewClient(opt)
 	defer rdb.Close()
+	_, err = rdb.Ping(ctx).Result()
+	assert.NoError(t, err)
+
 	store := &RedisStore{
 		RDB:         rdb,
 		JobsKey:     "agscheduler.test_jobs",

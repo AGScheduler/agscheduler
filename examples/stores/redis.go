@@ -22,12 +22,12 @@ func main() {
 		os.Exit(1)
 	}
 	rdb := redis.NewClient(opt)
+	defer rdb.Close()
 	_, err = rdb.Ping(context.Background()).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
-	defer rdb.Close()
 	store := &stores.RedisStore{
 		RDB:         rdb,
 		JobsKey:     "agscheduler.example_jobs",

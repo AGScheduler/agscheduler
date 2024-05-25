@@ -102,6 +102,7 @@ examples-store:
 examples-queue:
 	go run examples/queues/base.go examples/queues/memory.go
 	go run examples/queues/base.go examples/queues/nsq.go
+	go run examples/queues/base.go examples/queues/redis.go
 
 .PHONY: examples-api
 examples-api:
