@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	JOBS_KEY      = "agscheduler.jobs"
-	RUN_TIMES_KEY = "agscheduler.run_times"
+	REDIS_JOBS_KEY      = "agscheduler.jobs"
+	REDIS_RUN_TIMES_KEY = "agscheduler.run_times"
 )
 
 // Stores jobs in a Redis database.
@@ -22,10 +22,10 @@ type RedisStore struct {
 
 func (s *RedisStore) Init() error {
 	if s.JobsKey == "" {
-		s.JobsKey = JOBS_KEY
+		s.JobsKey = REDIS_JOBS_KEY
 	}
 	if s.RunTimesKey == "" {
-		s.RunTimesKey = RUN_TIMES_KEY
+		s.RunTimesKey = REDIS_RUN_TIMES_KEY
 	}
 
 	return nil

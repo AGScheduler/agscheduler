@@ -9,7 +9,7 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
-const TABLE_NAME = "jobs"
+const GORM_TABLE_NAME = "jobs"
 
 // GORM table
 type Jobs struct {
@@ -27,7 +27,7 @@ type GORMStore struct {
 
 func (s *GORMStore) Init() error {
 	if s.TableName == "" {
-		s.TableName = TABLE_NAME
+		s.TableName = GORM_TABLE_NAME
 	}
 
 	if err := s.DB.Table(s.TableName).AutoMigrate(&Jobs{}); err != nil {

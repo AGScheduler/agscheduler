@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	INDEX = "agscheduler_jobs"
+	ES_INDEX = "agscheduler_jobs"
 )
 
 // Stores jobs in a Elasticsearch database.
@@ -31,7 +31,7 @@ type doc struct {
 
 func (s *ElasticsearchStore) Init() error {
 	if s.Index == "" {
-		s.Index = INDEX
+		s.Index = ES_INDEX
 	}
 
 	exists, err := s.TClient.Indices.Exists(s.Index).Do(ctx)
