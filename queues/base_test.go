@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/stores"
 )
 
 var testQueue = "agscheduler_test_queue"
@@ -17,10 +18,17 @@ func runQueuesSleep(ctx context.Context, j agscheduler.Job) {
 	time.Sleep(1 * time.Second)
 }
 
-func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
+func runTest(t *testing.T, brk *agscheduler.Broker) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: runQueuesSleep},
 	)
+
+	sto := &stores.MemoryStore{}
+	s := &agscheduler.Scheduler{}
+	err := s.SetStore(sto)
+	assert.NoError(t, err)
+	err = s.SetBroker(brk)
+	assert.NoError(t, err)
 
 	for i := range 3 {
 		job := agscheduler.Job{
@@ -33,7 +41,6 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 		assert.NoError(t, err)
 	}
 
-	brk := agscheduler.GetBroker(s)
 	ch := brk.Queues[testQueue].PullJob()
 	assert.Len(t, ch, 0)
 
@@ -44,8 +51,13 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	time.Sleep(1 * time.Second)
 	assert.Len(t, ch, 0)
 
-	err := s.DeleteAllJobs()
+	err = s.DeleteAllJobs()
 	assert.NoError(t, err)
 
 	s.Stop()
+
+	err = brk.Queues[testQueue].Clear()
+	assert.NoError(t, err)
+	err = sto.Clear()
+	assert.NoError(t, err)
 }

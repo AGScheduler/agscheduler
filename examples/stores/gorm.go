@@ -10,7 +10,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
@@ -21,14 +20,8 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
+
 	store := &stores.GORMStore{DB: db, TableName: "example_jobs"}
 
-	scheduler := &agscheduler.Scheduler{}
-	err = scheduler.SetStore(store)
-	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
-		os.Exit(1)
-	}
-
-	runExample(scheduler)
+	runExample(store)
 }

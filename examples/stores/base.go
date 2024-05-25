@@ -1,18 +1,29 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/examples"
 )
 
-func runExample(s *agscheduler.Scheduler) {
+var ctx = context.Background()
+
+func runExample(sto agscheduler.Store) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: examples.PrintMsg},
 	)
+
+	s := &agscheduler.Scheduler{}
+	err := s.SetStore(sto)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
+		os.Exit(1)
+	}
 
 	job1 := agscheduler.Job{
 		Name:     "Job1",
@@ -95,4 +106,6 @@ func runExample(s *agscheduler.Scheduler) {
 	s.DeleteAllJobs()
 
 	s.Stop()
+
+	sto.Clear()
 }

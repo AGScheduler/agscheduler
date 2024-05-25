@@ -218,6 +218,7 @@ brk := &agscheduler.Broker{
 	MaxWorkers: 2,
 }
 
+scheduler.SetStore(store)
 scheduler.SetBroker(brk)
 ```
 

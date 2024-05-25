@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	DATABASE   = "agscheduler"
-	COLLECTION = "jobs"
+	MONGODB_DATABASE   = "agscheduler"
+	MONGODB_COLLECTION = "jobs"
 )
 
 // Stores jobs in a MongoDB database.
@@ -27,10 +27,10 @@ type MongoDBStore struct {
 
 func (s *MongoDBStore) Init() error {
 	if s.Database == "" {
-		s.Database = DATABASE
+		s.Database = MONGODB_DATABASE
 	}
 	if s.Collection == "" {
-		s.Collection = COLLECTION
+		s.Collection = MONGODB_COLLECTION
 	}
 
 	s.coll = s.Client.Database(s.Database).Collection(s.Collection)

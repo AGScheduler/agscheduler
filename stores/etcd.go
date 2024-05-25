@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	JOBS_PATH      = "/agscheduler/jobs"
-	RUN_TIMES_PATH = "/agscheduler/run_times"
+	ETCD_JOBS_PATH      = "/agscheduler/jobs"
+	ETCD_RUN_TIMES_PATH = "/agscheduler/run_times"
 )
 
 // Stores jobs in a etcd.
@@ -24,10 +24,10 @@ type EtcdStore struct {
 
 func (s *EtcdStore) Init() error {
 	if s.JobsPath == "" {
-		s.JobsPath = JOBS_PATH
+		s.JobsPath = ETCD_JOBS_PATH
 	}
 	if s.RunTimesPath == "" {
-		s.RunTimesPath = RUN_TIMES_PATH
+		s.RunTimesPath = ETCD_RUN_TIMES_PATH
 	}
 
 	return nil
