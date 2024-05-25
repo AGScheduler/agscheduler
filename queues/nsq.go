@@ -24,9 +24,6 @@ type NsqQueue struct {
 	// Default: `default`
 	Topic string
 
-	// Size of the queue.
-	// Default: `32`
-	Size int
 	jobC chan []byte
 }
 
@@ -34,11 +31,8 @@ func (q *NsqQueue) Init() error {
 	if q.Topic == "" {
 		q.Topic = "default"
 	}
-	if q.Size <= 0 {
-		q.Size = 32
-	}
 
-	q.jobC = make(chan []byte, q.Size)
+	q.jobC = make(chan []byte, 5)
 	q.Mh.jobC = q.jobC
 
 	return nil
