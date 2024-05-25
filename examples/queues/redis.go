@@ -3,7 +3,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/queues"
-	"github.com/agscheduler/agscheduler/stores"
 )
 
 func main() {
@@ -24,7 +22,7 @@ func main() {
 	}
 	rdb := redis.NewClient(opt)
 	defer rdb.Close()
-	_, err = rdb.Ping(context.Background()).Result()
+	_, err = rdb.Ping(ctx).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
@@ -43,18 +41,5 @@ func main() {
 		MaxWorkers: 2,
 	}
 
-	store := &stores.MemoryStore{}
-	scheduler := &agscheduler.Scheduler{}
-	err = scheduler.SetStore(store)
-	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
-		os.Exit(1)
-	}
-	err = scheduler.SetBroker(brk)
-	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to set broker: %s", err))
-		os.Exit(1)
-	}
-
-	runExample(scheduler)
+	runExample(brk)
 }

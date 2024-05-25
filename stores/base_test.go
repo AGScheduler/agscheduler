@@ -11,10 +11,14 @@ import (
 
 func dryRunStores(ctx context.Context, j agscheduler.Job) {}
 
-func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
+func runTest(t *testing.T, sto agscheduler.Store) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: dryRunStores},
 	)
+
+	s := &agscheduler.Scheduler{}
+	err := s.SetStore(sto)
+	assert.NoError(t, err)
 
 	s.Start()
 
@@ -28,7 +32,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	assert.Empty(t, j.FuncName)
 	assert.Empty(t, j.Status)
 
-	j, err := s.AddJob(j)
+	j, err = s.AddJob(j)
 	assert.NoError(t, err)
 	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
 	assert.NotEmpty(t, j.FuncName)
@@ -71,4 +75,7 @@ func testAGScheduler(t *testing.T, s *agscheduler.Scheduler) {
 	assert.Len(t, js, 0)
 
 	s.Stop()
+
+	err = sto.Clear()
+	assert.NoError(t, err)
 }

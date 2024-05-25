@@ -5,8 +5,6 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/agscheduler/agscheduler"
 )
 
 func TestRedisStore(t *testing.T) {
@@ -24,12 +22,5 @@ func TestRedisStore(t *testing.T) {
 		RunTimesKey: "agscheduler.test_run_times",
 	}
 
-	scheduler := &agscheduler.Scheduler{}
-	err = scheduler.SetStore(store)
-	assert.NoError(t, err)
-
-	testAGScheduler(t, scheduler)
-
-	err = store.Clear()
-	assert.NoError(t, err)
+	runTest(t, store)
 }

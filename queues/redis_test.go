@@ -8,7 +8,6 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/stores"
 )
 
 func TestRedisQueue(t *testing.T) {
@@ -33,17 +32,5 @@ func TestRedisQueue(t *testing.T) {
 		MaxWorkers: 2,
 	}
 
-	store := &stores.MemoryStore{}
-	scheduler := &agscheduler.Scheduler{}
-	err = scheduler.SetStore(store)
-	assert.NoError(t, err)
-	err = scheduler.SetBroker(brk)
-	assert.NoError(t, err)
-
-	testAGScheduler(t, scheduler)
-
-	err = store.Clear()
-	assert.NoError(t, err)
-	err = brk.Queues[testQueue].Clear()
-	assert.NoError(t, err)
+	runTest(t, brk)
 }

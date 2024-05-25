@@ -1,21 +1,39 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
+	"os"
 	"strconv"
 	"time"
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/examples"
+	"github.com/agscheduler/agscheduler/stores"
 )
+
+var ctx = context.Background()
 
 var exampleQueue = "agscheduler_example_queue"
 
-func runExample(s *agscheduler.Scheduler) {
+func runExample(brk *agscheduler.Broker) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: examples.PrintMsgSleep},
 	)
+
+	sto := &stores.MemoryStore{}
+	s := &agscheduler.Scheduler{}
+	err := s.SetStore(sto)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
+		os.Exit(1)
+	}
+	err = s.SetBroker(brk)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set broker: %s", err))
+		os.Exit(1)
+	}
 
 	for i := range 5 {
 		job := agscheduler.Job{
@@ -36,4 +54,7 @@ func runExample(s *agscheduler.Scheduler) {
 	s.DeleteAllJobs()
 
 	s.Stop()
+
+	brk.Queues[exampleQueue].Clear()
+	sto.Clear()
 }

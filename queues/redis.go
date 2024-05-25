@@ -1,6 +1,7 @@
 package queues
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 
@@ -20,7 +21,8 @@ type RedisQueue struct {
 	Group    string
 	Consumer string
 
-	jobC chan []byte
+	jobC       chan []byte
+	cancelFunc context.CancelFunc
 }
 
 func (q *RedisQueue) Init() error {
@@ -51,7 +53,9 @@ func (q *RedisQueue) Init() error {
 		}
 	}
 
-	go q.handleMessage()
+	var hmCtx context.Context
+	hmCtx, q.cancelFunc = context.WithCancel(ctx)
+	go q.handleMessage(hmCtx)
 
 	return nil
 }
@@ -76,6 +80,7 @@ func (q *RedisQueue) PullJob() <-chan []byte {
 func (q *RedisQueue) Clear() error {
 	defer close(q.jobC)
 
+	q.cancelFunc()
 	err := q.RDB.Del(ctx, q.Stream).Err()
 	if err != nil {
 		return err
@@ -84,23 +89,28 @@ func (q *RedisQueue) Clear() error {
 	return nil
 }
 
-func (q *RedisQueue) handleMessage() {
+func (q *RedisQueue) handleMessage(ctx context.Context) {
 	for {
-		messages, err := q.RDB.XReadGroup(ctx, &redis.XReadGroupArgs{
-			Group:    q.Group,
-			Consumer: q.Consumer,
-			Streams:  []string{q.Stream, ">"},
-			Count:    int64(10),
-			Block:    0,
-			NoAck:    false,
-		}).Result()
-		if err != nil {
-			slog.Error(fmt.Sprintf("RedisQueue read group error: `%s`", err))
-			continue
-		}
-		for _, msg := range messages[0].Messages {
-			bJ := []byte(fmt.Sprintf("%v", msg.Values["job"]))
-			q.jobC <- bJ
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			messages, err := q.RDB.XReadGroup(ctx, &redis.XReadGroupArgs{
+				Group:    q.Group,
+				Consumer: q.Consumer,
+				Streams:  []string{q.Stream, ">"},
+				Count:    int64(10),
+				Block:    0,
+				NoAck:    false,
+			}).Result()
+			if err != nil {
+				slog.Error(fmt.Sprintf("RedisQueue read group error: `%s`", err))
+				continue
+			}
+			for _, msg := range messages[0].Messages {
+				bJ := []byte(fmt.Sprintf("%v", msg.Values["job"]))
+				q.jobC <- bJ
+			}
 		}
 	}
 }

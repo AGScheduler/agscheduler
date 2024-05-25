@@ -3,14 +3,12 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
@@ -23,23 +21,17 @@ func main() {
 	}
 	rdb := redis.NewClient(opt)
 	defer rdb.Close()
-	_, err = rdb.Ping(context.Background()).Result()
+	_, err = rdb.Ping(ctx).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
+
 	store := &stores.RedisStore{
 		RDB:         rdb,
 		JobsKey:     "agscheduler.example_jobs",
 		RunTimesKey: "agscheduler.example_run_times",
 	}
 
-	scheduler := &agscheduler.Scheduler{}
-	err = scheduler.SetStore(store)
-	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
-		os.Exit(1)
-	}
-
-	runExample(scheduler)
+	runExample(store)
 }
