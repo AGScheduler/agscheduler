@@ -10,7 +10,7 @@ import (
 	"github.com/agscheduler/agscheduler/examples"
 )
 
-var exampleQueue = "example_default"
+var exampleQueue = "agscheduler_example_queue"
 
 func runExample(s *agscheduler.Scheduler) {
 	agscheduler.RegisterFuncs(

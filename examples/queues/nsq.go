@@ -20,6 +20,7 @@ func main() {
 	addr := "127.0.0.1:4150"
 	config := nsq.NewConfig()
 
+	exampleTopic := "agscheduler_example_topic"
 	messageHandler := &queues.NsqMessageHandler{}
 
 	producer, err := nsq.NewProducer(addr, config)
@@ -33,7 +34,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	consumer, err := nsq.NewConsumer(exampleQueue, exampleQueue, config)
+	consumer, err := nsq.NewConsumer(exampleTopic, exampleQueue, config)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to create consumer: %s", err))
 		os.Exit(1)
@@ -49,7 +50,7 @@ func main() {
 		Producer: producer,
 		Consumer: consumer,
 		Mh:       messageHandler,
-		Topic:    exampleQueue,
+		Topic:    exampleTopic,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

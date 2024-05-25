@@ -11,6 +11,8 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
+var testTopic = "agscheduler_test_topic"
+
 func TestNsqQueue(t *testing.T) {
 	var err error
 
@@ -24,7 +26,7 @@ func TestNsqQueue(t *testing.T) {
 	err = producer.Ping()
 	assert.NoError(t, err)
 
-	consumer, err := nsq.NewConsumer(testQueue, testQueue, config)
+	consumer, err := nsq.NewConsumer(testTopic, testQueue, config)
 	assert.NoError(t, err)
 	consumer.AddHandler(messageHandler)
 	err = consumer.ConnectToNSQD(addr)
@@ -34,7 +36,7 @@ func TestNsqQueue(t *testing.T) {
 		Producer: producer,
 		Consumer: consumer,
 		Mh:       messageHandler,
-		Topic:    testQueue,
+		Topic:    testTopic,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

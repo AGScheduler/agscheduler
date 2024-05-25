@@ -11,7 +11,7 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
-var testQueue = "test_default"
+var testQueue = "agscheduler_test_queue"
 
 func runQueuesSleep(ctx context.Context, j agscheduler.Job) {
 	time.Sleep(1 * time.Second)

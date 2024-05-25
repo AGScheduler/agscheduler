@@ -2,6 +2,10 @@ package queues
 
 import "github.com/nsqio/go-nsq"
 
+const (
+	NSQ_TOPIC = "agscheduler_topic"
+)
+
 type NsqMessageHandler struct {
 	jobC chan []byte
 }
@@ -20,25 +24,17 @@ type NsqQueue struct {
 	Producer *nsq.Producer
 	Consumer *nsq.Consumer
 	Mh       *NsqMessageHandler
-	// Topic of the MQ.
-	// Default: `default`
-	Topic string
+	Topic    string
 
-	// Size of the queue.
-	// Default: `32`
-	Size int
 	jobC chan []byte
 }
 
 func (q *NsqQueue) Init() error {
 	if q.Topic == "" {
-		q.Topic = "default"
-	}
-	if q.Size <= 0 {
-		q.Size = 32
+		q.Topic = NSQ_TOPIC
 	}
 
-	q.jobC = make(chan []byte, q.Size)
+	q.jobC = make(chan []byte, 5)
 	q.Mh.jobC = q.jobC
 
 	return nil
