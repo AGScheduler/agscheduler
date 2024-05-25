@@ -35,7 +35,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] Memory (Cluster mode is not supported)
   - [x] [NSQ](https://nsq.io/)
   - [ ] [RabbitMQ](https://www.rabbitmq.com/)
-  - [ ] [Redis](https://redis.io/)
+  - [x] [Redis](https://redis.io/)
   - [ ] [MQTT](https://mqtt.org/)
   - [ ] [Kafka](https://kafka.apache.org/)
   - [ ] [Pulsar](https://pulsar.apache.org/)
@@ -210,27 +210,15 @@ cnNode3 := &agscheduler.ClusterNode{...}
 ## Queue
 
 ```golang
-package main
+mq := &queues.MemoryQueue{}
+brk := &agscheduler.Broker{
+	Queues: map[string]agscheduler.Queue{
+		"default": mq,
+	},
+	MaxWorkers: 2,
+}
 
-import (
-	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/queues"
-	"github.com/agscheduler/agscheduler/stores"
-)
-
-func main() {
-	mq := &queues.MemoryQueue{}
-	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			"default": mq,
-		},
-		MaxWorkers: 2,
-	}
-
-	store := &stores.MemoryStore{}
-	scheduler := &agscheduler.Scheduler{}
-	scheduler.SetStore(store)
-	scheduler.SetBroker(brk)
+scheduler.SetBroker(brk)
 }
 ```
 

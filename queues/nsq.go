@@ -54,9 +54,10 @@ func (q *NsqQueue) PullJob() <-chan []byte {
 }
 
 func (q *NsqQueue) Clear() error {
+	defer close(q.jobC)
+
 	q.Producer.Stop()
 	q.Consumer.Stop()
-	close(q.jobC)
 
 	return nil
 }
