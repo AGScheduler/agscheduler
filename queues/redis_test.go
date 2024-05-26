@@ -24,6 +24,8 @@ func TestRedisQueue(t *testing.T) {
 		Stream:   "agscheduler_test_stream",
 		Group:    "agscheduler_test_group",
 		Consumer: "agscheduler_test_consumer",
+
+		size: 5,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

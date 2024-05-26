@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -21,6 +22,7 @@ type RedisQueue struct {
 	Group    string
 	Consumer string
 
+	size       int
 	jobC       chan []byte
 	cancelFunc context.CancelFunc
 }
@@ -36,7 +38,8 @@ func (q *RedisQueue) Init() error {
 		q.Consumer = REDIS_CONSUMER
 	}
 
-	q.jobC = make(chan []byte, 5)
+	q.size = int(math.Abs(float64(q.size)))
+	q.jobC = make(chan []byte, q.size)
 
 	groupIsExist := false
 	gs, _ := q.RDB.XInfoGroups(ctx, q.Stream).Result()
