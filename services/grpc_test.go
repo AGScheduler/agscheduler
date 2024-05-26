@@ -47,7 +47,7 @@ func TestGRPCService(t *testing.T) {
 	err = grservice.Start()
 	assert.NoError(t, err)
 
-	conn, err := grpc.Dial(grservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(grservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
 	defer conn.Close()
 

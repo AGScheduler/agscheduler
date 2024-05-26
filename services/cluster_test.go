@@ -50,7 +50,7 @@ func TestClusterService(t *testing.T) {
 	baseUrl := "http://" + cnMain.EndpointHTTP
 	testClusterHTTP(t, baseUrl)
 
-	conn, err := grpc.Dial(cnMain.EndpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(cnMain.EndpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
 	defer conn.Close()
 	clientC := pb.NewClusterClient(conn)

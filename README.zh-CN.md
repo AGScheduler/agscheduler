@@ -135,7 +135,7 @@ grservice := services.GRPCService{
 grservice.Start()
 
 // Client
-conn, _ := grpc.Dial("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
+conn, _ := grpc.NewClient("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
 client := pb.NewSchedulerClient(conn)
 client.AddJob(ctx, job)
 ```
