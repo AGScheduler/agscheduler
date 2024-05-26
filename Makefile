@@ -52,9 +52,9 @@ test: down-cluster-ci-service up-cluster-ci-service
 		-covermode=set \
 		-coverprofile=coverage.out \
 		. \
-		./queues \
-		./services \
 		./stores \
+		./services \
+		./queues \
 		-v
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
@@ -98,16 +98,17 @@ examples-store:
 	go run examples/stores/base.go examples/stores/etcd.go
 	go run examples/stores/base.go examples/stores/elasticsearch.go
 
-.PHONY: examples-queue
-examples-queue:
-	go run examples/queues/base.go examples/queues/memory.go
-	go run examples/queues/base.go examples/queues/nsq.go
-	go run examples/queues/base.go examples/queues/redis.go
-
 .PHONY: examples-api
 examples-api:
 	go run examples/grpc/grpc.go
 	go run examples/http/http.go
 
+.PHONY: examples-queue
+examples-queue:
+	go run examples/queues/base.go examples/queues/memory.go
+	go run examples/queues/base.go examples/queues/nsq.go
+	go run examples/queues/base.go examples/queues/redis.go
+	go run examples/queues/base.go examples/queues/mqtt.go
+
 .PHONY: examples-all
-examples-all: examples-store examples-queue examples-api
+examples-all: examples-store examples-api examples-queue

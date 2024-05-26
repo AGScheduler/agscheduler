@@ -20,7 +20,7 @@
   - [x] Cron 式调度
 - 支持多种作业存储方式
   - [x] Memory
-  - [x] [GORM](https://gorm.io/)(任何 GORM 支持的 RDBMS 都能运行)
+  - [x] [GORM](https://gorm.io/) (任何 GORM 支持的 RDBMS 都能运行)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
@@ -30,13 +30,13 @@
   - [x] HTTP
 - 支持集群
   - [x] 远程工作节点
-  - [x] 调度器高可用（实验性）
+  - [x] 调度器高可用 (实验性)
 - 支持多种作业队列
-  - [x] Memory (不支持集群)
+  - [x] Memory (不支持集群模式)
   - [x] [NSQ](https://nsq.io/)
   - [ ] [RabbitMQ](https://www.rabbitmq.com/)
   - [x] [Redis](https://redis.io/)
-  - [ ] [MQTT](https://mqtt.org/)
+  - [x] [MQTT](https://mqtt.org/) (不支持历史作业)
   - [ ] [Kafka](https://kafka.apache.org/)
   - [ ] [Pulsar](https://pulsar.apache.org/)
 

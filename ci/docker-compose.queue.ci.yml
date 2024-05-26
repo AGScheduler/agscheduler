@@ -5,3 +5,8 @@ services:
     command: /nsqd
     ports:
       - 127.0.0.1:4150:4150
+
+  nanomq:
+    image: emqx/nanomq
+    ports:
+      - 127.0.0.1:1883:1883

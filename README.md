@@ -20,7 +20,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] Cron-style scheduling
 - Supports multiple job store methods
   - [x] Memory
-  - [x] [GORM](https://gorm.io/)(any RDBMS supported by GORM works)
+  - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
@@ -36,7 +36,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [NSQ](https://nsq.io/)
   - [ ] [RabbitMQ](https://www.rabbitmq.com/)
   - [x] [Redis](https://redis.io/)
-  - [ ] [MQTT](https://mqtt.org/)
+  - [x] [MQTT](https://mqtt.org/) (History jobs are not supported)
   - [ ] [Kafka](https://kafka.apache.org/)
   - [ ] [Pulsar](https://pulsar.apache.org/)
 
