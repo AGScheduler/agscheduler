@@ -36,6 +36,8 @@ func TestNsqQueue(t *testing.T) {
 		Consumer: consumer,
 		Mh:       messageHandler,
 		Topic:    testTopic,
+
+		size: 5,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

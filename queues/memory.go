@@ -2,7 +2,7 @@ package queues
 
 // Queue jobs in an channel in RAM. Provides no persistence support.
 type MemoryQueue struct {
-	// Size of the queue.
+	// Size of the channel.
 	// Default: `32`
 	Size int
 	jobC chan []byte

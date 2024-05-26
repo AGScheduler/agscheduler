@@ -1,23 +1,14 @@
 package queues
 
-import "github.com/nsqio/go-nsq"
+import (
+	"math"
+
+	"github.com/nsqio/go-nsq"
+)
 
 const (
 	NSQ_TOPIC = "agscheduler_topic"
 )
-
-type NsqMessageHandler struct {
-	jobC chan []byte
-}
-
-func (h *NsqMessageHandler) HandleMessage(m *nsq.Message) error {
-	if len(m.Body) == 0 {
-		return nil
-	}
-	h.jobC <- m.Body
-
-	return nil
-}
 
 // Queue jobs in NSQ.
 type NsqQueue struct {
@@ -26,6 +17,7 @@ type NsqQueue struct {
 	Mh       *NsqMessageHandler
 	Topic    string
 
+	size int
 	jobC chan []byte
 }
 
@@ -34,7 +26,8 @@ func (q *NsqQueue) Init() error {
 		q.Topic = NSQ_TOPIC
 	}
 
-	q.jobC = make(chan []byte, 5)
+	q.size = int(math.Abs(float64(q.size)))
+	q.jobC = make(chan []byte, q.size)
 	q.Mh.jobC = q.jobC
 
 	return nil
@@ -58,6 +51,22 @@ func (q *NsqQueue) Clear() error {
 
 	q.Producer.Stop()
 	q.Consumer.Stop()
+
+	// TODO: Delete NSQ topic should use the nsqd http api or nsqlookupd http api
+	// https://github.com/nsqio/go-nsq/issues/335
+
+	return nil
+}
+
+type NsqMessageHandler struct {
+	jobC chan []byte
+}
+
+func (h *NsqMessageHandler) HandleMessage(m *nsq.Message) error {
+	if len(m.Body) == 0 {
+		return nil
+	}
+	h.jobC <- m.Body
 
 	return nil
 }
