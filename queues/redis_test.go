@@ -3,9 +3,8 @@ package queues
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
 )
@@ -15,9 +14,9 @@ func TestRedisQueue(t *testing.T) {
 	opt, err := redis.ParseURL(url)
 	assert.NoError(t, err)
 	rdb := redis.NewClient(opt)
-	defer rdb.Close()
 	_, err = rdb.Ping(ctx).Result()
 	assert.NoError(t, err)
+	defer rdb.Close()
 
 	rq := &RedisQueue{
 		RDB:      rdb,

@@ -12,9 +12,9 @@ func TestRedisStore(t *testing.T) {
 	opt, err := redis.ParseURL(url)
 	assert.NoError(t, err)
 	rdb := redis.NewClient(opt)
-	defer rdb.Close()
 	_, err = rdb.Ping(ctx).Result()
 	assert.NoError(t, err)
+	defer rdb.Close()
 
 	store := &RedisStore{
 		RDB:         rdb,

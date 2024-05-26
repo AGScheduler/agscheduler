@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"runtime/debug"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -93,6 +94,13 @@ func (q *RedisQueue) Clear() error {
 }
 
 func (q *RedisQueue) handleMessage(ctx context.Context) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("RedisQueue handle message error: `%s`", err))
+			slog.Debug(string(debug.Stack()))
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -107,7 +115,7 @@ func (q *RedisQueue) handleMessage(ctx context.Context) {
 				NoAck:    false,
 			}).Result()
 			if err != nil {
-				slog.Error(fmt.Sprintf("RedisQueue read group error: `%s`", err))
+				slog.Error(fmt.Sprintf("RedisQueue handle message error: `%s`", err))
 				continue
 			}
 			for _, msg := range messages[0].Messages {
