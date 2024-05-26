@@ -77,7 +77,7 @@ func (c *ClusterProxy) GRPCProxyInterceptor(
 	if !ok {
 		return nil, fmt.Errorf("invalid type for endpoint_grpc")
 	}
-	conn, err := grpc.Dial(endpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(endpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("dialing %s failure", endpointGRPC)
 	}
