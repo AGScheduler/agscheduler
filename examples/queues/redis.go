@@ -21,12 +21,12 @@ func main() {
 		os.Exit(1)
 	}
 	rdb := redis.NewClient(opt)
-	defer rdb.Close()
 	_, err = rdb.Ping(ctx).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
 	}
+	defer rdb.Close()
 
 	rq := &queues.RedisQueue{
 		RDB:      rdb,

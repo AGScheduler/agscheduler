@@ -32,6 +32,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
 	}
+	defer producer.Stop()
 
 	consumer, err := nsq.NewConsumer(exampleTopic, exampleQueue, config)
 	if err != nil {
@@ -44,6 +45,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
 	}
+	defer consumer.Stop()
 
 	nq := &queues.NsqQueue{
 		Producer: producer,

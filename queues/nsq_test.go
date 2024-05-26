@@ -3,9 +3,8 @@ package queues
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/nsqio/go-nsq"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
 )
@@ -24,12 +23,14 @@ func TestNsqQueue(t *testing.T) {
 	assert.NoError(t, err)
 	err = producer.Ping()
 	assert.NoError(t, err)
+	defer producer.Stop()
 
 	consumer, err := nsq.NewConsumer(testTopic, testQueue, config)
 	assert.NoError(t, err)
 	consumer.AddHandler(messageHandler)
 	err = consumer.ConnectToNSQD(addr)
 	assert.NoError(t, err)
+	defer consumer.Stop()
 
 	nq := &NsqQueue{
 		Producer: producer,

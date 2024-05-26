@@ -1,7 +1,10 @@
 package queues
 
 import (
+	"fmt"
+	"log/slog"
 	"math"
+	"runtime/debug"
 
 	"github.com/nsqio/go-nsq"
 )
@@ -49,9 +52,6 @@ func (q *NsqQueue) PullJob() <-chan []byte {
 func (q *NsqQueue) Clear() error {
 	defer close(q.jobC)
 
-	q.Producer.Stop()
-	q.Consumer.Stop()
-
 	// TODO: Delete NSQ topic should use the nsqd http api or nsqlookupd http api
 	// https://github.com/nsqio/go-nsq/issues/335
 
@@ -63,6 +63,13 @@ type NsqMessageHandler struct {
 }
 
 func (h *NsqMessageHandler) HandleMessage(m *nsq.Message) error {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("NsqQueue handle message error: `%s`", err))
+			slog.Debug(string(debug.Stack()))
+		}
+	}()
+
 	if len(m.Body) == 0 {
 		return nil
 	}
