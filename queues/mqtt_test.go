@@ -18,8 +18,9 @@ func TestMqttQueue(t *testing.T) {
 	defer c.Disconnect(250)
 
 	mq := &MqttQueue{
-		Cli:   c,
-		Topic: "test_topic",
+		Cli:         c,
+		TopicPrefix: MQTT_TOPIC_PREFIX,
+		Topic:       "test_topic",
 
 		size: 5,
 	}
