@@ -7,7 +7,9 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
-// Stores jobs in an array in RAM. Provides no persistence support.
+// Stores jobs in an array in RAM.
+// Provides no persistence support.
+// Cluster HA mode is not supported.
 type MemoryStore struct {
 	jobs []agscheduler.Job
 }

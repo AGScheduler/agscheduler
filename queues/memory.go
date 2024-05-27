@@ -1,6 +1,8 @@
 package queues
 
-// Queue jobs in an channel in RAM. Provides no persistence support.
+// Queue jobs in an channel in RAM.
+// Provides no persistence support.
+// Cluster mode is not supported.
 type MemoryQueue struct {
 	// Size of the channel.
 	// Default: `32`

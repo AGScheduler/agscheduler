@@ -16,6 +16,7 @@ const (
 )
 
 // Queue jobs in MQTT.
+// History jobs are not supported.
 type MqttQueue struct {
 	Cli         mqtt.Client
 	TopicPrefix string
