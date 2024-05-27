@@ -16,15 +16,14 @@ import (
 )
 
 func main() {
-	exampleGroup := "agscheduler-example-group"
 	exampleTopic := "agscheduler-example-topic"
 
 	seeds := []string{"127.0.0.1:9092"}
 	c, err := kgo.NewClient(
 		kgo.SeedBrokers(seeds...),
-		kgo.ConsumerGroup(exampleGroup),
 		kgo.ConsumeTopics(exampleTopic),
 		kgo.AllowAutoTopicCreation(),
+		kgo.ConsumerGroup("agscheduler-example-group"),
 	)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
@@ -41,7 +40,6 @@ func main() {
 
 	kq := &queues.KafkaQueue{
 		Cli:   c,
-		Group: exampleGroup,
 		Topic: exampleTopic,
 	}
 	brk := &agscheduler.Broker{
