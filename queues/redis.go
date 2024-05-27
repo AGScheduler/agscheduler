@@ -85,6 +85,7 @@ func (q *RedisQueue) Clear() error {
 	defer close(q.jobC)
 
 	q.cancelFunc()
+
 	err := q.RDB.Del(ctx, q.Stream).Err()
 	if err != nil {
 		return err

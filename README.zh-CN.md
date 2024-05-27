@@ -37,7 +37,7 @@
   - [ ] [RabbitMQ](https://www.rabbitmq.com/)
   - [x] [Redis](https://redis.io/)
   - [x] [MQTT](https://mqtt.org/) (不支持历史作业)
-  - [ ] [Kafka](https://kafka.apache.org/)
+  - [x] [Kafka](https://kafka.apache.org/)
   - [ ] [Pulsar](https://pulsar.apache.org/)
 
 ## 架构

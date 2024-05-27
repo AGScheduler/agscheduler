@@ -14,6 +14,7 @@ services:
       - 127.0.0.1:6379:6379
 
   mongodb:
+    # MongoDB 5.0+ requires a CPU with AVX support.
     image: mongo:4.4.29
     ports:
       - 127.0.0.1:27017:27017

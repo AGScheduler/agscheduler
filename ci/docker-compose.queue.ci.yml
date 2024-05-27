@@ -10,3 +10,8 @@ services:
     image: emqx/nanomq
     ports:
       - 127.0.0.1:1883:1883
+
+  kafka:
+    image: apache/kafka
+    ports:
+      - 127.0.0.1:9092:9092

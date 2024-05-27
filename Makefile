@@ -109,6 +109,7 @@ examples-queue:
 	go run examples/queues/base.go examples/queues/nsq.go
 	go run examples/queues/base.go examples/queues/redis.go
 	go run examples/queues/base.go examples/queues/mqtt.go
+	go run examples/queues/base.go examples/queues/kafka.go
 
 .PHONY: examples-all
 examples-all: examples-store examples-api examples-queue

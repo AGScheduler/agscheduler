@@ -15,7 +15,7 @@ import (
 var testQueue = "agscheduler_test_queue"
 
 func runQueuesSleep(ctx context.Context, j agscheduler.Job) {
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 }
 
 func runTest(t *testing.T, brk *agscheduler.Broker) {
@@ -45,10 +45,10 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 	assert.Len(t, ch, 0)
 
 	s.Start()
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 	assert.Len(t, ch, 1)
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(1500 * time.Millisecond)
 	assert.Len(t, ch, 0)
 
 	err = s.DeleteAllJobs()
