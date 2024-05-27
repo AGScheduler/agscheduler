@@ -12,15 +12,17 @@ import (
 )
 
 const (
-	RABBITMQ_QUEUE = "agscheduler_queue"
+	RABBITMQ_EXCHANGE = "agscheduler_exchange"
+	RABBITMQ_QUEUE    = "agscheduler_queue"
 )
 
 // Queue jobs in RabbitMQ.
 type RabbitMQQueue struct {
-	Conn  *amqp.Connection
-	Queue string
+	Conn     *amqp.Connection
+	Exchange string
+	Queue    string
 
-	queueC *amqp.Channel
+	ch *amqp.Channel
 
 	size       int
 	jobC       chan []byte
@@ -28,6 +30,9 @@ type RabbitMQQueue struct {
 }
 
 func (q *RabbitMQQueue) Init() error {
+	if q.Exchange == "" {
+		q.Exchange = RABBITMQ_EXCHANGE
+	}
 	if q.Queue == "" {
 		q.Queue = RABBITMQ_QUEUE
 	}
@@ -36,11 +41,23 @@ func (q *RabbitMQQueue) Init() error {
 	q.jobC = make(chan []byte, q.size)
 
 	var err error
-	q.queueC, err = q.Conn.Channel()
+	q.ch, err = q.Conn.Channel()
 	if err != nil {
 		return fmt.Errorf("failed to open a channel: %s", err)
 	}
-	_, err = q.queueC.QueueDeclare(
+	err = q.ch.ExchangeDeclare(
+		q.Exchange, // name
+		"fanout",   // type
+		true,       // durable
+		false,      // auto-deleted
+		false,      // internal
+		false,      // no-wait
+		nil,        // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("failed to declare an exchange: %s", err)
+	}
+	_, err = q.ch.QueueDeclare(
 		q.Queue, // name
 		true,    // durable
 		false,   // delete when unused
@@ -51,13 +68,23 @@ func (q *RabbitMQQueue) Init() error {
 	if err != nil {
 		return fmt.Errorf("failed to declare a queue: %s", err)
 	}
-	err = q.queueC.Qos(
+	err = q.ch.Qos(
 		1,     // prefetch count
 		0,     // prefetch size
 		false, // global
 	)
 	if err != nil {
 		return fmt.Errorf("failed to set Qos: %s", err)
+	}
+	err = q.ch.QueueBind(
+		q.Queue,    // queue name
+		"",         // routing key
+		q.Exchange, // exchange
+		false,
+		nil,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to bind a queue: %s", err)
 	}
 
 	var hmCtx context.Context
@@ -70,11 +97,11 @@ func (q *RabbitMQQueue) Init() error {
 func (q *RabbitMQQueue) PushJob(bJ []byte) error {
 	pCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	err := q.queueC.PublishWithContext(pCtx,
-		"",      // exchange
-		q.Queue, // routing key
-		false,   // mandatory
-		false,   // immediate
+	err := q.ch.PublishWithContext(pCtx,
+		q.Exchange, // exchange
+		"",         // routing key
+		false,      // mandatory
+		false,      // immediate
 		amqp.Publishing{
 			DeliveryMode: amqp.Persistent,
 			ContentType:  "text/plain",
@@ -97,11 +124,15 @@ func (q *RabbitMQQueue) Clear() error {
 
 	q.cancelFunc()
 
-	_, err := q.queueC.QueueDelete(q.Queue, false, false, false)
+	_, err := q.ch.QueueDelete(q.Queue, false, false, false)
 	if err != nil {
 		return err
 	}
-	q.queueC.Close()
+	err = q.ch.ExchangeDelete(q.Exchange, false, false)
+	if err != nil {
+		return err
+	}
+	q.ch.Close()
 
 	return nil
 }
@@ -114,7 +145,7 @@ func (q *RabbitMQQueue) handleMessage(ctx context.Context) {
 		}
 	}()
 
-	msgs, err := q.queueC.Consume(
+	msgs, err := q.ch.Consume(
 		q.Queue, // queue
 		"",      // consumer
 		true,    // auto-ack

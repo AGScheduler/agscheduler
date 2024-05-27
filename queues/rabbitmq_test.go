@@ -15,8 +15,9 @@ func TestRabbitMQQueue(t *testing.T) {
 	defer c.Close()
 
 	rmq := &RabbitMQQueue{
-		Conn:  c,
-		Queue: "agscheduler_test_queue",
+		Conn:     c,
+		Exchange: "agscheduler_test_exchange",
+		Queue:    "agscheduler_test_queue",
 
 		size: 5,
 	}
