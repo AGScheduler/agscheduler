@@ -22,8 +22,9 @@ func main() {
 	defer c.Close()
 
 	rmq := &queues.RabbitMQQueue{
-		Conn:  c,
-		Queue: "agscheduler_example_queue",
+		Conn:     c,
+		Exchange: "agscheduler_example_exchange",
+		Queue:    "agscheduler_example_queue",
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
