@@ -14,7 +14,11 @@ func TestMongoDBStore(t *testing.T) {
 	assert.NoError(t, err)
 	defer client.Disconnect(ctx)
 
-	store := &MongoDBStore{Client: client, Collection: "test_jobs"}
+	store := &MongoDBStore{
+		Client:     client,
+		Database:   MONGODB_DATABASE,
+		Collection: "test_jobs",
+	}
 
 	runTest(t, store)
 }

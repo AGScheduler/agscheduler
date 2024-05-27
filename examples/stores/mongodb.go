@@ -22,7 +22,11 @@ func main() {
 	}
 	defer client.Disconnect(ctx)
 
-	store := &stores.MongoDBStore{Client: client, Collection: "example_jobs"}
+	store := &stores.MongoDBStore{
+		Client:     client,
+		Database:   stores.MONGODB_DATABASE,
+		Collection: "example_jobs",
+	}
 
 	runExample(store)
 }
