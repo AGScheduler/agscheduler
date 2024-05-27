@@ -2,8 +2,11 @@ package queues
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"math"
+	"net/http"
+	"net/url"
 	"runtime/debug"
 
 	"github.com/nsqio/go-nsq"
@@ -19,6 +22,7 @@ type NsqQueue struct {
 	Consumer *nsq.Consumer
 	Mh       *NsqMessageHandler
 	Topic    string
+	HttpAddr string
 
 	size int
 	jobC chan []byte
@@ -52,8 +56,23 @@ func (q *NsqQueue) PullJob() <-chan []byte {
 func (q *NsqQueue) Clear() error {
 	defer close(q.jobC)
 
-	// TODO: Delete NSQ topic should use the nsqd http api or nsqlookupd http api
+	// Delete NSQ topic should use the nsqd http api or nsqlookupd http api
 	// https://github.com/nsqio/go-nsq/issues/335
+	u, err := url.JoinPath(q.HttpAddr, "/topic/delete")
+	if err != nil {
+		return err
+	}
+	resp, err := http.Post(u+"?topic="+q.Topic, "text/plain", nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("failed to delete topic: `%s`", body)
+	}
 
 	return nil
 }

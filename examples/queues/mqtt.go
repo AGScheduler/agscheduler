@@ -23,8 +23,9 @@ func main() {
 	defer c.Disconnect(250)
 
 	mq := &queues.MqttQueue{
-		Cli:   c,
-		Topic: "example_topic",
+		Cli:         c,
+		TopicPrefix: queues.MQTT_TOPIC_PREFIX,
+		Topic:       "example_topic",
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

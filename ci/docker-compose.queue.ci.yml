@@ -5,6 +5,7 @@ services:
     command: /nsqd
     ports:
       - 127.0.0.1:4150:4150
+      - 127.0.0.1:4151:4151
 
   rabbitmq:
     image: rabbitmq

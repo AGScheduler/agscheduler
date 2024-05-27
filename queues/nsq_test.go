@@ -12,13 +12,14 @@ import (
 func TestNsqQueue(t *testing.T) {
 	var err error
 
-	addr := "127.0.0.1:4150"
+	tcpAddr := "127.0.0.1:4150"
+	httpAddr := "http://127.0.0.1:4151"
 	config := nsq.NewConfig()
 
 	testTopic := "agscheduler_test_topic"
 	messageHandler := &NsqMessageHandler{}
 
-	producer, err := nsq.NewProducer(addr, config)
+	producer, err := nsq.NewProducer(tcpAddr, config)
 	assert.NoError(t, err)
 	err = producer.Ping()
 	assert.NoError(t, err)
@@ -27,7 +28,7 @@ func TestNsqQueue(t *testing.T) {
 	consumer, err := nsq.NewConsumer(testTopic, testQueue, config)
 	assert.NoError(t, err)
 	consumer.AddHandler(messageHandler)
-	err = consumer.ConnectToNSQD(addr)
+	err = consumer.ConnectToNSQD(tcpAddr)
 	assert.NoError(t, err)
 	defer consumer.Stop()
 
@@ -36,6 +37,7 @@ func TestNsqQueue(t *testing.T) {
 		Consumer: consumer,
 		Mh:       messageHandler,
 		Topic:    testTopic,
+		HttpAddr: httpAddr,
 
 		size: 5,
 	}

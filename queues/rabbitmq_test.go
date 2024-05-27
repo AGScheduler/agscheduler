@@ -17,7 +17,7 @@ func TestRabbitMQQueue(t *testing.T) {
 	rmq := &RabbitMQQueue{
 		Conn:     c,
 		Exchange: "agscheduler_test_exchange",
-		Queue:    "agscheduler_test_queue",
+		Queue:    testQueue,
 
 		size: 5,
 	}
