@@ -9,14 +9,13 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
-var testTopic = "agscheduler_test_topic"
-
 func TestNsqQueue(t *testing.T) {
 	var err error
 
 	addr := "127.0.0.1:4150"
 	config := nsq.NewConfig()
 
+	testTopic := "agscheduler_test_topic"
 	messageHandler := &NsqMessageHandler{}
 
 	producer, err := nsq.NewProducer(addr, config)

@@ -37,7 +37,7 @@ English | [简体中文](README.zh-CN.md)
   - [ ] [RabbitMQ](https://www.rabbitmq.com/)
   - [x] [Redis](https://redis.io/)
   - [x] [MQTT](https://mqtt.org/) (History jobs are not supported)
-  - [ ] [Kafka](https://kafka.apache.org/)
+  - [x] [Kafka](https://kafka.apache.org/)
   - [ ] [Pulsar](https://pulsar.apache.org/)
 
 ## Framework
