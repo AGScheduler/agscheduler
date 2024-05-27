@@ -34,11 +34,10 @@
 - 支持多种作业队列
   - [x] Memory (不支持集群模式)
   - [x] [NSQ](https://nsq.io/)
-  - [ ] [RabbitMQ](https://www.rabbitmq.com/)
+  - [x] [RabbitMQ](https://www.rabbitmq.com/)
   - [x] [Redis](https://redis.io/)
   - [x] [MQTT](https://mqtt.org/) (不支持历史作业)
   - [x] [Kafka](https://kafka.apache.org/)
-  - [ ] [Pulsar](https://pulsar.apache.org/)
 
 ## 架构
 

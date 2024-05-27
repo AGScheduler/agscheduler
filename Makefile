@@ -93,6 +93,7 @@ protobuf:
 examples-store:
 	go run examples/stores/base.go examples/stores/memory.go
 	go run examples/stores/base.go examples/stores/gorm.go
+	go run examples/queues/base.go examples/queues/rabbitmq.go
 	go run examples/stores/base.go examples/stores/redis.go
 	go run examples/stores/base.go examples/stores/mongodb.go
 	go run examples/stores/base.go examples/stores/etcd.go

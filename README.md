@@ -34,11 +34,10 @@ English | [简体中文](README.zh-CN.md)
 - Supports multiple job queues
   - [x] Memory (Cluster mode is not supported)
   - [x] [NSQ](https://nsq.io/)
-  - [ ] [RabbitMQ](https://www.rabbitmq.com/)
+  - [x] [RabbitMQ](https://www.rabbitmq.com/)
   - [x] [Redis](https://redis.io/)
   - [x] [MQTT](https://mqtt.org/) (History jobs are not supported)
   - [x] [Kafka](https://kafka.apache.org/)
-  - [ ] [Pulsar](https://pulsar.apache.org/)
 
 ## Framework
 
