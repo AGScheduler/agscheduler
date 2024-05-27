@@ -53,7 +53,7 @@ func (q *RedisQueue) Init() error {
 	if !groupIsExist {
 		err := q.RDB.XGroupCreateMkStream(ctx, q.Stream, q.Group, "0-0").Err()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create stream `%s` group `%s`: %s", q.Stream, q.Group, err)
 		}
 	}
 

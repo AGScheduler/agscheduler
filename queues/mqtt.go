@@ -36,12 +36,12 @@ func (q *MqttQueue) Init() error {
 	q.size = int(math.Abs(float64(q.size)))
 	q.jobC = make(chan []byte, q.size)
 
-	t, err := url.JoinPath(MQTT_TOPIC_PREFIX, q.Topic)
+	topic, err := url.JoinPath(MQTT_TOPIC_PREFIX, q.Topic)
 	if err != nil {
 		return err
 	}
-	if t := q.Cli.Subscribe(t, 2, q.handleMessage); t.Wait() && t.Error() != nil {
-		return t.Error()
+	if t := q.Cli.Subscribe(topic, 2, q.handleMessage); t.Wait() && t.Error() != nil {
+		return fmt.Errorf("failed to subscribe `%s`: %s", t, t.Error())
 	}
 
 	return nil

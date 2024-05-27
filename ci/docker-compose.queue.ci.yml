@@ -6,6 +6,11 @@ services:
     ports:
       - 127.0.0.1:4150:4150
 
+  rabbitmq:
+    image: rabbitmq
+    ports:
+      - 127.0.0.1:5672:5672
+
   nanomq:
     image: emqx/nanomq
     ports:
