@@ -24,7 +24,7 @@ func main() {
 	rmq := &queues.RabbitMQQueue{
 		Conn:     c,
 		Exchange: "agscheduler_example_exchange",
-		Queue:    "agscheduler_example_queue",
+		Queue:    exampleQueue,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
