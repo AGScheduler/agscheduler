@@ -12,15 +12,14 @@ import (
 )
 
 func TestKafkaQueue(t *testing.T) {
-	testGroup := "agscheduler-test-group"
 	testTopic := "agscheduler-test-topic"
 
 	seeds := []string{"127.0.0.1:9092"}
 	c, err := kgo.NewClient(
 		kgo.SeedBrokers(seeds...),
-		kgo.ConsumerGroup(testGroup),
 		kgo.ConsumeTopics(testTopic),
 		kgo.AllowAutoTopicCreation(),
+		kgo.ConsumerGroup("agscheduler-test-group"),
 	)
 	assert.NoError(t, err)
 	defer c.Close()
@@ -31,7 +30,6 @@ func TestKafkaQueue(t *testing.T) {
 
 	kq := &KafkaQueue{
 		Cli:   c,
-		Group: testGroup,
 		Topic: testTopic,
 
 		size: 5,

@@ -13,14 +13,12 @@ import (
 )
 
 const (
-	KAFKA_GROUP = "agscheduler-group"
 	KAFKA_TOPIC = "agscheduler-topic"
 )
 
 // Queue jobs in Kafka.
 type KafkaQueue struct {
 	Cli   *kgo.Client
-	Group string
 	Topic string
 
 	size       int
@@ -29,9 +27,6 @@ type KafkaQueue struct {
 }
 
 func (q *KafkaQueue) Init() error {
-	if q.Group == "" {
-		q.Group = KAFKA_GROUP
-	}
 	if q.Topic == "" {
 		q.Topic = KAFKA_TOPIC
 	}
