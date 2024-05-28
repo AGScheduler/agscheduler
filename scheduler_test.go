@@ -529,6 +529,6 @@ func TestInfo(t *testing.T) {
 
 	info := s.Info()
 
-	assert.Len(t, info, 4)
+	assert.Len(t, info, 6)
 	assert.Equal(t, info["version"], agscheduler.Version)
 }
