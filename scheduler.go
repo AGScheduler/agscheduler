@@ -38,6 +38,7 @@ type Scheduler struct {
 	broker *Broker
 
 	statusM sync.RWMutex
+	storeM  sync.RWMutex
 }
 
 func (s *Scheduler) IsRunning() bool {
@@ -139,6 +140,9 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	if err := j.init(); err != nil {
 		return Job{}, err
 	}
@@ -153,15 +157,21 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 }
 
 func (s *Scheduler) GetJob(id string) (Job, error) {
+	s.storeM.RLock()
+	defer s.storeM.RUnlock()
+
 	return s.store.GetJob(id)
 }
 
 func (s *Scheduler) GetAllJobs() ([]Job, error) {
+	s.storeM.RLock()
+	defer s.storeM.RUnlock()
+
 	return s.store.GetAllJobs()
 }
 
-func (s *Scheduler) UpdateJob(j Job) (Job, error) {
-	oJ, err := s.GetJob(j.Id)
+func (s *Scheduler) _updateJob(j Job) (Job, error) {
+	oJ, err := s.store.GetJob(j.Id)
 	if err != nil {
 		return Job{}, err
 	}
@@ -195,33 +205,58 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 	return j, nil
 }
 
-func (s *Scheduler) DeleteJob(id string) error {
+func (s *Scheduler) UpdateJob(j Job) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
+	j, err := s._updateJob(j)
+	if err != nil {
+		return Job{}, err
+	}
+
+	return j, nil
+}
+
+func (s *Scheduler) _deleteJob(id string) error {
 	slog.Info(fmt.Sprintf("Scheduler delete jobId `%s`.", id))
 
-	if _, err := s.GetJob(id); err != nil {
+	if _, err := s.store.GetJob(id); err != nil {
 		return err
 	}
 
 	return s.store.DeleteJob(id)
 }
 
+func (s *Scheduler) DeleteJob(id string) error {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
+	return s._deleteJob(id)
+}
+
 func (s *Scheduler) DeleteAllJobs() error {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	slog.Info("Scheduler delete all jobs.")
 
 	return s.store.DeleteAllJobs()
 }
 
 func (s *Scheduler) PauseJob(id string) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	slog.Info(fmt.Sprintf("Scheduler pause jobId `%s`.", id))
 
-	j, err := s.GetJob(id)
+	j, err := s.store.GetJob(id)
 	if err != nil {
 		return Job{}, err
 	}
 
 	j.Status = STATUS_PAUSED
 
-	j, err = s.UpdateJob(j)
+	j, err = s._updateJob(j)
 	if err != nil {
 		return Job{}, err
 	}
@@ -230,16 +265,19 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 }
 
 func (s *Scheduler) ResumeJob(id string) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	slog.Info(fmt.Sprintf("Scheduler resume jobId `%s`.", id))
 
-	j, err := s.GetJob(id)
+	j, err := s.store.GetJob(id)
 	if err != nil {
 		return Job{}, err
 	}
 
 	j.Status = STATUS_RUNNING
 
-	j, err = s.UpdateJob(j)
+	j, err = s._updateJob(j)
 	if err != nil {
 		return Job{}, err
 	}
@@ -348,17 +386,17 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	if j.Type == TYPE_DATETIME {
 		if j.NextRunTime.Before(now) {
-			if err := s.DeleteJob(j.Id); err != nil {
+			if err := s._deleteJob(j.Id); err != nil {
 				return fmt.Errorf("delete job `%s` error: %s", j.FullName(), err)
 			}
 		}
 	} else {
-		j, err := s.GetJob(j.Id)
+		j, err := s.store.GetJob(j.Id)
 		if err != nil {
 			return fmt.Errorf("get job `%s` error: %s", j.FullName(), err)
 		}
 		j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
-		if _, err := s.UpdateJob(j); err != nil {
+		if _, err := s._updateJob(j); err != nil {
 			return fmt.Errorf("update job `%s` error: %s", j.FullName(), err)
 		}
 	}
@@ -426,10 +464,12 @@ func (s *Scheduler) run() {
 
 			now := time.Now().UTC()
 
-			js, err := s.GetAllJobs()
+			s.storeM.Lock()
+			js, err := s.store.GetAllJobs()
 			if err != nil {
 				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s", err))
 				s.timer.Reset(time.Second)
+				s.storeM.Unlock()
 				continue
 			}
 
@@ -463,6 +503,7 @@ func (s *Scheduler) run() {
 			slog.Debug(fmt.Sprintf("Scheduler next wakeup interval %s", nextWakeupInterval))
 
 			s.timer.Reset(nextWakeupInterval)
+			s.storeM.Unlock()
 		}
 	}
 }
