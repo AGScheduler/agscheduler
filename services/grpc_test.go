@@ -21,7 +21,7 @@ func testGRPC(t *testing.T, c pb.BaseClient) {
 
 	pbI, err := c.GetInfo(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
-	assert.Len(t, pbI.Info.AsMap(), 4)
+	assert.Len(t, pbI.Info.AsMap(), 6)
 	assert.Equal(t, pbI.Info.AsMap()["version"], agscheduler.Version)
 
 	pbFS, err := c.GetFuncs(ctx, &emptypb.Empty{})
