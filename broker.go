@@ -64,10 +64,10 @@ func (b *Broker) choiceQueue(queues []string) (string, error) {
 		bqs = append(bqs, q)
 	}
 
-	bqs_count := len(bqs)
-	if bqs_count != 0 {
+	bqsCount := len(bqs)
+	if bqsCount != 0 {
 		rand.New(rand.NewSource(time.Now().UnixNano()))
-		i := rand.Intn(bqs_count)
+		i := rand.Intn(bqsCount)
 		return bqs[i], nil
 	}
 

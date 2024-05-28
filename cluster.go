@@ -278,10 +278,10 @@ func (cn *ClusterNode) choiceNode(queues []string) (*ClusterNode, error) {
 		})
 	}
 
-	cns_count := len(cns)
-	if cns_count != 0 {
+	cnsCount := len(cns)
+	if cnsCount != 0 {
 		rand.New(rand.NewSource(time.Now().UnixNano()))
-		i := rand.Intn(cns_count)
+		i := rand.Intn(cnsCount)
 		return cns[i], nil
 	}
 

@@ -31,6 +31,8 @@ func main() {
 	}
 	defer c.Close()
 
+	// Used to ensure that partitions are allocated to consumer.
+	// For examples and testing only.
 	aC := kadm.NewClient(c)
 	_, err = aC.CreatePartitions(ctx, 1, exampleTopic)
 	if err != nil {
