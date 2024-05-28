@@ -23,12 +23,11 @@ type RedisQueue struct {
 	Group    string
 	Consumer string
 
-	size       int
-	jobC       chan []byte
-	cancelFunc context.CancelFunc
+	size int
+	jobC chan []byte
 }
 
-func (q *RedisQueue) Init() error {
+func (q *RedisQueue) Init(ctx context.Context) error {
 	if q.Stream == "" {
 		q.Stream = REDIS_STREAM
 	}
@@ -57,9 +56,7 @@ func (q *RedisQueue) Init() error {
 		}
 	}
 
-	var hmCtx context.Context
-	hmCtx, q.cancelFunc = context.WithCancel(ctx)
-	go q.handleMessage(hmCtx)
+	go q.handleMessage(ctx)
 
 	return nil
 }
@@ -82,10 +79,6 @@ func (q *RedisQueue) PullJob() <-chan []byte {
 }
 
 func (q *RedisQueue) Clear() error {
-	defer close(q.jobC)
-
-	q.cancelFunc()
-
 	err := q.RDB.Del(ctx, q.Stream).Err()
 	if err != nil {
 		return err

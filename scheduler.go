@@ -82,10 +82,10 @@ func (s *Scheduler) getClusterNode() *ClusterNode {
 }
 
 // Bind the broker
-func (s *Scheduler) SetBroker(brk *Broker) error {
+func (s *Scheduler) SetBroker(ctx context.Context, brk *Broker) error {
 	s.broker = brk
 	brk.scheduler = s
-	if err := s.broker.init(); err != nil {
+	if err := s.broker.init(ctx); err != nil {
 		return err
 	}
 

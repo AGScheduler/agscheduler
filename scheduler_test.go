@@ -100,7 +100,9 @@ func TestSchedulerSetBroker(t *testing.T) {
 
 	assert.Nil(t, agscheduler.GetBroker(s))
 
-	err := s.SetBroker(brk)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	err := s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, agscheduler.GetBroker(s))
@@ -367,7 +369,9 @@ func TestSchedulerScheduleJobBrokerQueue(t *testing.T) {
 	s := getSchedulerWithStore(t)
 	j := getJob()
 
-	err := s.SetBroker(brk)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	err := s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 	_, err = s.AddJob(j)
 	assert.NoError(t, err)
@@ -382,7 +386,9 @@ func TestSchedulerScheduleJobBrokerQueueNotExist(t *testing.T) {
 	s := getSchedulerWithStore(t)
 	j := getJob()
 
-	err := s.SetBroker(brk)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	err := s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 	_, err = s.AddJob(j)
 	assert.NoError(t, err)
@@ -527,7 +533,7 @@ func TestInfo(t *testing.T) {
 	defer cancel()
 	err := s.SetClusterNode(ctx, cn)
 	assert.NoError(t, err)
-	err = s.SetBroker(brk)
+	err = s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 
 	info := s.Info()

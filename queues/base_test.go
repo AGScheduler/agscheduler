@@ -27,7 +27,10 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 	s := &agscheduler.Scheduler{}
 	err := s.SetStore(sto)
 	assert.NoError(t, err)
-	err = s.SetBroker(brk)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	err = s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 
 	for i := range 3 {

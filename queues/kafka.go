@@ -25,12 +25,11 @@ type KafkaQueue struct {
 
 	aCli *kadm.Client
 
-	size       int
-	jobC       chan []byte
-	cancelFunc context.CancelFunc
+	size int
+	jobC chan []byte
 }
 
-func (q *KafkaQueue) Init() error {
+func (q *KafkaQueue) Init(ctx context.Context) error {
 	if q.Topic == "" {
 		q.Topic = KAFKA_TOPIC
 	}
@@ -40,9 +39,7 @@ func (q *KafkaQueue) Init() error {
 
 	q.aCli = kadm.NewClient(q.Cli)
 
-	var hmCtx context.Context
-	hmCtx, q.cancelFunc = context.WithCancel(ctx)
-	go q.handleMessage(hmCtx)
+	go q.handleMessage(ctx)
 
 	return nil
 }
@@ -74,10 +71,6 @@ func (q *KafkaQueue) PullJob() <-chan []byte {
 }
 
 func (q *KafkaQueue) Clear() error {
-	defer close(q.jobC)
-
-	q.cancelFunc()
-
 	aCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	_, err := q.aCli.DeleteTopic(aCtx, q.Topic)
