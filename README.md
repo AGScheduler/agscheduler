@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/agscheduler/agscheduler)
 [![license](https://img.shields.io/github/license/agscheduler/agscheduler)](https://github.com/agscheduler/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) is a task scheduling library for Golang that supports multiple scheduling types, dynamically changing and persistent jobs, remote call, and cluster
+> Advanced Golang Scheduler (AGScheduler) is a task scheduling library for Golang that supports multiple scheduling types, dynamically changing and persistent jobs, job queues, remote call, and cluster
 
 English | [简体中文](README.zh-CN.md)
 
@@ -51,7 +51,7 @@ go get -u github.com/agscheduler/agscheduler
 
 ## Usage
 
-```golang
+```go
 package main
 
 import (
@@ -125,7 +125,7 @@ func main() {
 
 ## gRPC
 
-```golang
+```go
 // Server
 grservice := services.GRPCService{
 	Scheduler: scheduler,
@@ -141,7 +141,7 @@ client.AddJob(ctx, job)
 
 ## HTTP
 
-```golang
+```go
 // Server
 hservice := services.HTTPService{
 	Scheduler: scheduler,
@@ -157,7 +157,7 @@ resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json",
 
 ## Cluster
 
-```golang
+```go
 // Main Node
 cnMain := &agscheduler.ClusterNode{
 	Endpoint:     "127.0.0.1:36380",
@@ -186,7 +186,7 @@ cserviceNode.Start()
 
 ## Cluster HA (High Availability, Experimental)
 
-```golang
+```go
 
 // HA requires the following conditions to be met:
 //
@@ -208,7 +208,7 @@ cnNode3 := &agscheduler.ClusterNode{...}
 
 ## Queue
 
-```golang
+```go
 mq := &queues.MemoryQueue{}
 brk := &agscheduler.Broker{
 	Queues: map[string]agscheduler.Queue{
