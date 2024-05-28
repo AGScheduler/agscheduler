@@ -96,7 +96,9 @@ func (q *KafkaQueue) handleMessage(ctx context.Context) {
 		default:
 			fetches := q.Cli.PollFetches(ctx)
 			if errs := fetches.Errors(); len(errs) > 0 {
-				panic(fmt.Sprint(errs))
+				slog.Error(fmt.Sprintf("KafkaQueue poll fetches error: `%s`", fmt.Sprint(errs)))
+				time.Sleep(1 * time.Second)
+				continue
 			}
 
 			iter := fetches.RecordIter()
