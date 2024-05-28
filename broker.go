@@ -1,6 +1,7 @@
 package agscheduler
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math/rand"
@@ -13,9 +14,9 @@ type Broker struct {
 	// Job queues.
 	// def: map[<queue>]Queue
 	Queues map[string]Queue
-	// Maximum number of workers per queue.
+	// Number of workers per queue.
 	// Default: `2`
-	MaxWorkers int
+	WorkersPerQueue int
 
 	// Bind to each other and the Scheduler.
 	scheduler *Scheduler
@@ -23,17 +24,17 @@ type Broker struct {
 
 // Initialization functions for each broker,
 // called when the scheduler run `SetBroker`.
-func (b *Broker) init() error {
-	if b.MaxWorkers <= 0 {
-		b.MaxWorkers = 2
+func (b *Broker) init(ctx context.Context) error {
+	if b.WorkersPerQueue <= 0 {
+		b.WorkersPerQueue = 2
 	}
 
 	for _, q := range b.Queues {
-		if err := q.Init(); err != nil {
+		if err := q.Init(ctx); err != nil {
 			return err
 		}
-		for range b.MaxWorkers {
-			go b.worker(q)
+		for range b.WorkersPerQueue {
+			go b.worker(ctx, q)
 		}
 	}
 
@@ -41,15 +42,20 @@ func (b *Broker) init() error {
 }
 
 // Job worker, receiving jobs from the queue.
-func (b *Broker) worker(q Queue) {
-	for bJ := range q.PullJob() {
-		j, err := StateLoad(bJ)
-		if err != nil {
-			slog.Error(fmt.Sprintf("Job `%s` StateLoad error: `%s`", bJ, err))
-			continue
-		}
+func (b *Broker) worker(ctx context.Context, q Queue) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case bJ := <-q.PullJob():
+			j, err := StateLoad(bJ)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` StateLoad error: `%s`", bJ, err))
+				continue
+			}
 
-		b.scheduler._runJob(j)
+			b.scheduler._runJob(j)
+		}
 	}
 }
 

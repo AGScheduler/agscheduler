@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math"
 	"runtime/debug"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -23,12 +24,11 @@ type RedisQueue struct {
 	Group    string
 	Consumer string
 
-	size       int
-	jobC       chan []byte
-	cancelFunc context.CancelFunc
+	size int
+	jobC chan []byte
 }
 
-func (q *RedisQueue) Init() error {
+func (q *RedisQueue) Init(ctx context.Context) error {
 	if q.Stream == "" {
 		q.Stream = REDIS_STREAM
 	}
@@ -57,9 +57,7 @@ func (q *RedisQueue) Init() error {
 		}
 	}
 
-	var hmCtx context.Context
-	hmCtx, q.cancelFunc = context.WithCancel(ctx)
-	go q.handleMessage(hmCtx)
+	go q.handleMessage(ctx)
 
 	return nil
 }
@@ -83,8 +81,6 @@ func (q *RedisQueue) PullJob() <-chan []byte {
 
 func (q *RedisQueue) Clear() error {
 	defer close(q.jobC)
-
-	q.cancelFunc()
 
 	err := q.RDB.Del(ctx, q.Stream).Err()
 	if err != nil {
@@ -116,7 +112,8 @@ func (q *RedisQueue) handleMessage(ctx context.Context) {
 				NoAck:    false,
 			}).Result()
 			if err != nil {
-				slog.Error(fmt.Sprintf("RedisQueue handle message error: `%s`", err))
+				slog.Error(fmt.Sprintf("RedisQueue read group error: `%s`", err))
+				time.Sleep(1 * time.Second)
 				continue
 			}
 			for _, msg := range messages[0].Messages {

@@ -1,6 +1,9 @@
 package agscheduler
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 // Defines the interface that each store must implement.
 type Store interface {
@@ -40,7 +43,7 @@ type Store interface {
 type Queue interface {
 	// Initialization functions for each queue,
 	// called when the scheduler run `SetBroker`.
-	Init() error
+	Init(ctx context.Context) error
 
 	// Push job to this queue.
 	PushJob(bJ []byte) error

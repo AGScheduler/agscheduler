@@ -40,7 +40,7 @@ func TestKafkaQueue(t *testing.T) {
 		Queues: map[string]agscheduler.Queue{
 			testQueue: kq,
 		},
-		MaxWorkers: 2,
+		WorkersPerQueue: 2,
 	}
 
 	// PS: On any new group, Kafka internally forces a 3s wait.

@@ -1,6 +1,7 @@
 package queues
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math"
@@ -26,7 +27,7 @@ type MqttQueue struct {
 	jobC chan []byte
 }
 
-func (q *MqttQueue) Init() error {
+func (q *MqttQueue) Init(ctx context.Context) error {
 	if q.TopicPrefix == "" {
 		q.TopicPrefix = MQTT_TOPIC_PREFIX
 	}

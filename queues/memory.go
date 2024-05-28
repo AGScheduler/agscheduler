@@ -1,5 +1,7 @@
 package queues
 
+import "context"
+
 // Queue jobs in an channel in RAM.
 // Provides no persistence support.
 // Cluster mode is not supported.
@@ -10,7 +12,7 @@ type MemoryQueue struct {
 	jobC chan []byte
 }
 
-func (q *MemoryQueue) Init() error {
+func (q *MemoryQueue) Init(ctx context.Context) error {
 	if q.Size <= 0 {
 		q.Size = 32
 	}
@@ -31,7 +33,7 @@ func (q *MemoryQueue) PullJob() <-chan []byte {
 }
 
 func (q *MemoryQueue) Clear() error {
-	close(q.jobC)
+	defer close(q.jobC)
 
 	return nil
 }

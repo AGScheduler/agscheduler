@@ -29,7 +29,8 @@ func runExample(brk *agscheduler.Broker) {
 		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
 		os.Exit(1)
 	}
-	err = s.SetBroker(brk)
+	ctx, cancel := context.WithCancel(ctx)
+	err = s.SetBroker(ctx, brk)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set broker: %s", err))
 		os.Exit(1)
@@ -55,6 +56,7 @@ func runExample(brk *agscheduler.Broker) {
 
 	s.Stop()
 
+	cancel()
 	brk.Queues[exampleQueue].Clear()
 	sto.Clear()
 }

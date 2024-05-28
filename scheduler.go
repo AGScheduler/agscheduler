@@ -19,8 +19,6 @@ var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 var GetBroker = (*Scheduler).getBroker
 
-var mutexS sync.RWMutex
-
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
 type Scheduler struct {
@@ -38,11 +36,14 @@ type Scheduler struct {
 
 	// Used in broker mode, bind to each other and the broker.
 	broker *Broker
+
+	statusM sync.RWMutex
+	storeM  sync.RWMutex
 }
 
 func (s *Scheduler) IsRunning() bool {
-	mutexS.RLock()
-	defer mutexS.RUnlock()
+	s.statusM.RLock()
+	defer s.statusM.RUnlock()
 
 	return s.isRunning
 }
@@ -81,10 +82,10 @@ func (s *Scheduler) getClusterNode() *ClusterNode {
 }
 
 // Bind the broker
-func (s *Scheduler) SetBroker(brk *Broker) error {
+func (s *Scheduler) SetBroker(ctx context.Context, brk *Broker) error {
 	s.broker = brk
 	brk.scheduler = s
-	if err := s.broker.init(); err != nil {
+	if err := s.broker.init(ctx); err != nil {
 		return err
 	}
 
@@ -139,6 +140,9 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 }
 
 func (s *Scheduler) AddJob(j Job) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	if err := j.init(); err != nil {
 		return Job{}, err
 	}
@@ -153,15 +157,21 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 }
 
 func (s *Scheduler) GetJob(id string) (Job, error) {
+	s.storeM.RLock()
+	defer s.storeM.RUnlock()
+
 	return s.store.GetJob(id)
 }
 
 func (s *Scheduler) GetAllJobs() ([]Job, error) {
+	s.storeM.RLock()
+	defer s.storeM.RUnlock()
+
 	return s.store.GetAllJobs()
 }
 
-func (s *Scheduler) UpdateJob(j Job) (Job, error) {
-	oJ, err := s.GetJob(j.Id)
+func (s *Scheduler) _updateJob(j Job) (Job, error) {
+	oJ, err := s.store.GetJob(j.Id)
 	if err != nil {
 		return Job{}, err
 	}
@@ -195,33 +205,58 @@ func (s *Scheduler) UpdateJob(j Job) (Job, error) {
 	return j, nil
 }
 
-func (s *Scheduler) DeleteJob(id string) error {
+func (s *Scheduler) UpdateJob(j Job) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
+	j, err := s._updateJob(j)
+	if err != nil {
+		return Job{}, err
+	}
+
+	return j, nil
+}
+
+func (s *Scheduler) _deleteJob(id string) error {
 	slog.Info(fmt.Sprintf("Scheduler delete jobId `%s`.", id))
 
-	if _, err := s.GetJob(id); err != nil {
+	if _, err := s.store.GetJob(id); err != nil {
 		return err
 	}
 
 	return s.store.DeleteJob(id)
 }
 
+func (s *Scheduler) DeleteJob(id string) error {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
+	return s._deleteJob(id)
+}
+
 func (s *Scheduler) DeleteAllJobs() error {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	slog.Info("Scheduler delete all jobs.")
 
 	return s.store.DeleteAllJobs()
 }
 
 func (s *Scheduler) PauseJob(id string) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	slog.Info(fmt.Sprintf("Scheduler pause jobId `%s`.", id))
 
-	j, err := s.GetJob(id)
+	j, err := s.store.GetJob(id)
 	if err != nil {
 		return Job{}, err
 	}
 
 	j.Status = STATUS_PAUSED
 
-	j, err = s.UpdateJob(j)
+	j, err = s._updateJob(j)
 	if err != nil {
 		return Job{}, err
 	}
@@ -230,16 +265,19 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 }
 
 func (s *Scheduler) ResumeJob(id string) (Job, error) {
+	s.storeM.Lock()
+	defer s.storeM.Unlock()
+
 	slog.Info(fmt.Sprintf("Scheduler resume jobId `%s`.", id))
 
-	j, err := s.GetJob(id)
+	j, err := s.store.GetJob(id)
 	if err != nil {
 		return Job{}, err
 	}
 
 	j.Status = STATUS_RUNNING
 
-	j, err = s.UpdateJob(j)
+	j, err = s._updateJob(j)
 	if err != nil {
 		return Job{}, err
 	}
@@ -348,17 +386,17 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	if j.Type == TYPE_DATETIME {
 		if j.NextRunTime.Before(now) {
-			if err := s.DeleteJob(j.Id); err != nil {
+			if err := s._deleteJob(j.Id); err != nil {
 				return fmt.Errorf("delete job `%s` error: %s", j.FullName(), err)
 			}
 		}
 	} else {
-		j, err := s.GetJob(j.Id)
+		j, err := s.store.GetJob(j.Id)
 		if err != nil {
 			return fmt.Errorf("get job `%s` error: %s", j.FullName(), err)
 		}
 		j.LastRunTime = time.Unix(now.Unix(), 0).UTC()
-		if _, err := s.UpdateJob(j); err != nil {
+		if _, err := s._updateJob(j); err != nil {
 			return fmt.Errorf("update job `%s` error: %s", j.FullName(), err)
 		}
 	}
@@ -419,6 +457,8 @@ func (s *Scheduler) run() {
 			slog.Info("Scheduler quit.")
 			return
 		case <-s.timer.C:
+			s.timer.Stop()
+
 			if s.IsClusterMode() && !s.clusterNode.IsMainNode() {
 				s.timer.Reset(time.Second)
 				continue
@@ -426,10 +466,12 @@ func (s *Scheduler) run() {
 
 			now := time.Now().UTC()
 
-			js, err := s.GetAllJobs()
+			s.storeM.Lock()
+			js, err := s.store.GetAllJobs()
 			if err != nil {
 				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s", err))
 				s.timer.Reset(time.Second)
+				s.storeM.Unlock()
 				continue
 			}
 
@@ -463,6 +505,7 @@ func (s *Scheduler) run() {
 			slog.Debug(fmt.Sprintf("Scheduler next wakeup interval %s", nextWakeupInterval))
 
 			s.timer.Reset(nextWakeupInterval)
+			s.storeM.Unlock()
 		}
 	}
 }
@@ -470,8 +513,8 @@ func (s *Scheduler) run() {
 // In addition to being called manually,
 // it is also called after `AddJob`.
 func (s *Scheduler) Start() {
-	mutexS.Lock()
-	defer mutexS.Unlock()
+	s.statusM.Lock()
+	defer s.statusM.Unlock()
 
 	if s.isRunning {
 		slog.Info("Scheduler is running.")
@@ -479,7 +522,7 @@ func (s *Scheduler) Start() {
 	}
 
 	s.timer = time.NewTimer(0)
-	s.quitChan = make(chan struct{}, 3)
+	s.quitChan = make(chan struct{})
 	s.isRunning = true
 
 	go s.run()
@@ -490,8 +533,8 @@ func (s *Scheduler) Start() {
 // In addition to being called manually,
 // there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
-	mutexS.Lock()
-	defer mutexS.Unlock()
+	s.statusM.Lock()
+	defer s.statusM.Unlock()
 
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.")
@@ -553,8 +596,8 @@ func (s *Scheduler) Info() map[string]any {
 			queues = append(queues, k)
 		}
 		info["broker"] = map[string]any{
-			"queues":      queues,
-			"max_workers": s.broker.MaxWorkers,
+			"queues":            queues,
+			"workers_per_queue": s.broker.WorkersPerQueue,
 		}
 	}
 

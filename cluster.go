@@ -20,9 +20,6 @@ import (
 
 type TypeNodeMap map[string]map[string]any
 
-var nodeMapMutexC sync.RWMutex
-var endpointMainMutexC sync.RWMutex
-
 type Node struct {
 	EndpointMain string
 	Endpoint     string
@@ -91,6 +88,9 @@ type ClusterNode struct {
 	Raft *Raft
 	// Used to mark the status of Cluster Scheduler operation.
 	SchedulerCanStart bool
+
+	nodeMapM      sync.RWMutex
+	endpointMainM sync.RWMutex
 }
 
 func (cn *ClusterNode) toNode() *Node {
@@ -107,8 +107,8 @@ func (cn *ClusterNode) toNode() *Node {
 }
 
 func (cn *ClusterNode) setNodeMap(nmap TypeNodeMap) {
-	nodeMapMutexC.Lock()
-	defer nodeMapMutexC.Unlock()
+	cn.nodeMapM.Lock()
+	defer cn.nodeMapM.Unlock()
 
 	cn.nodeMap = nmap
 }
@@ -125,8 +125,8 @@ func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src TypeNodeMap) error {
 }
 
 func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
-	nodeMapMutexC.RLock()
-	defer nodeMapMutexC.RUnlock()
+	cn.nodeMapM.RLock()
+	defer cn.nodeMapM.RUnlock()
 
 	nodeMapCopy := make(TypeNodeMap)
 	err := cn.deepCopyNodeMapByGob(nodeMapCopy, cn.nodeMap)
@@ -177,15 +177,15 @@ func (cn *ClusterNode) HANodeMap() TypeNodeMap {
 }
 
 func (cn *ClusterNode) SetEndpointMain(endpoint string) {
-	endpointMainMutexC.Lock()
-	defer endpointMainMutexC.Unlock()
+	cn.endpointMainM.Lock()
+	defer cn.endpointMainM.Unlock()
 
 	cn.EndpointMain = endpoint
 }
 
 func (cn *ClusterNode) GetEndpointMain() string {
-	endpointMainMutexC.RLock()
-	defer endpointMainMutexC.RUnlock()
+	cn.endpointMainM.RLock()
+	defer cn.endpointMainM.RUnlock()
 
 	return cn.EndpointMain
 }
@@ -229,8 +229,8 @@ func (cn *ClusterNode) init(ctx context.Context) error {
 
 // Register node with the cluster.
 func (cn *ClusterNode) registerNode(n *ClusterNode) {
-	nodeMapMutexC.Lock()
-	defer nodeMapMutexC.Unlock()
+	cn.nodeMapM.Lock()
+	defer cn.nodeMapM.Unlock()
 
 	if cn.nodeMap == nil {
 		cn.nodeMap = make(TypeNodeMap)
@@ -337,14 +337,14 @@ func (cn *ClusterNode) checkNode(ctx context.Context) {
 					if v["mode"].(string) == "HA" {
 						continue
 					}
-					nodeMapMutexC.Lock()
+					cn.nodeMapM.Lock()
 					delete(cn.nodeMap, endpoint)
-					nodeMapMutexC.Unlock()
+					cn.nodeMapM.Unlock()
 					slog.Warn(fmt.Sprintf("Cluster node `%s` have been deleted because unhealthy", endpoint))
 				} else if now.Sub(lastHeartbeatTime) > 600*time.Millisecond {
-					nodeMapMutexC.Lock()
+					cn.nodeMapM.Lock()
 					cn.nodeMap[endpoint]["health"] = false
-					nodeMapMutexC.Unlock()
+					cn.nodeMapM.Unlock()
 				}
 			}
 			timer.Reset(interval)

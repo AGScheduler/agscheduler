@@ -24,12 +24,11 @@ type RabbitMQQueue struct {
 
 	ch *amqp.Channel
 
-	size       int
-	jobC       chan []byte
-	cancelFunc context.CancelFunc
+	size int
+	jobC chan []byte
 }
 
-func (q *RabbitMQQueue) Init() error {
+func (q *RabbitMQQueue) Init(ctx context.Context) error {
 	if q.Exchange == "" {
 		q.Exchange = RABBITMQ_EXCHANGE
 	}
@@ -87,9 +86,7 @@ func (q *RabbitMQQueue) Init() error {
 		return fmt.Errorf("failed to bind a queue: %s", err)
 	}
 
-	var hmCtx context.Context
-	hmCtx, q.cancelFunc = context.WithCancel(ctx)
-	go q.handleMessage(hmCtx)
+	go q.handleMessage(ctx)
 
 	return nil
 }
@@ -121,8 +118,6 @@ func (q *RabbitMQQueue) PullJob() <-chan []byte {
 
 func (q *RabbitMQQueue) Clear() error {
 	defer close(q.jobC)
-
-	q.cancelFunc()
 
 	_, err := q.ch.QueueDelete(q.Queue, false, false, false)
 	if err != nil {
@@ -162,10 +157,8 @@ func (q *RabbitMQQueue) handleMessage(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			for d := range msgs {
-				q.jobC <- d.Body
-			}
+		case d := <-msgs:
+			q.jobC <- d.Body
 		}
 	}
 }

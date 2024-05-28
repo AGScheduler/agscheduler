@@ -48,7 +48,7 @@ func main() {
 		Queues: map[string]agscheduler.Queue{
 			exampleQueue: kq,
 		},
-		MaxWorkers: 2,
+		WorkersPerQueue: 2,
 	}
 
 	// PS: On any new group, Kafka internally forces a 3s wait.

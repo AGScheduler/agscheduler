@@ -1,6 +1,7 @@
 package queues
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -28,7 +29,7 @@ type NsqQueue struct {
 	jobC chan []byte
 }
 
-func (q *NsqQueue) Init() error {
+func (q *NsqQueue) Init(ctx context.Context) error {
 	if q.Topic == "" {
 		q.Topic = NSQ_TOPIC
 	}

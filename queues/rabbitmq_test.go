@@ -25,7 +25,7 @@ func TestRabbitMQQueue(t *testing.T) {
 		Queues: map[string]agscheduler.Queue{
 			testQueue: rmq,
 		},
-		MaxWorkers: 2,
+		WorkersPerQueue: 2,
 	}
 
 	runTest(t, brk)
