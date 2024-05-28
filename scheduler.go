@@ -520,7 +520,7 @@ func (s *Scheduler) Start() {
 	}
 
 	s.timer = time.NewTimer(0)
-	s.quitChan = make(chan struct{}, 3)
+	s.quitChan = make(chan struct{})
 	s.isRunning = true
 
 	go s.run()
