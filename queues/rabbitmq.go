@@ -155,10 +155,8 @@ func (q *RabbitMQQueue) handleMessage(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		default:
-			for d := range msgs {
-				q.jobC <- d.Body
-			}
+		case d := <-msgs:
+			q.jobC <- d.Body
 		}
 	}
 }
