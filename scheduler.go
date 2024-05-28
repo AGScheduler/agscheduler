@@ -366,24 +366,25 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 	return nil
 }
 
+// All nodes are equal and may pick myself.
 func (s *Scheduler) _scheduleJob(j Job) error {
-	if s.IsClusterMode() {
-		// In cluster mode, all nodes are equal and may pick myself.
-		node, err := s.clusterNode.choiceNode(j.Queues)
+	if s.IsBrokerMode() {
+		// In broker mode.
+		queue, err := s.broker.choiceQueue(j.Queues)
 		if err != nil {
-			return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
+			return fmt.Errorf("broker's queues with queue `%s` does not exist", j.Queues)
 		}
-		go s._runJobRemote(node, j)
+		go s.pushJob(queue, j)
 	} else {
-		// In standalone mode.
-		if s.IsBrokerMode() {
-			// In broker mode.
-			queue, err := s.broker.choiceQueue(j.Queues)
+		if s.IsClusterMode() {
+			// In cluster mode
+			node, err := s.clusterNode.choiceNode(j.Queues)
 			if err != nil {
-				return fmt.Errorf("broker's queues with queue `%s` does not exist", j.Queues)
+				return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 			}
-			go s.pushJob(queue, j)
+			go s._runJobRemote(node, j)
 		} else {
+			// In standalone mode.
 			go s._runJob(j)
 		}
 	}
@@ -399,8 +400,7 @@ func (s *Scheduler) RunJob(j Job) error {
 	return nil
 }
 
-// Used in cluster mode.
-// Select a worker node
+// Select a worker node or queue.
 func (s *Scheduler) ScheduleJob(j Job) error {
 	slog.Info(fmt.Sprintf("Scheduler schedule job `%s`.", j.FullName()))
 
