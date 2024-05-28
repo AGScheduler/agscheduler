@@ -117,6 +117,8 @@ func (q *RabbitMQQueue) PullJob() <-chan []byte {
 }
 
 func (q *RabbitMQQueue) Clear() error {
+	defer close(q.jobC)
+
 	_, err := q.ch.QueueDelete(q.Queue, false, false, false)
 	if err != nil {
 		return err

@@ -80,6 +80,8 @@ func (q *RedisQueue) PullJob() <-chan []byte {
 }
 
 func (q *RedisQueue) Clear() error {
+	defer close(q.jobC)
+
 	err := q.RDB.Del(ctx, q.Stream).Err()
 	if err != nil {
 		return err

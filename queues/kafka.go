@@ -71,6 +71,8 @@ func (q *KafkaQueue) PullJob() <-chan []byte {
 }
 
 func (q *KafkaQueue) Clear() error {
+	defer close(q.jobC)
+
 	aCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	_, err := q.aCli.DeleteTopic(aCtx, q.Topic)

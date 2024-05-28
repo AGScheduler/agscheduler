@@ -29,7 +29,6 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	err = s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 
@@ -59,6 +58,7 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 
 	s.Stop()
 
+	cancel()
 	err = brk.Queues[testQueue].Clear()
 	assert.NoError(t, err)
 	err = sto.Clear()

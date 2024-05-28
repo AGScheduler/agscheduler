@@ -55,6 +55,8 @@ func (q *NsqQueue) PullJob() <-chan []byte {
 }
 
 func (q *NsqQueue) Clear() error {
+	defer close(q.jobC)
+
 	// Delete NSQ topic should use the nsqd http api or nsqlookupd http api
 	// https://github.com/nsqio/go-nsq/issues/335
 	u, err := url.JoinPath(q.HttpAddr, "/topic/delete")

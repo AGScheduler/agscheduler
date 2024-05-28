@@ -33,5 +33,7 @@ func (q *MemoryQueue) PullJob() <-chan []byte {
 }
 
 func (q *MemoryQueue) Clear() error {
+	defer close(q.jobC)
+
 	return nil
 }
