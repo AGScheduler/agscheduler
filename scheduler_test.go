@@ -520,11 +520,14 @@ func TestCalcNextRunTimeCronExprError(t *testing.T) {
 
 func TestInfo(t *testing.T) {
 	cn := getClusterNode()
+	brk := getBroker()
 	s := &agscheduler.Scheduler{}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	err := s.SetClusterNode(ctx, cn)
+	assert.NoError(t, err)
+	err = s.SetBroker(brk)
 	assert.NoError(t, err)
 
 	info := s.Info()
