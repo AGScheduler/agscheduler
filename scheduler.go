@@ -457,6 +457,8 @@ func (s *Scheduler) run() {
 			slog.Info("Scheduler quit.")
 			return
 		case <-s.timer.C:
+			s.timer.Stop()
+
 			if s.IsClusterMode() && !s.clusterNode.IsMainNode() {
 				s.timer.Reset(time.Second)
 				continue
