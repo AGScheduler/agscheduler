@@ -19,8 +19,6 @@ var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 var GetBroker = (*Scheduler).getBroker
 
-var mutexS sync.RWMutex
-
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
 type Scheduler struct {
@@ -38,11 +36,13 @@ type Scheduler struct {
 
 	// Used in broker mode, bind to each other and the broker.
 	broker *Broker
+
+	statusM sync.RWMutex
 }
 
 func (s *Scheduler) IsRunning() bool {
-	mutexS.RLock()
-	defer mutexS.RUnlock()
+	s.statusM.RLock()
+	defer s.statusM.RUnlock()
 
 	return s.isRunning
 }
@@ -470,8 +470,8 @@ func (s *Scheduler) run() {
 // In addition to being called manually,
 // it is also called after `AddJob`.
 func (s *Scheduler) Start() {
-	mutexS.Lock()
-	defer mutexS.Unlock()
+	s.statusM.Lock()
+	defer s.statusM.Unlock()
 
 	if s.isRunning {
 		slog.Info("Scheduler is running.")
@@ -490,8 +490,8 @@ func (s *Scheduler) Start() {
 // In addition to being called manually,
 // there is no job in store that will also be called.
 func (s *Scheduler) Stop() {
-	mutexS.Lock()
-	defer mutexS.Unlock()
+	s.statusM.Lock()
+	defer s.statusM.Unlock()
 
 	if !s.isRunning {
 		slog.Info("Scheduler has stopped.")
