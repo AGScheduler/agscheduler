@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"math/rand"
 	"runtime/debug"
+	"strconv"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -21,6 +23,8 @@ type KafkaQueue struct {
 	Cli   *kgo.Client
 	Topic string
 
+	aCli *kadm.Client
+
 	size       int
 	jobC       chan []byte
 	cancelFunc context.CancelFunc
@@ -34,6 +38,8 @@ func (q *KafkaQueue) Init() error {
 	q.size = int(math.Abs(float64(q.size)))
 	q.jobC = make(chan []byte, q.size)
 
+	q.aCli = kadm.NewClient(q.Cli)
+
 	var hmCtx context.Context
 	hmCtx, q.cancelFunc = context.WithCancel(ctx)
 	go q.handleMessage(hmCtx)
@@ -42,7 +48,20 @@ func (q *KafkaQueue) Init() error {
 }
 
 func (q *KafkaQueue) PushJob(bJ []byte) error {
-	record := &kgo.Record{Topic: q.Topic, Value: bJ}
+	aCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	topicD, err := q.aCli.ListTopics(aCtx, q.Topic)
+	if err != nil {
+		return err
+	}
+
+	ps := topicD.TopicsList()[0].Partitions
+	psCount := len(ps)
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+	i := rand.Intn(psCount)
+	key := []byte(strconv.Itoa(int(ps[i])))
+
+	record := &kgo.Record{Topic: q.Topic, Key: key, Value: bJ}
 	if err := q.Cli.ProduceSync(ctx, record).FirstErr(); err != nil {
 		return err
 	}
@@ -61,8 +80,7 @@ func (q *KafkaQueue) Clear() error {
 
 	aCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	aCli := kadm.NewClient(q.Cli)
-	_, err := aCli.DeleteTopic(aCtx, q.Topic)
+	_, err := q.aCli.DeleteTopic(aCtx, q.Topic)
 	if err != nil {
 		return err
 	}
