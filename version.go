@@ -1,3 +1,3 @@
 package agscheduler
 
-const Version = "0.7.6"
+const Version = "0.7.7"
