@@ -214,7 +214,7 @@ brk := &agscheduler.Broker{
 	Queues: map[string]agscheduler.Queue{
 		"default": mq,
 	},
-	MaxWorkers: 2,
+	WorkersPerQueue: 2,
 }
 
 scheduler.SetStore(store)

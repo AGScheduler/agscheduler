@@ -596,8 +596,8 @@ func (s *Scheduler) Info() map[string]any {
 			queues = append(queues, k)
 		}
 		info["broker"] = map[string]any{
-			"queues":      queues,
-			"max_workers": s.broker.MaxWorkers,
+			"queues":            queues,
+			"workers_per_queue": s.broker.WorkersPerQueue,
 		}
 	}
 

@@ -64,7 +64,7 @@ func getBroker() *agscheduler.Broker {
 		Queues: map[string]agscheduler.Queue{
 			"default": mq,
 		},
-		MaxWorkers: 2,
+		WorkersPerQueue: 2,
 	}
 }
 

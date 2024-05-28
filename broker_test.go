@@ -11,7 +11,7 @@ func getBroker() *Broker {
 		Queues: map[string]Queue{
 			"default": nil,
 		},
-		MaxWorkers: 2,
+		WorkersPerQueue: 2,
 	}
 }
 

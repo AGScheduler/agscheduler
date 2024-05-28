@@ -31,7 +31,7 @@ func main() {
 		Queues: map[string]agscheduler.Queue{
 			exampleQueue: mq,
 		},
-		MaxWorkers: 2,
+		WorkersPerQueue: 2,
 	}
 
 	runExample(brk)

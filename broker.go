@@ -14,9 +14,9 @@ type Broker struct {
 	// Job queues.
 	// def: map[<queue>]Queue
 	Queues map[string]Queue
-	// Maximum number of workers per queue.
+	// Number of workers per queue.
 	// Default: `2`
-	MaxWorkers int
+	WorkersPerQueue int
 
 	// Bind to each other and the Scheduler.
 	scheduler *Scheduler
@@ -25,15 +25,15 @@ type Broker struct {
 // Initialization functions for each broker,
 // called when the scheduler run `SetBroker`.
 func (b *Broker) init(ctx context.Context) error {
-	if b.MaxWorkers <= 0 {
-		b.MaxWorkers = 2
+	if b.WorkersPerQueue <= 0 {
+		b.WorkersPerQueue = 2
 	}
 
 	for _, q := range b.Queues {
 		if err := q.Init(ctx); err != nil {
 			return err
 		}
-		for range b.MaxWorkers {
+		for range b.WorkersPerQueue {
 			go b.worker(ctx, q)
 		}
 	}
