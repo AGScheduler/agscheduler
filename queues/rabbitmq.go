@@ -159,7 +159,12 @@ func (q *RabbitMQQueue) handleMessage(ctx context.Context) {
 			return
 		case d := <-msgs:
 			q.jobC <- d.Body
-			d.Ack(false)
+			err := d.Ack(false)
+			if err != nil {
+				slog.Error(fmt.Sprintf("RabbitMQQueue ack error: `%s`", err))
+				time.Sleep(1 * time.Second)
+				continue
+			}
 		}
 	}
 }
