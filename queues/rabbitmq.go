@@ -143,7 +143,7 @@ func (q *RabbitMQQueue) handleMessage(ctx context.Context) {
 	msgs, err := q.ch.Consume(
 		q.Queue, // queue
 		"",      // consumer
-		true,    // auto-ack
+		false,   // auto-ack
 		false,   // exclusive
 		false,   // no-local
 		false,   // no-wait
@@ -159,6 +159,7 @@ func (q *RabbitMQQueue) handleMessage(ctx context.Context) {
 			return
 		case d := <-msgs:
 			q.jobC <- d.Body
+			d.Ack(false)
 		}
 	}
 }
