@@ -107,7 +107,7 @@ func (q *RedisQueue) handleMessage(ctx context.Context) {
 				Group:    q.Group,
 				Consumer: q.Consumer,
 				Streams:  []string{q.Stream, ">"},
-				Count:    int64(10),
+				Count:    int64(1),
 				Block:    0,
 				NoAck:    false,
 			}).Result()
@@ -119,6 +119,12 @@ func (q *RedisQueue) handleMessage(ctx context.Context) {
 			for _, msg := range messages[0].Messages {
 				bJ := []byte(fmt.Sprintf("%v", msg.Values["job"]))
 				q.jobC <- bJ
+				err := q.RDB.XAck(ctx, q.Stream, q.Group, msg.ID).Err()
+				if err != nil {
+					slog.Error(fmt.Sprintf("RedisQueue ack error: `%s`", err))
+					time.Sleep(1 * time.Second)
+					continue
+				}
 			}
 		}
 	}
