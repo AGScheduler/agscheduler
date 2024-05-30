@@ -63,8 +63,8 @@ type Job struct {
 	// The running timeout of `Func`.
 	// Default: `1h`
 	Timeout string `json:"timeout"`
-	// Used in cluster mode, if empty, randomly pick a node to run `Func`.
-	// Used in broker mode, if empty, randomly pick a queue to run `Func`.
+	// Used in cluster mode, if empty, randomly pick a node to run `Func`,
+	// but when broker exist, if empty, randomly pick a queue to run `Func`.
 	Queues []string `json:"queues"`
 
 	// Automatic update, not manual setting.

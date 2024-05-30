@@ -34,7 +34,7 @@ type Scheduler struct {
 	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
 
-	// Used in broker mode, bind to each other and the broker.
+	// When broker exist, bind to each other and the broker.
 	broker *Broker
 
 	statusM sync.RWMutex
@@ -96,7 +96,7 @@ func (s *Scheduler) getBroker() *Broker {
 	return s.broker
 }
 
-func (s *Scheduler) IsBrokerMode() bool {
+func (s *Scheduler) HasBroker() bool {
 	return s.broker != nil
 }
 
@@ -285,8 +285,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	return j, nil
 }
 
-// Used in broker mode.
-// Push job to queue to run the `RunJob`.
+// When broker exist, push job to queue to run the `RunJob`.
 func (s *Scheduler) pushJob(queue string, j Job) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -406,8 +405,8 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 
 // All nodes are equal and may pick myself.
 func (s *Scheduler) _scheduleJob(j Job) error {
-	if s.IsBrokerMode() {
-		// In broker mode.
+	if s.HasBroker() {
+		// When broker exist.
 		queue, err := s.broker.choiceQueue(j.Queues)
 		if err != nil {
 			return fmt.Errorf("broker's queues with queue `%s` does not exist", j.Queues)
@@ -574,7 +573,7 @@ func (s *Scheduler) Info() map[string]any {
 	info := map[string]any{
 		"is_cluster_mode":   s.IsClusterMode(),
 		"cluster_main_node": map[string]any{},
-		"is_broker_mode":    s.IsBrokerMode(),
+		"has_broker":        s.HasBroker(),
 		"broker":            map[string]any{},
 		"is_running":        s.IsRunning(),
 		"version":           Version,
@@ -590,7 +589,7 @@ func (s *Scheduler) Info() map[string]any {
 		}
 	}
 
-	if s.IsBrokerMode() {
+	if s.HasBroker() {
 		queues := []string{}
 		for k := range s.broker.Queues {
 			queues = append(queues, k)
