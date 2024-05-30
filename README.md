@@ -187,7 +187,6 @@ cserviceNode.Start()
 ## Cluster HA (High Availability, Experimental)
 
 ```go
-
 // HA requires the following conditions to be met:
 //
 // 1. The number of HA nodes in the cluster must be odd

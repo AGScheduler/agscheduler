@@ -187,7 +187,6 @@ cserviceNode.Start()
 ## Cluster HA (高可用，实验性)
 
 ```go
-
 // HA 需要满足以下条件：
 //
 // 1. 集群中 HA 节点的数量必须为奇数
