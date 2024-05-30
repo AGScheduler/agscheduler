@@ -30,6 +30,13 @@ const (
 	STATUS_PAUSED  = "paused"
 )
 
+// constant indicating the status of the job record
+const (
+	RECORD_STATUS_RUNNING   = "running"
+	RECORD_STATUS_COMPLETED = "completed"
+	RECORD_STATUS_TIMEOUT   = "timeout"
+)
+
 // Carry the information of the scheduled job
 type Job struct {
 	// The unique identifier of this job, automatically generated.

@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/agscheduler/agscheduler)
 [![license](https://img.shields.io/github/license/agscheduler/agscheduler)](https://github.com/agscheduler/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) is a task scheduling library for Golang that supports multiple scheduling types, dynamically changing and persistent jobs, job queues, remote call, and cluster
+> Advanced Golang Scheduler (AGScheduler) is a task scheduling library for Golang that supports multiple scheduling types, dynamically changing and persistent jobs, job queues, job result collection, remote call, and cluster
 
 English | [简体中文](README.zh-CN.md)
 
@@ -19,7 +19,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] Interval execution
   - [x] Cron-style scheduling
 - Supports multiple job store methods
-  - [x] Memory
+  - [x] Memory (Cluster HA mode is not supported)
   - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
@@ -38,6 +38,11 @@ English | [简体中文](README.zh-CN.md)
   - [x] [Redis](https://redis.io/)
   - [x] [MQTT](https://mqtt.org/) (History jobs are not supported)
   - [x] [Kafka](https://kafka.apache.org/)
+- Supports multiple job result backends
+  - [ ] Memory (Cluster mode is not supported)
+  - [ ] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
+  - [ ] [Redis](https://redis.io/)
+  - [ ] [MongoDB](https://www.mongodb.com/)
 
 ## Framework
 

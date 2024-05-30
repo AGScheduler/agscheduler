@@ -18,6 +18,7 @@ import (
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 var GetBroker = (*Scheduler).getBroker
+var GetBackend = (*Scheduler).getBackend
 
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
@@ -36,6 +37,8 @@ type Scheduler struct {
 
 	// When broker exist, bind to each other and the broker.
 	broker *Broker
+	// Backend, record the results of job runs.
+	backend Backend
 
 	statusM sync.RWMutex
 	storeM  sync.RWMutex
@@ -98,6 +101,24 @@ func (s *Scheduler) getBroker() *Broker {
 
 func (s *Scheduler) HasBroker() bool {
 	return s.broker != nil
+}
+
+// Bind the backend
+func (s *Scheduler) SetBackend(be Backend) error {
+	s.backend = be
+	if err := s.backend.Init(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Scheduler) getBackend() Backend {
+	return s.backend
+}
+
+func (s *Scheduler) HasBackend() bool {
+	return s.backend != nil
 }
 
 // Calculate the next run time, different job type will be calculated in different ways,
@@ -321,8 +342,14 @@ func (s *Scheduler) _runJob(j Job) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
+		var rId string
+		if s.HasBackend() {
+			rId, err = s.backend.RecordMetadata(j)
+			slog.Error(fmt.Sprintf("Job `%s` record metadata error: `%s`", j.FullName(), err))
+			return
+		}
 		ch := make(chan error, 1)
-		go func() {
+		go func(rId string) {
 			defer close(ch)
 			defer func() {
 				if err := recover(); err != nil {
@@ -331,14 +358,29 @@ func (s *Scheduler) _runJob(j Job) {
 				}
 			}()
 
-			f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
-		}()
+			rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
+			if s.HasBackend() {
+				result := rValues[0].Interface().([]byte)
+				err := s.backend.RecordResult(rId, RECORD_STATUS_COMPLETED, result)
+				if err != nil {
+					slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
+					return
+				}
+			}
+		}(rId)
 
 		select {
 		case <-ch:
 			return
 		case <-ctx.Done():
 			slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
+			if s.HasBackend() {
+				err := s.backend.RecordResult(rId, RECORD_STATUS_TIMEOUT, []byte{})
+				if err != nil {
+					slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
+					return
+				}
+			}
 		}
 	}
 }
@@ -575,6 +617,7 @@ func (s *Scheduler) Info() map[string]any {
 		"cluster_main_node": map[string]any{},
 		"has_broker":        s.HasBroker(),
 		"broker":            map[string]any{},
+		"has_backend":       s.HasBackend(),
 		"is_running":        s.IsRunning(),
 		"version":           Version,
 	}
