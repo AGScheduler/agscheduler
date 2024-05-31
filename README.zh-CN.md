@@ -39,7 +39,7 @@
   - [x] [MQTT](https://mqtt.org/) (不支持历史作业)
   - [x] [Kafka](https://kafka.apache.org/)
 - 支持多种作业结果后端
-  - [ ] Memory (不支持集群模式)
+  - [x] Memory (不支持集群模式)
   - [ ] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [ ] [Redis](https://redis.io/)
   - [ ] [MongoDB](https://www.mongodb.com/)
@@ -69,8 +69,9 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func printMsg(ctx context.Context, j agscheduler.Job) {
+func printMsg(ctx context.Context, j agscheduler.Job) (result []byte) {
 	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
+	return
 }
 
 func main() {
@@ -223,6 +224,19 @@ brk := &agscheduler.Broker{
 
 scheduler.SetStore(store)
 scheduler.SetBroker(brk)
+```
+
+## 结果回收
+
+```go
+mb := &backends.MemoryBackend{}
+rec := &agscheduler.Recorder{Backend: mb}
+
+scheduler.SetStore(store)
+scheduler.SetRecorder(rec)
+
+job, _ = scheduler.AddJob(job)
+records, _ := rec.GetRecords(job.Id)
 ```
 
 ## Base API

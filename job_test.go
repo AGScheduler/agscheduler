@@ -15,7 +15,7 @@ func getJob() Job {
 		Name:     "Job",
 		Type:     TYPE_INTERVAL,
 		Interval: "1s",
-		Func:     func(ctx context.Context, j Job) {},
+		Func:     func(ctx context.Context, j Job) (result []byte) { return },
 		Args:     map[string]any{},
 	}
 }
@@ -122,7 +122,7 @@ func TestRegisterFuncs(t *testing.T) {
 	assert.Empty(t, FuncMap)
 
 	RegisterFuncs(
-		FuncPkg{Func: func(ctx context.Context, j Job) {}},
+		FuncPkg{Func: func(ctx context.Context, j Job) (result []byte) { return }},
 	)
 
 	assert.Len(t, FuncMap, 1)
@@ -130,7 +130,7 @@ func TestRegisterFuncs(t *testing.T) {
 
 func TestFuncMapReadable(t *testing.T) {
 	RegisterFuncs(
-		FuncPkg{Func: func(ctx context.Context, j Job) {}},
+		FuncPkg{Func: func(ctx context.Context, j Job) (result []byte) { return }},
 	)
 	funcLen := len(FuncMap)
 

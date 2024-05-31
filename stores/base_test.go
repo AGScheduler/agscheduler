@@ -9,7 +9,7 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
-func dryRunStores(ctx context.Context, j agscheduler.Job) {}
+func dryRunStores(ctx context.Context, j agscheduler.Job) (result []byte) { return }
 
 func runTest(t *testing.T, sto agscheduler.Store) {
 	agscheduler.RegisterFuncs(

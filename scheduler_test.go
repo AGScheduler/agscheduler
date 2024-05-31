@@ -9,13 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/backends"
 	"github.com/agscheduler/agscheduler/queues"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func dryRunScheduler(ctx context.Context, j agscheduler.Job) {}
+func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result []byte) { return }
 
-func runSchedulerPanic(ctx context.Context, j agscheduler.Job) { panic(nil) }
+func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result []byte) { panic(nil); return }
 
 func getSchedulerWithStore(t *testing.T) *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}
@@ -68,6 +69,11 @@ func getBroker() *agscheduler.Broker {
 	}
 }
 
+func getRecorder() *agscheduler.Recorder {
+	bn := &backends.MemoryBackend{}
+	return &agscheduler.Recorder{Backend: bn}
+}
+
 func TestSchedulerSetStore(t *testing.T) {
 	store := &stores.MemoryStore{}
 	s := &agscheduler.Scheduler{}
@@ -106,6 +112,18 @@ func TestSchedulerSetBroker(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, agscheduler.GetBroker(s))
+}
+
+func TestSchedulerSetRecorder(t *testing.T) {
+	rec := getRecorder()
+	s := &agscheduler.Scheduler{}
+
+	assert.Nil(t, agscheduler.GetRecorder(s))
+
+	err := s.SetRecorder(rec)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, agscheduler.GetRecorder(s))
 }
 
 func TestSchedulerAddJob(t *testing.T) {
@@ -397,6 +415,35 @@ func TestSchedulerScheduleJobBrokerQueueNotExist(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestSchedulerRecorderRecordMetadata(t *testing.T) {
+	rec := getRecorder()
+	s := getSchedulerWithStore(t)
+	j := getJob()
+
+	err := s.SetRecorder(rec)
+	assert.NoError(t, err)
+	_, err = s.AddJob(j)
+	assert.NoError(t, err)
+
+	s.Start()
+	time.Sleep(500 * time.Millisecond)
+}
+
+func TestSchedulerRecorderRecordMetadataTimeout(t *testing.T) {
+	rec := getRecorder()
+	s := getSchedulerWithStore(t)
+	j := getJob()
+	j.Timeout = "0.05ms"
+
+	err := s.SetRecorder(rec)
+	assert.NoError(t, err)
+	_, err = s.AddJob(j)
+	assert.NoError(t, err)
+
+	s.Start()
+	time.Sleep(500 * time.Millisecond)
+}
+
 func TestSchedulerStartAndStop(t *testing.T) {
 	s := getSchedulerWithStore(t)
 	s.Start()
@@ -527,6 +574,7 @@ func TestCalcNextRunTimeCronExprError(t *testing.T) {
 func TestInfo(t *testing.T) {
 	cn := getClusterNode()
 	brk := getBroker()
+	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -534,6 +582,8 @@ func TestInfo(t *testing.T) {
 	err := s.SetClusterNode(ctx, cn)
 	assert.NoError(t, err)
 	err = s.SetBroker(ctx, brk)
+	assert.NoError(t, err)
+	err = s.SetRecorder(rec)
 	assert.NoError(t, err)
 
 	info := s.Info()

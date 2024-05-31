@@ -39,7 +39,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [MQTT](https://mqtt.org/) (History jobs are not supported)
   - [x] [Kafka](https://kafka.apache.org/)
 - Supports multiple job result backends
-  - [ ] Memory (Cluster mode is not supported)
+  - [x] Memory (Cluster mode is not supported)
   - [ ] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [ ] [Redis](https://redis.io/)
   - [ ] [MongoDB](https://www.mongodb.com/)
@@ -69,8 +69,9 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func printMsg(ctx context.Context, j agscheduler.Job) {
+func printMsg(ctx context.Context, j agscheduler.Job) (result []byte) {
 	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
+	return
 }
 
 func main() {
@@ -223,6 +224,19 @@ brk := &agscheduler.Broker{
 
 scheduler.SetStore(store)
 scheduler.SetBroker(brk)
+```
+
+## Result Collection
+
+```go
+mb := &backends.MemoryBackend{}
+rec := &agscheduler.Recorder{Backend: mb}
+
+scheduler.SetStore(store)
+scheduler.SetRecorder(rec)
+
+job, _ = scheduler.AddJob(job)
+records, _ := rec.GetRecords(job.Id)
 ```
 
 ## Base API

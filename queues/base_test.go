@@ -14,8 +14,9 @@ import (
 
 var testQueue = "agscheduler_test_queue"
 
-func runQueuesSleep(ctx context.Context, j agscheduler.Job) {
+func runQueuesSleep(ctx context.Context, j agscheduler.Job) (result []byte) {
 	time.Sleep(2 * time.Second)
+	return
 }
 
 func runTest(t *testing.T, brk *agscheduler.Broker) {

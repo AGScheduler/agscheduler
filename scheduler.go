@@ -18,7 +18,7 @@ import (
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 var GetBroker = (*Scheduler).getBroker
-var GetBackend = (*Scheduler).getBackend
+var GetRecorder = (*Scheduler).getRecorder
 
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
@@ -35,10 +35,10 @@ type Scheduler struct {
 	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
 
-	// When broker exist, bind to each other and the broker.
+	// When broker exist, job scheduling is done in queue.
 	broker *Broker
-	// Backend, record the results of job runs.
-	backend Backend
+	// When recorder exist, record the results of job runs.
+	recorder *Recorder
 
 	statusM sync.RWMutex
 	storeM  sync.RWMutex
@@ -103,22 +103,22 @@ func (s *Scheduler) HasBroker() bool {
 	return s.broker != nil
 }
 
-// Bind the backend
-func (s *Scheduler) SetBackend(be Backend) error {
-	s.backend = be
-	if err := s.backend.Init(); err != nil {
+// Bind the recorder
+func (s *Scheduler) SetRecorder(rec *Recorder) error {
+	s.recorder = rec
+	if err := s.recorder.init(); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *Scheduler) getBackend() Backend {
-	return s.backend
+func (s *Scheduler) getRecorder() *Recorder {
+	return s.recorder
 }
 
-func (s *Scheduler) HasBackend() bool {
-	return s.backend != nil
+func (s *Scheduler) HasRecorder() bool {
+	return s.recorder != nil
 }
 
 // Calculate the next run time, different job type will be calculated in different ways,
@@ -342,44 +342,47 @@ func (s *Scheduler) _runJob(j Job) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
-		var rId string
-		if s.HasBackend() {
-			rId, err = s.backend.RecordMetadata(j)
-			slog.Error(fmt.Sprintf("Job `%s` record metadata error: `%s`", j.FullName(), err))
-			return
+		var rId uint64
+		var status string
+		var result []byte
+		if s.HasRecorder() {
+			rId, err = s.recorder.RecordMetadata(j)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` record metadata error: `%s`", j.FullName(), err))
+				return
+			}
 		}
+
 		ch := make(chan error, 1)
-		go func(rId string) {
+		go func() {
 			defer close(ch)
 			defer func() {
 				if err := recover(); err != nil {
 					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
 					slog.Debug(string(debug.Stack()))
+					status = RECORD_STATUS_ERROR
 				}
 			}()
 
 			rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
-			if s.HasBackend() {
-				result := rValues[0].Interface().([]byte)
-				err := s.backend.RecordResult(rId, RECORD_STATUS_COMPLETED, result)
-				if err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
-					return
-				}
-			}
-		}(rId)
+			result = rValues[0].Interface().([]byte)
+		}()
 
 		select {
 		case <-ch:
-			return
+			if status == "" {
+				status = RECORD_STATUS_COMPLETED
+			}
 		case <-ctx.Done():
 			slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
-			if s.HasBackend() {
-				err := s.backend.RecordResult(rId, RECORD_STATUS_TIMEOUT, []byte{})
-				if err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
-					return
-				}
+			status = RECORD_STATUS_TIMEOUT
+		}
+
+		if s.HasRecorder() {
+			err := s.recorder.RecordResult(rId, status, result)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
+				return
 			}
 		}
 	}
@@ -617,7 +620,7 @@ func (s *Scheduler) Info() map[string]any {
 		"cluster_main_node": map[string]any{},
 		"has_broker":        s.HasBroker(),
 		"broker":            map[string]any{},
-		"has_backend":       s.HasBackend(),
+		"has_recorder":      s.HasRecorder(),
 		"is_running":        s.IsRunning(),
 		"version":           Version,
 	}

@@ -30,13 +30,6 @@ const (
 	STATUS_PAUSED  = "paused"
 )
 
-// constant indicating the status of the job record
-const (
-	RECORD_STATUS_RUNNING   = "running"
-	RECORD_STATUS_COMPLETED = "completed"
-	RECORD_STATUS_TIMEOUT   = "timeout"
-)
-
 // Carry the information of the scheduled job
 type Job struct {
 	// The unique identifier of this job, automatically generated.
@@ -61,7 +54,7 @@ type Job struct {
 	// and you need to register it through 'RegisterFuncs' before using it.
 	// Since it cannot be stored by serialization,
 	// when using gRPC or HTTP calls, you should use `FuncName`.
-	Func func(context.Context, Job) `json:"-"`
+	Func func(context.Context, Job) (result []byte) `json:"-"`
 	// The actual path of `Func`.
 	// This field has a higher priority than `Func`
 	FuncName string `json:"func_name"`
@@ -292,7 +285,7 @@ func PbJobsPtrToJobs(pbJs *pb.Jobs) []Job {
 }
 
 type FuncPkg struct {
-	Func func(context.Context, Job)
+	Func func(context.Context, Job) (result []byte)
 	// About this function.
 	Info string
 }
@@ -314,7 +307,7 @@ func FuncMapReadable() []map[string]string {
 	return funcs
 }
 
-func getFuncName(f func(context.Context, Job)) string {
+func getFuncName(f func(context.Context, Job) (result []byte)) string {
 	return runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
 }
 

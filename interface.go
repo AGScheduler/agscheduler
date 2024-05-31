@@ -62,10 +62,22 @@ type Backend interface {
 	Init() error
 
 	// Record the metadata of the job to this backend.
-	RecordMetadata(j Job) (id string, err error)
+	RecordMetadata(r Record) error
 
-	// Record the result of the job to this backend.
-	RecordResult(id string, status string, result []byte) error
+	// Record the result of the job run to this backend.
+	RecordResult(id uint64, status string, result []byte) error
+
+	// Get records by job id from this backend.
+	GetRecords(jId string) ([]Record, error)
+
+	// Get all records from this backend.
+	GetAllRecords() ([]Record, error)
+
+	// Delete records by job id from this backend.
+	DeleteRecords(jId string) error
+
+	// Delete all records from this backend.
+	DeleteAllRecords() error
 
 	// Clear all resources bound to this backend.
 	Clear() error

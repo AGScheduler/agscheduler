@@ -55,6 +55,7 @@ test: down-cluster-ci-service up-cluster-ci-service
 		./stores \
 		./services \
 		./queues \
+		./backends \
 		-v
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
@@ -112,5 +113,9 @@ examples-queue:
 	go run examples/queues/base.go examples/queues/mqtt.go
 	go run examples/queues/base.go examples/queues/kafka.go
 
+.PHONY: examples-backend
+examples-backend:
+	go run examples/backends/base.go examples/backends/memory.go
+
 .PHONY: examples-all
-examples-all: examples-store examples-api examples-queue
+examples-all: examples-store examples-api examples-queue examples-backend
