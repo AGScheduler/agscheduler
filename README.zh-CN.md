@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/agscheduler/agscheduler)
 [![license](https://img.shields.io/github/license/agscheduler/agscheduler)](https://github.com/agscheduler/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度库，支持多种调度类型，支持动态更改和持久化作业，支持作业队列，支持远程调用，支持集群
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度库，支持多种调度类型，支持动态更改和持久化作业，支持作业队列，支持作业结果回收，支持远程调用，支持集群
 
 [English](README.md) | 简体中文
 
@@ -19,7 +19,7 @@
   - [x] 间隔执行
   - [x] Cron 式调度
 - 支持多种作业存储方式
-  - [x] Memory
+  - [x] Memory (不支持集群 HA 模式)
   - [x] [GORM](https://gorm.io/) (任何 GORM 支持的 RDBMS 都能运行)
   - [x] [Redis](https://redis.io/)
   - [x] [MongoDB](https://www.mongodb.com/)
@@ -38,6 +38,11 @@
   - [x] [Redis](https://redis.io/)
   - [x] [MQTT](https://mqtt.org/) (不支持历史作业)
   - [x] [Kafka](https://kafka.apache.org/)
+- 支持多种作业结果后端
+  - [x] Memory (不支持集群模式)
+  - [ ] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
+  - [ ] [Redis](https://redis.io/)
+  - [ ] [MongoDB](https://www.mongodb.com/)
 
 ## 架构
 
@@ -64,8 +69,9 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func printMsg(ctx context.Context, j agscheduler.Job) {
+func printMsg(ctx context.Context, j agscheduler.Job) (result []byte) {
 	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
+	return
 }
 
 func main() {
@@ -187,7 +193,6 @@ cserviceNode.Start()
 ## Cluster HA (高可用，实验性)
 
 ```go
-
 // HA 需要满足以下条件：
 //
 // 1. 集群中 HA 节点的数量必须为奇数
@@ -219,6 +224,19 @@ brk := &agscheduler.Broker{
 
 scheduler.SetStore(store)
 scheduler.SetBroker(brk)
+```
+
+## 结果回收
+
+```go
+mb := &backends.MemoryBackend{}
+rec := &agscheduler.Recorder{Backend: mb}
+
+scheduler.SetStore(store)
+scheduler.SetRecorder(rec)
+
+job, _ = scheduler.AddJob(job)
+records, _ := rec.GetRecords(job.Id)
 ```
 
 ## Base API

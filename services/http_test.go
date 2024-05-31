@@ -19,7 +19,7 @@ type result struct {
 	Error string `json:"error"`
 }
 
-func dryRunHTTP(ctx context.Context, j agscheduler.Job) {}
+func dryRunHTTP(ctx context.Context, j agscheduler.Job) (result []byte) { return }
 
 func testHTTP(t *testing.T, baseUrl string) {
 	resp, err := http.Get(baseUrl + "/info")
@@ -30,7 +30,7 @@ func testHTTP(t *testing.T, baseUrl string) {
 	rJ := &result{}
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
-	assert.Len(t, rJ.Data.(map[string]any), 6)
+	assert.Len(t, rJ.Data.(map[string]any), 7)
 	assert.Equal(t, agscheduler.Version, rJ.Data.(map[string]any)["version"])
 
 	resp, err = http.Get(baseUrl + "/funcs")

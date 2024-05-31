@@ -54,3 +54,31 @@ type Queue interface {
 	// Clear all resources bound to this queue.
 	Clear() error
 }
+
+// Defines the interface that each backend must implement.
+type Backend interface {
+	// Initialization functions for each backend,
+	// called when the scheduler run `SetBackend`.
+	Init() error
+
+	// Record the metadata of the job to this backend.
+	RecordMetadata(r Record) error
+
+	// Record the result of the job run to this backend.
+	RecordResult(id uint64, status string, result []byte) error
+
+	// Get records by job id from this backend.
+	GetRecords(jId string) ([]Record, error)
+
+	// Get all records from this backend.
+	GetAllRecords() ([]Record, error)
+
+	// Delete records by job id from this backend.
+	DeleteRecords(jId string) error
+
+	// Delete all records from this backend.
+	DeleteAllRecords() error
+
+	// Clear all resources bound to this backend.
+	Clear() error
+}

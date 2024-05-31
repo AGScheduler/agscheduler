@@ -18,6 +18,7 @@ import (
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 var GetBroker = (*Scheduler).getBroker
+var GetRecorder = (*Scheduler).getRecorder
 
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
@@ -34,8 +35,10 @@ type Scheduler struct {
 	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
 
-	// Used in broker mode, bind to each other and the broker.
+	// When broker exist, job scheduling is done in queue.
 	broker *Broker
+	// When recorder exist, record the results of job runs.
+	recorder *Recorder
 
 	statusM sync.RWMutex
 	storeM  sync.RWMutex
@@ -96,8 +99,26 @@ func (s *Scheduler) getBroker() *Broker {
 	return s.broker
 }
 
-func (s *Scheduler) IsBrokerMode() bool {
+func (s *Scheduler) HasBroker() bool {
 	return s.broker != nil
+}
+
+// Bind the recorder
+func (s *Scheduler) SetRecorder(rec *Recorder) error {
+	s.recorder = rec
+	if err := s.recorder.init(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Scheduler) getRecorder() *Recorder {
+	return s.recorder
+}
+
+func (s *Scheduler) HasRecorder() bool {
+	return s.recorder != nil
 }
 
 // Calculate the next run time, different job type will be calculated in different ways,
@@ -285,8 +306,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 	return j, nil
 }
 
-// Used in broker mode.
-// Push job to queue to run the `RunJob`.
+// When broker exist, push job to queue to run the `RunJob`.
 func (s *Scheduler) pushJob(queue string, j Job) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -322,6 +342,17 @@ func (s *Scheduler) _runJob(j Job) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
+		var rId uint64
+		var status string
+		var result []byte
+		if s.HasRecorder() {
+			rId, err = s.recorder.RecordMetadata(j)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` record metadata error: `%s`", j.FullName(), err))
+				return
+			}
+		}
+
 		ch := make(chan error, 1)
 		go func() {
 			defer close(ch)
@@ -329,17 +360,30 @@ func (s *Scheduler) _runJob(j Job) {
 				if err := recover(); err != nil {
 					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
 					slog.Debug(string(debug.Stack()))
+					status = RECORD_STATUS_ERROR
 				}
 			}()
 
-			f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
+			rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
+			result = rValues[0].Interface().([]byte)
 		}()
 
 		select {
 		case <-ch:
-			return
+			if status == "" {
+				status = RECORD_STATUS_COMPLETED
+			}
 		case <-ctx.Done():
 			slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
+			status = RECORD_STATUS_TIMEOUT
+		}
+
+		if s.HasRecorder() {
+			err := s.recorder.RecordResult(rId, status, result)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
+				return
+			}
 		}
 	}
 }
@@ -406,8 +450,8 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 
 // All nodes are equal and may pick myself.
 func (s *Scheduler) _scheduleJob(j Job) error {
-	if s.IsBrokerMode() {
-		// In broker mode.
+	if s.HasBroker() {
+		// When broker exist.
 		queue, err := s.broker.choiceQueue(j.Queues)
 		if err != nil {
 			return fmt.Errorf("broker's queues with queue `%s` does not exist", j.Queues)
@@ -574,8 +618,9 @@ func (s *Scheduler) Info() map[string]any {
 	info := map[string]any{
 		"is_cluster_mode":   s.IsClusterMode(),
 		"cluster_main_node": map[string]any{},
-		"is_broker_mode":    s.IsBrokerMode(),
+		"has_broker":        s.HasBroker(),
 		"broker":            map[string]any{},
+		"has_recorder":      s.HasRecorder(),
 		"is_running":        s.IsRunning(),
 		"version":           Version,
 	}
@@ -590,7 +635,7 @@ func (s *Scheduler) Info() map[string]any {
 		}
 	}
 
-	if s.IsBrokerMode() {
+	if s.HasBroker() {
 		queues := []string{}
 		for k := range s.broker.Queues {
 			queues = append(queues, k)
