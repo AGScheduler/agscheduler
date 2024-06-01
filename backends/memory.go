@@ -86,10 +86,6 @@ func (b *MemoryBackend) Clear() error {
 }
 
 func slicePage(page, pageSize, total int) (sliceStart, sliceEnd int) {
-	if pageSize > total {
-		return 0, total
-	}
-
 	pageCount := int(math.Ceil(float64(total) / float64(pageSize)))
 	if page > pageCount {
 		return 0, 0
