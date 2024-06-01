@@ -36,7 +36,7 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 	for i := range 3 {
 		job := agscheduler.Job{
 			Name:    "Job" + strconv.Itoa(i+1),
-			Type:    agscheduler.TYPE_DATETIME,
+			Type:    agscheduler.JOB_TYPE_DATETIME,
 			StartAt: "2023-09-22 07:30:08",
 			Func:    runQueuesSleep,
 		}

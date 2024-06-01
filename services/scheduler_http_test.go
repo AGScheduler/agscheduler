@@ -23,7 +23,7 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 
 	mJ := map[string]any{
 		"name":      "Job",
-		"type":      agscheduler.TYPE_INTERVAL,
+		"type":      agscheduler.JOB_TYPE_INTERVAL,
 		"interval":  "1s",
 		"func_name": "github.com/agscheduler/agscheduler/services.dryRunHTTP",
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
@@ -38,7 +38,7 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	rJ := &result{}
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.STATUS_RUNNING, rJ.Data.(map[string]any)["status"].(string))
+	assert.Equal(t, agscheduler.JOB_STATUS_RUNNING, rJ.Data.(map[string]any)["status"].(string))
 
 	id := rJ.Data.(map[string]any)["id"].(string)
 	mJ["id"] = id
@@ -58,7 +58,7 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	rJ = &result{}
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.TYPE_CRON, rJ.Data.(map[string]any)["type"].(string))
+	assert.Equal(t, agscheduler.JOB_TYPE_CRON, rJ.Data.(map[string]any)["type"].(string))
 
 	timezone, err := time.LoadLocation(rJ.Data.(map[string]any)["timezone"].(string))
 	assert.NoError(t, err)
@@ -73,7 +73,7 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	rJ = &result{}
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.STATUS_PAUSED, rJ.Data.(map[string]any)["status"].(string))
+	assert.Equal(t, agscheduler.JOB_STATUS_PAUSED, rJ.Data.(map[string]any)["status"].(string))
 	nextRunTime, err := time.ParseInLocation(time.RFC3339, rJ.Data.(map[string]any)["next_run_time"].(string), timezone)
 	assert.NoError(t, err)
 	assert.Equal(t, nextRunTimeMax.Unix(), nextRunTime.Unix())

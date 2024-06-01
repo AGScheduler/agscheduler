@@ -19,15 +19,15 @@ import (
 
 // constant indicating a job's type
 const (
-	TYPE_DATETIME = "datetime"
-	TYPE_INTERVAL = "interval"
-	TYPE_CRON     = "cron"
+	JOB_TYPE_DATETIME = "datetime"
+	JOB_TYPE_INTERVAL = "interval"
+	JOB_TYPE_CRON     = "cron"
 )
 
 // constant indicating a job's status
 const (
-	STATUS_RUNNING = "running"
-	STATUS_PAUSED  = "paused"
+	JOB_STATUS_RUNNING = "running"
+	JOB_STATUS_PAUSED  = "paused"
 )
 
 // Carry the information of the scheduled job
@@ -37,15 +37,15 @@ type Job struct {
 	Id string `json:"id"`
 	// User defined.
 	Name string `json:"name"`
-	// Optional: `TYPE_DATETIME` | `TYPE_INTERVAL` | `TYPE_CRON`
+	// Optional: `JOB_TYPE_DATETIME` | `JOB_TYPE_INTERVAL` | `JOB_TYPE_CRON`
 	Type string `json:"type"`
-	// It can be used when Type is `TYPE_DATETIME`.
+	// It can be used when Type is `JOB_TYPE_DATETIME`.
 	StartAt string `json:"start_at"`
 	// This field is useless.
 	EndAt string `json:"end_at"`
-	// It can be used when Type is `TYPE_INTERVAL`.
+	// It can be used when Type is `JOB_TYPE_INTERVAL`.
 	Interval string `json:"interval"`
-	// It can be used when Type is `TYPE_CRON`.
+	// It can be used when Type is `JOB_TYPE_CRON`.
 	CronExpr string `json:"cron_expr"`
 	// Refer to `time.LoadLocation`.
 	// Default: `UTC`
@@ -72,7 +72,7 @@ type Job struct {
 	// Automatic update, not manual setting.
 	// When the job is paused, this field is set to `9999-09-09 09:09:09`.
 	NextRunTime time.Time `json:"next_run_time"`
-	// Optional: `STATUS_RUNNING` | `STATUS_PAUSED`
+	// Optional: `JOB_STATUS_RUNNING` | `JOB_STATUS_PAUSED`
 	// It should not be set manually.
 	Status string `json:"status"`
 }
@@ -93,7 +93,7 @@ func (j *Job) setId() {
 func (j *Job) init() error {
 	j.setId()
 
-	j.Status = STATUS_RUNNING
+	j.Status = JOB_STATUS_RUNNING
 
 	if j.Timezone == "" {
 		j.Timezone = "UTC"

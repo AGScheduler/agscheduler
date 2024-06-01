@@ -13,7 +13,7 @@ import (
 func getJob() Job {
 	return Job{
 		Name:     "Job",
-		Type:     TYPE_INTERVAL,
+		Type:     JOB_TYPE_INTERVAL,
 		Interval: "1s",
 		Func:     func(ctx context.Context, j Job) (result []byte) { return },
 		Args:     map[string]any{},
