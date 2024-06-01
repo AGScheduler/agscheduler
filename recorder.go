@@ -82,12 +82,15 @@ func (r *Recorder) RecordMetadata(j Job) (id uint64, err error) {
 		return id, err
 	}
 
+	t := time.Now().UTC()
 	err = r.Backend.RecordMetadata(Record{
 		Id:      id,
 		JobId:   j.Id,
 		JobName: j.Name,
 		Status:  RECORD_STATUS_RUNNING,
-		StartAt: time.Now().UTC(),
+		Result:  []byte(""),
+		StartAt: t,
+		EndAt:   t,
 	})
 
 	return id, err
@@ -96,6 +99,10 @@ func (r *Recorder) RecordMetadata(j Job) (id uint64, err error) {
 func (r *Recorder) RecordResult(id uint64, status string, result []byte) error {
 	r.backendM.Lock()
 	defer r.backendM.Unlock()
+
+	if result == nil {
+		result = []byte("")
+	}
 
 	return r.Backend.RecordResult(id, status, result)
 }
