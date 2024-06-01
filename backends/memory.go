@@ -23,7 +23,7 @@ func (b *MemoryBackend) RecordMetadata(r agscheduler.Record) error {
 	return nil
 }
 
-func (b *MemoryBackend) RecordResult(id uint64, status string, result []byte) error {
+func (b *MemoryBackend) RecordResult(id uint64, status string, result string) error {
 	for i, r := range b.records {
 		if r.Id == id {
 			b.records[i].Status = status

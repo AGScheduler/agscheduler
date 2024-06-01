@@ -344,7 +344,7 @@ func (s *Scheduler) _runJob(j Job) {
 
 		var rId uint64
 		var status string
-		var result []byte
+		var result string
 		if s.HasRecorder() {
 			rId, err = s.recorder.RecordMetadata(j)
 			if err != nil {
@@ -365,7 +365,7 @@ func (s *Scheduler) _runJob(j Job) {
 			}()
 
 			rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
-			result = rValues[0].Interface().([]byte)
+			result = rValues[0].Interface().(string)
 		}()
 
 		select {

@@ -14,9 +14,9 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result []byte) { return }
+func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result string) { return }
 
-func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result []byte) { panic(nil); return }
+func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result string) { panic(nil); return }
 
 func getSchedulerWithStore(t *testing.T) *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}

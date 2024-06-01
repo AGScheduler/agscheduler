@@ -65,7 +65,7 @@ type Backend interface {
 	RecordMetadata(r Record) error
 
 	// Record the result of the job run to this backend.
-	RecordResult(id uint64, status string, result []byte) error
+	RecordResult(id uint64, status string, result string) error
 
 	// Get records by job id from this backend.
 	GetRecords(jId string) ([]Record, error)

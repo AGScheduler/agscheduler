@@ -14,7 +14,7 @@ import (
 
 var testQueue = "agscheduler_test_queue"
 
-func runQueuesSleep(ctx context.Context, j agscheduler.Job) (result []byte) {
+func runQueuesSleep(ctx context.Context, j agscheduler.Job) (result string) {
 	time.Sleep(2 * time.Second)
 	return
 }

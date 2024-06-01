@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -69,7 +68,7 @@ func (b *MongoDBBackend) RecordMetadata(r agscheduler.Record) error {
 	return err
 }
 
-func (b *MongoDBBackend) RecordResult(id uint64, status string, result []byte) error {
+func (b *MongoDBBackend) RecordResult(id uint64, status string, result string) error {
 	var resultB bson.M
 	err := b.coll.FindOneAndUpdate(ctx,
 		bson.M{"_id": id},
@@ -104,7 +103,7 @@ func (b *MongoDBBackend) _getRecords(filter any) ([]agscheduler.Record, error) {
 			JobId:   result["job_id"].(string),
 			JobName: result["job_name"].(string),
 			Status:  result["status"].(string),
-			Result:  result["result"].(primitive.Binary).Data,
+			Result:  result["result"].(string),
 			StartAt: time.Unix(result["start_at"].(int64), 0),
 			EndAt:   time.Unix(result["end_at"].(int64), 0),
 		})

@@ -17,7 +17,7 @@ type Records struct {
 	JobId   string    `gorm:"size:64;not null"`
 	JobName string    `gorm:"size:64"`
 	Status  string    `gorm:"size:9;not null"`
-	Result  []byte    `gorm:"type:bytes"`
+	Result  string    `gorm:"type:text"`
 	StartAt time.Time `gorm:"not null"`
 	EndAt   time.Time `gorm:"default:null"`
 }
@@ -55,7 +55,7 @@ func (b *GORMBackend) RecordMetadata(r agscheduler.Record) error {
 	return b.DB.Table(b.TableName).Create(&rs).Error
 }
 
-func (b *GORMBackend) RecordResult(id uint64, status string, result []byte) error {
+func (b *GORMBackend) RecordResult(id uint64, status string, result string) error {
 	return b.DB.Table(b.TableName).Where("id = ?", id).
 		Update("status", status).
 		Update("result", result).

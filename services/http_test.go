@@ -19,7 +19,7 @@ type result struct {
 	Error string `json:"error"`
 }
 
-func dryRunHTTP(ctx context.Context, j agscheduler.Job) (result []byte) { return }
+func dryRunHTTP(ctx context.Context, j agscheduler.Job) (result string) { return }
 
 func testHTTP(t *testing.T, baseUrl string) {
 	resp, err := http.Get(baseUrl + "/info")

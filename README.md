@@ -68,7 +68,7 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func printMsg(ctx context.Context, j agscheduler.Job) (result []byte) {
+func printMsg(ctx context.Context, j agscheduler.Job) (result string) {
 	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
 	return
 }
