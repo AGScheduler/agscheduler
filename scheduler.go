@@ -361,6 +361,7 @@ func (s *Scheduler) _runJob(j Job) {
 					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
 					slog.Debug(string(debug.Stack()))
 					status = RECORD_STATUS_ERROR
+					result = fmt.Sprintf("%s", err)
 				}
 			}()
 
