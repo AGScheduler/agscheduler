@@ -63,14 +63,22 @@ func (b *GORMBackend) RecordResult(id uint64, status string, result string) erro
 		Error
 }
 
-func (b *GORMBackend) _getRecords(query any, args ...any) ([]agscheduler.Record, error) {
+func (b *GORMBackend) _getRecords(page, pageSize int, query any, args ...any) ([]agscheduler.Record, int64, error) {
 	var rsList []*Records
+	total := int64(0)
 
 	err := b.DB.Table(b.TableName).Where(query, args...).
 		Order("start_at desc").
+		Limit(pageSize).Offset((page - 1) * pageSize).
 		Find(&rsList).Error
 	if err != nil {
-		return nil, err
+		return nil, total, err
+	}
+
+	err = b.DB.Table(b.TableName).Where(query, args...).
+		Count(&total).Error
+	if err != nil {
+		return nil, total, err
 	}
 
 	var recordList []agscheduler.Record
@@ -86,15 +94,15 @@ func (b *GORMBackend) _getRecords(query any, args ...any) ([]agscheduler.Record,
 		})
 	}
 
-	return recordList, nil
+	return recordList, total, nil
 }
 
-func (b *GORMBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
-	return b._getRecords("job_id = ?", jId)
+func (b *GORMBackend) GetRecords(jId string, page, pageSize int) ([]agscheduler.Record, int64, error) {
+	return b._getRecords(page, pageSize, "job_id = ?", jId)
 }
 
-func (b *GORMBackend) GetAllRecords() ([]agscheduler.Record, error) {
-	return b._getRecords("1 = 1")
+func (b *GORMBackend) GetAllRecords(page, pageSize int) ([]agscheduler.Record, int64, error) {
+	return b._getRecords(page, pageSize, "1 = 1")
 }
 
 func (b *GORMBackend) DeleteRecords(jId string) error {

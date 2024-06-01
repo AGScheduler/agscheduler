@@ -102,18 +102,24 @@ func (r *Recorder) RecordResult(id uint64, status string, result string) error {
 	return r.Backend.RecordResult(id, status, result)
 }
 
-func (r *Recorder) GetRecords(jId string) ([]Record, error) {
+func (r *Recorder) GetRecords(jId string, page, pageSize int) ([]Record, int64, error) {
 	r.backendM.RLock()
 	defer r.backendM.RUnlock()
 
-	return r.Backend.GetRecords(jId)
+	page = fixPositiveNum(page, 1)
+	pageSize = fixPositiveNumMax(fixPositiveNum(pageSize, 10), 1000)
+
+	return r.Backend.GetRecords(jId, page, pageSize)
 }
 
-func (r *Recorder) GetAllRecords() ([]Record, error) {
+func (r *Recorder) GetAllRecords(page, pageSize int) ([]Record, int64, error) {
 	r.backendM.RLock()
 	defer r.backendM.RUnlock()
 
-	return r.Backend.GetAllRecords()
+	page = fixPositiveNum(page, 1)
+	pageSize = fixPositiveNumMax(fixPositiveNum(pageSize, 10), 1000)
+
+	return r.Backend.GetAllRecords(page, pageSize)
 }
 
 func (r *Recorder) DeleteRecords(jId string) error {
@@ -135,4 +141,20 @@ func (r *Recorder) Clear() error {
 	defer r.backendM.Unlock()
 
 	return r.Backend.Clear()
+}
+
+func fixPositiveNum(num, numDef int) int {
+	if num < 1 {
+		return numDef
+	}
+
+	return num
+}
+
+func fixPositiveNumMax(num, numMax int) int {
+	if num > numMax {
+		return numMax
+	}
+
+	return num
 }

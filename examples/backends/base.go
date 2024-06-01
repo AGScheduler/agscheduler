@@ -55,10 +55,10 @@ func runExample(rec *agscheduler.Recorder) {
 	slog.Info("Sleep 5s......\n\n")
 	time.Sleep(5 * time.Second)
 
-	records, _ := rec.GetRecords(job.Id)
+	records, _, _ := rec.GetRecords(job.Id, 1, 10)
 	slog.Info(fmt.Sprintf("Scheduler recorder get records %v.\n\n", records))
 
-	records, _ = rec.GetAllRecords()
+	records, _, _ = rec.GetAllRecords(1, 10)
 	slog.Info(fmt.Sprintf("Scheduler recorder get all records %v.\n\n", records))
 
 	rec.DeleteRecords(job.Id)
