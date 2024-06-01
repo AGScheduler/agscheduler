@@ -47,7 +47,9 @@ func (b *GORMBackend) RecordMetadata(r agscheduler.Record) error {
 		JobId:   r.JobId,
 		JobName: r.JobName,
 		Status:  r.Status,
+		Result:  r.Result,
 		StartAt: r.StartAt,
+		EndAt:   r.EndAt,
 	}
 
 	return b.DB.Table(b.TableName).Create(&rs).Error
@@ -61,10 +63,10 @@ func (b *GORMBackend) RecordResult(id uint64, status string, result []byte) erro
 		Error
 }
 
-func (b *GORMBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
+func (b *GORMBackend) _getRecords(query any, args ...any) ([]agscheduler.Record, error) {
 	var rsList []*Records
 
-	err := b.DB.Table(b.TableName).Where("job_id = ?", jId).
+	err := b.DB.Table(b.TableName).Where(query, args...).
 		Order("start_at desc").
 		Find(&rsList).Error
 	if err != nil {
@@ -87,28 +89,12 @@ func (b *GORMBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
 	return recordList, nil
 }
 
+func (b *GORMBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
+	return b._getRecords("job_id = ?", jId)
+}
+
 func (b *GORMBackend) GetAllRecords() ([]agscheduler.Record, error) {
-	var rsList []*Records
-
-	err := b.DB.Table(b.TableName).Order("start_at desc").Find(&rsList).Error
-	if err != nil {
-		return nil, err
-	}
-
-	var recordList []agscheduler.Record
-	for _, rs := range rsList {
-		recordList = append(recordList, agscheduler.Record{
-			Id:      rs.ID,
-			JobId:   rs.JobId,
-			JobName: rs.JobName,
-			Status:  rs.Status,
-			Result:  rs.Result,
-			StartAt: rs.StartAt,
-			EndAt:   rs.EndAt,
-		})
-	}
-
-	return recordList, nil
+	return b._getRecords("1 = 1")
 }
 
 func (b *GORMBackend) DeleteRecords(jId string) error {
