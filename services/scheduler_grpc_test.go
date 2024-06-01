@@ -19,7 +19,7 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 
 	j := agscheduler.Job{
 		Name:     "Job",
-		Type:     agscheduler.TYPE_INTERVAL,
+		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "1s",
 		FuncName: "github.com/agscheduler/agscheduler/services.dryRunGRPC",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
@@ -31,16 +31,16 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	pbJ, err = c.AddJob(ctx, pbJ)
 	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
-	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
+	assert.Equal(t, agscheduler.JOB_STATUS_RUNNING, j.Status)
 
-	j.Type = agscheduler.TYPE_CRON
+	j.Type = agscheduler.JOB_TYPE_CRON
 	j.CronExpr = "*/1 * * * *"
 	pbJ, err = agscheduler.JobToPbJobPtr(j)
 	assert.NoError(t, err)
 	pbJ, err = c.UpdateJob(ctx, pbJ)
 	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
-	assert.Equal(t, agscheduler.TYPE_CRON, j.Type)
+	assert.Equal(t, agscheduler.JOB_TYPE_CRON, j.Type)
 
 	assert.NoError(t, err)
 	nextRunTimeMax, err := agscheduler.GetNextRunTimeMax()
@@ -49,7 +49,7 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	pbJ, err = c.PauseJob(ctx, &pb.JobId{Id: j.Id})
 	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
-	assert.Equal(t, agscheduler.STATUS_PAUSED, j.Status)
+	assert.Equal(t, agscheduler.JOB_STATUS_PAUSED, j.Status)
 	assert.Equal(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
 	pbJ, err = c.ResumeJob(ctx, &pb.JobId{Id: j.Id})

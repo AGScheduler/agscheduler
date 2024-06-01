@@ -27,7 +27,7 @@ func runExample(sto agscheduler.Store) {
 
 	job1 := agscheduler.Job{
 		Name:     "Job1",
-		Type:     agscheduler.TYPE_INTERVAL,
+		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "2s",
 		Timezone: "UTC",
 		Func:     examples.PrintMsg,
@@ -38,7 +38,7 @@ func runExample(sto agscheduler.Store) {
 
 	job2 := agscheduler.Job{
 		Name:     "Job2",
-		Type:     agscheduler.TYPE_CRON,
+		Type:     agscheduler.JOB_TYPE_CRON,
 		CronExpr: "*/1 * * * *",
 		Timezone: "Asia/Shanghai",
 		FuncName: "github.com/agscheduler/agscheduler/examples.PrintMsg",
@@ -51,7 +51,7 @@ func runExample(sto agscheduler.Store) {
 
 	job3 := agscheduler.Job{
 		Name:     "Job3",
-		Type:     agscheduler.TYPE_DATETIME,
+		Type:     agscheduler.JOB_TYPE_DATETIME,
 		StartAt:  "2023-09-22 07:30:08",
 		Timezone: "America/New_York",
 		Func:     examples.PrintMsg,
@@ -69,7 +69,7 @@ func runExample(sto agscheduler.Store) {
 	job1, _ = s.GetJob(job1.Id)
 	slog.Info(fmt.Sprintf("Scheduler get job `%s` %s.\n\n", job1.FullName(), job1))
 
-	job2.Type = agscheduler.TYPE_INTERVAL
+	job2.Type = agscheduler.JOB_TYPE_INTERVAL
 	job2.Interval = "3s"
 	job2, _ = s.UpdateJob(job2)
 	slog.Info(fmt.Sprintf("Scheduler update job `%s` %s.\n\n", job2.FullName(), job2))

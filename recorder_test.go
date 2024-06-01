@@ -54,7 +54,7 @@ func TestRecorderRecordResult(t *testing.T) {
 	id, err := rec.RecordMetadata(j)
 	assert.NoError(t, err)
 
-	err = rec.RecordResult(id, agscheduler.RECORD_STATUS_COMPLETED, []byte{})
+	err = rec.RecordResult(id, agscheduler.RECORD_STATUS_COMPLETED, "")
 	assert.NoError(t, err)
 
 	rs, err := rec.GetRecords(j.Id)

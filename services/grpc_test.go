@@ -14,7 +14,7 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func dryRunGRPC(ctx context.Context, j agscheduler.Job) (result []byte) { return }
+func dryRunGRPC(ctx context.Context, j agscheduler.Job) (result string) { return }
 
 func testGRPC(t *testing.T, c pb.BaseClient) {
 	ctx := context.Background()

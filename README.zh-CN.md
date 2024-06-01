@@ -68,7 +68,7 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-func printMsg(ctx context.Context, j agscheduler.Job) (result []byte) {
+func printMsg(ctx context.Context, j agscheduler.Job) (result string) {
 	slog.Info(fmt.Sprintf("Run job `%s` %s\n\n", j.FullName(), j.Args))
 	return
 }
@@ -84,7 +84,7 @@ func main() {
 
 	job1 := agscheduler.Job{
 		Name:     "Job1",
-		Type:     agscheduler.TYPE_INTERVAL,
+		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "2s",
 		Timezone: "UTC",
 		Func:     printMsg,
@@ -95,7 +95,7 @@ func main() {
 
 	job2 := agscheduler.Job{
 		Name:     "Job2",
-		Type:     agscheduler.TYPE_CRON,
+		Type:     agscheduler.JOB_TYPE_CRON,
 		CronExpr: "*/1 * * * *",
 		Timezone: "Asia/Shanghai",
 		FuncName: "main.printMsg",
@@ -106,7 +106,7 @@ func main() {
 
 	job3 := agscheduler.Job{
 		Name:     "Job3",
-		Type:     agscheduler.TYPE_DATETIME,
+		Type:     agscheduler.JOB_TYPE_DATETIME,
 		StartAt:  "2023-09-22 07:30:08",
 		Timezone: "America/New_York",
 		Func:     printMsg,

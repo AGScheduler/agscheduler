@@ -129,25 +129,25 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("job `%s` Timezone `%s` error: %s", j.FullName(), j.Timezone, err)
 	}
 
-	if j.Status == STATUS_PAUSED {
+	if j.Status == JOB_STATUS_PAUSED {
 		nextRunTimeMax, _ := GetNextRunTimeMax()
 		return time.Unix(nextRunTimeMax.Unix(), 0).UTC(), nil
 	}
 
 	var nextRunTime time.Time
 	switch strings.ToLower(j.Type) {
-	case TYPE_DATETIME:
+	case JOB_TYPE_DATETIME:
 		nextRunTime, err = time.ParseInLocation(time.DateTime, j.StartAt, timezone)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("job `%s` StartAt `%s` error: %s", j.FullName(), j.Timezone, err)
 		}
-	case TYPE_INTERVAL:
+	case JOB_TYPE_INTERVAL:
 		i, err := time.ParseDuration(j.Interval)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("job `%s` Interval `%s` error: %s", j.FullName(), j.Interval, err)
 		}
 		nextRunTime = time.Now().In(timezone).Add(i)
-	case TYPE_CRON:
+	case JOB_TYPE_CRON:
 		expr, err := cronexpr.Parse(j.CronExpr)
 		if err != nil {
 			return time.Time{}, fmt.Errorf("job `%s` CronExpr `%s` error: %s", j.FullName(), j.CronExpr, err)
@@ -198,7 +198,7 @@ func (s *Scheduler) _updateJob(j Job) (Job, error) {
 	}
 
 	if j.Status == "" ||
-		(j.Status != STATUS_RUNNING && j.Status != STATUS_PAUSED) {
+		(j.Status != JOB_STATUS_RUNNING && j.Status != JOB_STATUS_PAUSED) {
 		j.Status = oJ.Status
 	}
 
@@ -275,7 +275,7 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 		return Job{}, err
 	}
 
-	j.Status = STATUS_PAUSED
+	j.Status = JOB_STATUS_PAUSED
 
 	j, err = s._updateJob(j)
 	if err != nil {
@@ -296,7 +296,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 		return Job{}, err
 	}
 
-	j.Status = STATUS_RUNNING
+	j.Status = JOB_STATUS_RUNNING
 
 	j, err = s._updateJob(j)
 	if err != nil {
@@ -344,7 +344,7 @@ func (s *Scheduler) _runJob(j Job) {
 
 		var rId uint64
 		var status string
-		var result []byte
+		var result string
 		if s.HasRecorder() {
 			rId, err = s.recorder.RecordMetadata(j)
 			if err != nil {
@@ -361,11 +361,12 @@ func (s *Scheduler) _runJob(j Job) {
 					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
 					slog.Debug(string(debug.Stack()))
 					status = RECORD_STATUS_ERROR
+					result = fmt.Sprintf("%s", err)
 				}
 			}()
 
 			rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
-			result = rValues[0].Interface().([]byte)
+			result = rValues[0].Interface().(string)
 		}()
 
 		select {
@@ -428,7 +429,7 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 }
 
 func (s *Scheduler) _flushJob(j Job, now time.Time) error {
-	if j.Type == TYPE_DATETIME {
+	if j.Type == JOB_TYPE_DATETIME {
 		if j.NextRunTime.Before(now) {
 			if err := s._deleteJob(j.Id); err != nil {
 				return fmt.Errorf("delete job `%s` error: %s", j.FullName(), err)

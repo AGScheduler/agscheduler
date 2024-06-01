@@ -14,7 +14,7 @@ import (
 
 var testQueue = "agscheduler_test_queue"
 
-func runQueuesSleep(ctx context.Context, j agscheduler.Job) (result []byte) {
+func runQueuesSleep(ctx context.Context, j agscheduler.Job) (result string) {
 	time.Sleep(2 * time.Second)
 	return
 }
@@ -36,7 +36,7 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 	for i := range 3 {
 		job := agscheduler.Job{
 			Name:    "Job" + strconv.Itoa(i+1),
-			Type:    agscheduler.TYPE_DATETIME,
+			Type:    agscheduler.JOB_TYPE_DATETIME,
 			StartAt: "2023-09-22 07:30:08",
 			Func:    runQueuesSleep,
 		}

@@ -17,7 +17,7 @@ type Records struct {
 	JobId   string    `gorm:"size:64;not null"`
 	JobName string    `gorm:"size:64"`
 	Status  string    `gorm:"size:9;not null"`
-	Result  []byte    `gorm:"type:bytes"`
+	Result  string    `gorm:"type:text"`
 	StartAt time.Time `gorm:"not null"`
 	EndAt   time.Time `gorm:"default:null"`
 }
@@ -47,13 +47,15 @@ func (b *GORMBackend) RecordMetadata(r agscheduler.Record) error {
 		JobId:   r.JobId,
 		JobName: r.JobName,
 		Status:  r.Status,
+		Result:  r.Result,
 		StartAt: r.StartAt,
+		EndAt:   r.EndAt,
 	}
 
 	return b.DB.Table(b.TableName).Create(&rs).Error
 }
 
-func (b *GORMBackend) RecordResult(id uint64, status string, result []byte) error {
+func (b *GORMBackend) RecordResult(id uint64, status string, result string) error {
 	return b.DB.Table(b.TableName).Where("id = ?", id).
 		Update("status", status).
 		Update("result", result).
@@ -61,10 +63,10 @@ func (b *GORMBackend) RecordResult(id uint64, status string, result []byte) erro
 		Error
 }
 
-func (b *GORMBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
+func (b *GORMBackend) _getRecords(query any, args ...any) ([]agscheduler.Record, error) {
 	var rsList []*Records
 
-	err := b.DB.Table(b.TableName).Where("job_id = ?", jId).
+	err := b.DB.Table(b.TableName).Where(query, args...).
 		Order("start_at desc").
 		Find(&rsList).Error
 	if err != nil {
@@ -87,28 +89,12 @@ func (b *GORMBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
 	return recordList, nil
 }
 
+func (b *GORMBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
+	return b._getRecords("job_id = ?", jId)
+}
+
 func (b *GORMBackend) GetAllRecords() ([]agscheduler.Record, error) {
-	var rsList []*Records
-
-	err := b.DB.Table(b.TableName).Order("start_at desc").Find(&rsList).Error
-	if err != nil {
-		return nil, err
-	}
-
-	var recordList []agscheduler.Record
-	for _, rs := range rsList {
-		recordList = append(recordList, agscheduler.Record{
-			Id:      rs.ID,
-			JobId:   rs.JobId,
-			JobName: rs.JobName,
-			Status:  rs.Status,
-			Result:  rs.Result,
-			StartAt: rs.StartAt,
-			EndAt:   rs.EndAt,
-		})
-	}
-
-	return recordList, nil
+	return b._getRecords("1 = 1")
 }
 
 func (b *GORMBackend) DeleteRecords(jId string) error {

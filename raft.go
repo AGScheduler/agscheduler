@@ -13,9 +13,9 @@ import (
 type Role int
 
 const (
-	Follower Role = iota + 1
-	Candidate
-	Leader
+	RAFT_FOLLOWER Role = iota + 1
+	RAFT_CANDIDATE
+	RAFT_LEADER
 )
 
 type Raft struct {
@@ -34,7 +34,7 @@ func (rf *Raft) toFollower(term int) {
 	slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm Follower", rf.cn.Endpoint))
 
 	rf.currentTerm = term
-	rf.role = Follower
+	rf.role = RAFT_FOLLOWER
 	rf.votedFor = ""
 
 	rf.cn.Scheduler.Stop()
@@ -186,7 +186,7 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 		return nil
 	}
 
-	if args.Term > rf.currentTerm || rf.role == Leader {
+	if args.Term > rf.currentTerm || rf.role == RAFT_LEADER {
 		rf.toFollower(args.Term)
 	}
 
@@ -201,7 +201,7 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 }
 
 func (rf *Raft) start(ctx context.Context) {
-	rf.role = Follower
+	rf.role = RAFT_FOLLOWER
 	rf.currentTerm = 0
 	rf.votedFor = ""
 	rf.heartbeatC = make(chan bool)
@@ -217,15 +217,15 @@ func (rf *Raft) start(ctx context.Context) {
 				return
 			default:
 				switch rf.role {
-				case Follower:
+				case RAFT_FOLLOWER:
 					select {
 					case <-rf.heartbeatC:
 						slog.Debug(fmt.Sprintf("Follower: `%s` received heartbeat", rf.cn.Endpoint))
 					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
 						slog.Warn(fmt.Sprintf("Follower: `%s` timeout", rf.cn.Endpoint))
-						rf.role = Candidate
+						rf.role = RAFT_CANDIDATE
 					}
-				case Candidate:
+				case RAFT_CANDIDATE:
 					slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm candidate", rf.cn.Endpoint))
 
 					rf.cn.Scheduler.Stop()
@@ -237,10 +237,10 @@ func (rf *Raft) start(ctx context.Context) {
 
 					select {
 					case <-time.After(time.Duration(rand.Intn(300)+500) * time.Millisecond):
-						rf.role = Follower
+						rf.role = RAFT_FOLLOWER
 					case <-rf.toLeaderC:
 						slog.Info(fmt.Sprintf("Cluster node: `%s`, I'm leader", rf.cn.Endpoint))
-						rf.role = Leader
+						rf.role = RAFT_LEADER
 
 						rf.cn.SetEndpointMain(rf.cn.Endpoint)
 						rf.cn.registerNode(rf.cn)
@@ -248,7 +248,7 @@ func (rf *Raft) start(ctx context.Context) {
 							rf.cn.Scheduler.Start()
 						}
 					}
-				case Leader:
+				case RAFT_LEADER:
 					rf.broadcastHeartbeat()
 					time.Sleep(300 * time.Millisecond)
 				}

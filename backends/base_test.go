@@ -26,7 +26,7 @@ func runTest(t *testing.T, rec *agscheduler.Recorder) {
 
 	job := agscheduler.Job{
 		Name:     "Job",
-		Type:     agscheduler.TYPE_INTERVAL,
+		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "2s",
 		Func:     examples.PrintMsg,
 	}
@@ -35,7 +35,7 @@ func runTest(t *testing.T, rec *agscheduler.Recorder) {
 
 	job2 := agscheduler.Job{
 		Name:    "Job",
-		Type:    agscheduler.TYPE_DATETIME,
+		Type:    agscheduler.JOB_TYPE_DATETIME,
 		StartAt: "2023-09-22 07:30:08",
 		Func:    examples.PrintMsg,
 	}

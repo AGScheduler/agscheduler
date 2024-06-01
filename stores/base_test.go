@@ -9,7 +9,7 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
-func dryRunStores(ctx context.Context, j agscheduler.Job) (result []byte) { return }
+func dryRunStores(ctx context.Context, j agscheduler.Job) (result string) { return }
 
 func runTest(t *testing.T, sto agscheduler.Store) {
 	agscheduler.RegisterFuncs(
@@ -24,7 +24,7 @@ func runTest(t *testing.T, sto agscheduler.Store) {
 
 	j := agscheduler.Job{
 		Name:     "Job",
-		Type:     agscheduler.TYPE_INTERVAL,
+		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "1s",
 		Func:     dryRunStores,
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
@@ -34,18 +34,18 @@ func runTest(t *testing.T, sto agscheduler.Store) {
 
 	j, err = s.AddJob(j)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.STATUS_RUNNING, j.Status)
+	assert.Equal(t, agscheduler.JOB_STATUS_RUNNING, j.Status)
 	assert.NotEmpty(t, j.FuncName)
 
 	js, err := s.GetAllJobs()
 	assert.NoError(t, err)
 	assert.Len(t, js, 1)
 
-	j.Type = agscheduler.TYPE_CRON
+	j.Type = agscheduler.JOB_TYPE_CRON
 	j.CronExpr = "*/1 * * * *"
 	j, err = s.UpdateJob(j)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.TYPE_CRON, j.Type)
+	assert.Equal(t, agscheduler.JOB_TYPE_CRON, j.Type)
 
 	assert.NoError(t, err)
 	nextRunTimeMax, err := agscheduler.GetNextRunTimeMax()
@@ -53,7 +53,7 @@ func runTest(t *testing.T, sto agscheduler.Store) {
 
 	j, err = s.PauseJob(j.Id)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.STATUS_PAUSED, j.Status)
+	assert.Equal(t, agscheduler.JOB_STATUS_PAUSED, j.Status)
 	assert.Equal(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
 	j, err = s.ResumeJob(j.Id)

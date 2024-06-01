@@ -26,7 +26,7 @@ type Record struct {
 	// Optional: `RECORD_STATUS_RUNNING` | `RECORD_STATUS_COMPLETED` | `RECORD_STATUS_ERROR` | `RECORD_STATUS_TIMEOUT`
 	Status string
 	// The result of the job run
-	Result []byte
+	Result string
 	// Start time
 	StartAt time.Time
 	// End time
@@ -88,7 +88,6 @@ func (r *Recorder) RecordMetadata(j Job) (id uint64, err error) {
 		JobId:   j.Id,
 		JobName: j.Name,
 		Status:  RECORD_STATUS_RUNNING,
-		Result:  []byte(""),
 		StartAt: t,
 		EndAt:   t,
 	})
@@ -96,13 +95,9 @@ func (r *Recorder) RecordMetadata(j Job) (id uint64, err error) {
 	return id, err
 }
 
-func (r *Recorder) RecordResult(id uint64, status string, result []byte) error {
+func (r *Recorder) RecordResult(id uint64, status string, result string) error {
 	r.backendM.Lock()
 	defer r.backendM.Unlock()
-
-	if result == nil {
-		result = []byte("")
-	}
 
 	return r.Backend.RecordResult(id, status, result)
 }

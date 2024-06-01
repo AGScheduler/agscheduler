@@ -21,7 +21,7 @@ func runExampleGRPC(c pb.SchedulerClient) {
 
 	job1 := agscheduler.Job{
 		Name:     "Job1",
-		Type:     agscheduler.TYPE_INTERVAL,
+		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "2s",
 		Timezone: "UTC",
 		FuncName: "github.com/agscheduler/agscheduler/examples.PrintMsg",
