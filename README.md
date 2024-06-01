@@ -268,6 +268,13 @@ records, _ := rec.GetRecords(job.Id)
 |---------------|-------------|---------------------------|
 | GetNodes      | GET         | /cluster/nodes            |
 
+## Recorder API
+
+| gRPC Function | HTTP Method | HTTP Path                 |
+|---------------|-------------|---------------------------|
+| GetRecords    | GET         | /recorder/records/:job_id |
+| GetAllRecords | GET         | /recorder/records         |
+
 ## Examples
 
 [Complete example][examples]
