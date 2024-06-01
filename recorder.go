@@ -106,18 +106,12 @@ func (r *Recorder) GetRecords(jId string, page, pageSize int) ([]Record, int64, 
 	r.backendM.RLock()
 	defer r.backendM.RUnlock()
 
-	page = fixPositiveNum(page, 1)
-	pageSize = fixPositiveNumMax(fixPositiveNum(pageSize, 10), 1000)
-
 	return r.Backend.GetRecords(jId, page, pageSize)
 }
 
 func (r *Recorder) GetAllRecords(page, pageSize int) ([]Record, int64, error) {
 	r.backendM.RLock()
 	defer r.backendM.RUnlock()
-
-	page = fixPositiveNum(page, 1)
-	pageSize = fixPositiveNumMax(fixPositiveNum(pageSize, 10), 1000)
 
 	return r.Backend.GetAllRecords(page, pageSize)
 }
@@ -141,20 +135,4 @@ func (r *Recorder) Clear() error {
 	defer r.backendM.Unlock()
 
 	return r.Backend.Clear()
-}
-
-func fixPositiveNum(num, numDef int) int {
-	if num < 1 {
-		return numDef
-	}
-
-	return num
-}
-
-func fixPositiveNumMax(num, numMax int) int {
-	if num > numMax {
-		return numMax
-	}
-
-	return num
 }

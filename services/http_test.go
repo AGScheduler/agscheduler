@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/backends"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
@@ -50,10 +51,15 @@ func TestHTTPService(t *testing.T) {
 		agscheduler.FuncPkg{Func: dryRunHTTP},
 	)
 
-	store := &stores.MemoryStore{}
-
 	scheduler := &agscheduler.Scheduler{}
+
+	store := &stores.MemoryStore{}
 	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
+
+	mb := &backends.MemoryBackend{}
+	recorder := &agscheduler.Recorder{Backend: mb}
+	err = scheduler.SetRecorder(recorder)
 	assert.NoError(t, err)
 
 	hservice := HTTPService{Scheduler: scheduler}
@@ -65,6 +71,7 @@ func TestHTTPService(t *testing.T) {
 	baseUrl := "http://" + hservice.Address
 	testHTTP(t, baseUrl)
 	testSchedulerHTTP(t, baseUrl)
+	testRecorderHTTP(t, baseUrl)
 
 	err = hservice.Stop()
 	assert.NoError(t, err)

@@ -61,6 +61,11 @@ func (s *HTTPService) Start() error {
 		chs.registerRoutes(r)
 	}
 
+	if s.Scheduler.HasRecorder() {
+		rhs := &rHTTPService{recorder: agscheduler.GetRecorder(s.Scheduler)}
+		rhs.registerRoutes(r)
+	}
+
 	slog.Info(fmt.Sprintf("HTTP Service listening at: %s", s.Address))
 
 	s.srv = &http.Server{
