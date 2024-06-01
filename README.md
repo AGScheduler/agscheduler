@@ -41,8 +41,7 @@ English | [简体中文](README.zh-CN.md)
 - Supports multiple job result backends
   - [x] Memory (Cluster mode is not supported)
   - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
-  - [ ] [Redis](https://redis.io/)
-  - [ ] [MongoDB](https://www.mongodb.com/)
+  - [x] [MongoDB](https://www.mongodb.com/)
 
 ## Framework
 
