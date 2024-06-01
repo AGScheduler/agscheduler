@@ -116,6 +116,7 @@ examples-queue:
 .PHONY: examples-backend
 examples-backend:
 	go run examples/backends/base.go examples/backends/memory.go
+	go run examples/backends/base.go examples/backends/gorm.go
 
 .PHONY: examples-all
 examples-all: examples-store examples-api examples-queue examples-backend

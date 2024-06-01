@@ -40,7 +40,7 @@
   - [x] [Kafka](https://kafka.apache.org/)
 - 支持多种作业结果后端
   - [x] Memory (不支持集群模式)
-  - [ ] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
+  - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [ ] [Redis](https://redis.io/)
   - [ ] [MongoDB](https://www.mongodb.com/)
 

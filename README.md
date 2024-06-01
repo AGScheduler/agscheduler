@@ -40,7 +40,7 @@ English | [简体中文](README.zh-CN.md)
   - [x] [Kafka](https://kafka.apache.org/)
 - Supports multiple job result backends
   - [x] Memory (Cluster mode is not supported)
-  - [ ] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
+  - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [ ] [Redis](https://redis.io/)
   - [ ] [MongoDB](https://www.mongodb.com/)
 
