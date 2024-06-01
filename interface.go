@@ -68,10 +68,12 @@ type Backend interface {
 	RecordResult(id uint64, status string, result string) error
 
 	// Get records by job id from this backend.
-	GetRecords(jId string) ([]Record, error)
+	//  @return records, total, error.
+	GetRecords(jId string, page, pageSize int) ([]Record, int64, error)
 
 	// Get all records from this backend.
-	GetAllRecords() ([]Record, error)
+	//  @return records, total, error.
+	GetAllRecords(page, pageSize int) ([]Record, int64, error)
 
 	// Delete records by job id from this backend.
 	DeleteRecords(jId string) error

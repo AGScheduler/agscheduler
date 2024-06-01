@@ -84,11 +84,20 @@ func (b *MongoDBBackend) RecordResult(id uint64, status string, result string) e
 	return err
 }
 
-func (b *MongoDBBackend) _getRecords(filter any) ([]agscheduler.Record, error) {
-	opts := options.Find().SetSort(bson.M{"start_at": -1})
-	cursor, err := b.coll.Find(ctx, filter, opts)
+func (b *MongoDBBackend) _getRecords(page, pageSize int, filter any) ([]agscheduler.Record, int64, error) {
+	total := int64(0)
+
+	optsFind := options.Find().SetSort(bson.M{"start_at": -1}).
+		SetLimit(int64(pageSize)).SetSkip(int64((page - 1) * pageSize))
+	cursor, err := b.coll.Find(ctx, filter, optsFind)
 	if err != nil {
-		return nil, err
+		return nil, total, err
+	}
+
+	optsCount := options.Count().SetHint("_id_")
+	total, err = b.coll.CountDocuments(ctx, filter, optsCount)
+	if err != nil {
+		return nil, total, err
 	}
 
 	var recordList []agscheduler.Record
@@ -96,7 +105,7 @@ func (b *MongoDBBackend) _getRecords(filter any) ([]agscheduler.Record, error) {
 		var result bson.M
 		err := cursor.Decode(&result)
 		if err != nil {
-			return nil, err
+			return nil, total, err
 		}
 		recordList = append(recordList, agscheduler.Record{
 			Id:      uint64(result["_id"].(int64)),
@@ -109,15 +118,15 @@ func (b *MongoDBBackend) _getRecords(filter any) ([]agscheduler.Record, error) {
 		})
 	}
 
-	return recordList, nil
+	return recordList, total, nil
 }
 
-func (b *MongoDBBackend) GetRecords(jId string) ([]agscheduler.Record, error) {
-	return b._getRecords(bson.M{"job_id": jId})
+func (b *MongoDBBackend) GetRecords(jId string, page, pageSize int) ([]agscheduler.Record, int64, error) {
+	return b._getRecords(page, pageSize, bson.M{"job_id": jId})
 }
 
-func (b *MongoDBBackend) GetAllRecords() ([]agscheduler.Record, error) {
-	return b._getRecords(bson.M{})
+func (b *MongoDBBackend) GetAllRecords(page, pageSize int) ([]agscheduler.Record, int64, error) {
+	return b._getRecords(page, pageSize, bson.M{})
 }
 
 func (b *MongoDBBackend) DeleteRecords(jId string) error {
