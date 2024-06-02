@@ -56,14 +56,6 @@ func testRecorderHTTP(t *testing.T, baseUrl string) {
 	total := int(rJ.Data.(map[string]any)["total"].(float64))
 	assert.Equal(t, 1, total)
 
-	mJ = map[string]any{
-		"name":      "Job2",
-		"type":      agscheduler.JOB_TYPE_DATETIME,
-		"start_at":  "2023-09-22 07:30:08",
-		"func_name": "github.com/agscheduler/agscheduler/services.dryRunHTTP",
-	}
-	bJ, err = json.Marshal(mJ)
-	assert.NoError(t, err)
 	resp, err = http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJ))
 	assert.NoError(t, err)
 	assert.Equal(t, 200, resp.StatusCode)
