@@ -46,13 +46,13 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	nextRunTimeMax, err := agscheduler.GetNextRunTimeMax()
 	assert.NoError(t, err)
 
-	pbJ, err = c.PauseJob(ctx, &pb.JobId{Id: j.Id})
+	pbJ, err = c.PauseJob(ctx, &pb.JobReq{Id: j.Id})
 	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.Equal(t, agscheduler.JOB_STATUS_PAUSED, j.Status)
 	assert.Equal(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
 
-	pbJ, err = c.ResumeJob(ctx, &pb.JobId{Id: j.Id})
+	pbJ, err = c.ResumeJob(ctx, &pb.JobReq{Id: j.Id})
 	assert.NoError(t, err)
 	j = agscheduler.PbJobPtrToJob(pbJ)
 	assert.NotEqual(t, nextRunTimeMax.Unix(), j.NextRunTime.Unix())
@@ -63,16 +63,16 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	_, err = c.ScheduleJob(ctx, pbJ)
 	assert.NoError(t, err)
 
-	_, err = c.DeleteJob(ctx, &pb.JobId{Id: j.Id})
+	_, err = c.DeleteJob(ctx, &pb.JobReq{Id: j.Id})
 	assert.NoError(t, err)
-	_, err = c.GetJob(ctx, &pb.JobId{Id: j.Id})
+	_, err = c.GetJob(ctx, &pb.JobReq{Id: j.Id})
 	assert.Contains(t, err.Error(), agscheduler.JobNotFoundError(j.Id).Error())
 
 	_, err = c.DeleteAllJobs(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
-	pbJs, err := c.GetAllJobs(ctx, &emptypb.Empty{})
+	jsResp, err := c.GetAllJobs(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
-	js := agscheduler.PbJobsPtrToJobs(pbJs)
+	js := agscheduler.PbJobsPtrToJobs(jsResp.Jobs)
 	assert.Len(t, js, 0)
 
 	_, err = c.Stop(ctx, &emptypb.Empty{})

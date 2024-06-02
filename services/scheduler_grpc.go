@@ -25,8 +25,8 @@ func (sgrs *sGRPCService) AddJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, e
 	return agscheduler.JobToPbJobPtr(j)
 }
 
-func (sgrs *sGRPCService) GetJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := sgrs.scheduler.GetJob(jobId.GetId())
+func (sgrs *sGRPCService) GetJob(ctx context.Context, req *pb.JobReq) (*pb.Job, error) {
+	j, err := sgrs.scheduler.GetJob(req.GetId())
 	if err != nil {
 		return &pb.Job{}, err
 	}
@@ -34,13 +34,18 @@ func (sgrs *sGRPCService) GetJob(ctx context.Context, jobId *pb.JobId) (*pb.Job,
 	return agscheduler.JobToPbJobPtr(j)
 }
 
-func (sgrs *sGRPCService) GetAllJobs(ctx context.Context, in *emptypb.Empty) (*pb.Jobs, error) {
+func (sgrs *sGRPCService) GetAllJobs(ctx context.Context, in *emptypb.Empty) (*pb.JobsResp, error) {
 	js, err := sgrs.scheduler.GetAllJobs()
 	if err != nil {
-		return &pb.Jobs{}, err
+		return &pb.JobsResp{}, err
 	}
 
-	return agscheduler.JobsToPbJobsPtr(js)
+	pbJs, err := agscheduler.JobsToPbJobsPtr(js)
+	if err != nil {
+		return &pb.JobsResp{}, err
+	}
+
+	return &pb.JobsResp{Jobs: pbJs}, err
 }
 
 func (sgrs *sGRPCService) UpdateJob(ctx context.Context, pbJob *pb.Job) (*pb.Job, error) {
@@ -53,8 +58,8 @@ func (sgrs *sGRPCService) UpdateJob(ctx context.Context, pbJob *pb.Job) (*pb.Job
 	return agscheduler.JobToPbJobPtr(j)
 }
 
-func (sgrs *sGRPCService) DeleteJob(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
-	err := sgrs.scheduler.DeleteJob(jobId.GetId())
+func (sgrs *sGRPCService) DeleteJob(ctx context.Context, req *pb.JobReq) (*emptypb.Empty, error) {
+	err := sgrs.scheduler.DeleteJob(req.GetId())
 	return &emptypb.Empty{}, err
 }
 
@@ -63,8 +68,8 @@ func (sgrs *sGRPCService) DeleteAllJobs(ctx context.Context, in *emptypb.Empty) 
 	return &emptypb.Empty{}, err
 }
 
-func (sgrs *sGRPCService) PauseJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := sgrs.scheduler.PauseJob(jobId.GetId())
+func (sgrs *sGRPCService) PauseJob(ctx context.Context, req *pb.JobReq) (*pb.Job, error) {
+	j, err := sgrs.scheduler.PauseJob(req.GetId())
 	if err != nil {
 		return &pb.Job{}, err
 	}
@@ -72,8 +77,8 @@ func (sgrs *sGRPCService) PauseJob(ctx context.Context, jobId *pb.JobId) (*pb.Jo
 	return agscheduler.JobToPbJobPtr(j)
 }
 
-func (sgrs *sGRPCService) ResumeJob(ctx context.Context, jobId *pb.JobId) (*pb.Job, error) {
-	j, err := sgrs.scheduler.ResumeJob(jobId.GetId())
+func (sgrs *sGRPCService) ResumeJob(ctx context.Context, req *pb.JobReq) (*pb.Job, error) {
+	j, err := sgrs.scheduler.ResumeJob(req.GetId())
 	if err != nil {
 		return &pb.Job{}, err
 	}

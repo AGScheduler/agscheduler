@@ -8,7 +8,7 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class JobId(_message.Message):
+class JobReq(_message.Message):
     __slots__ = ("id",)
     ID_FIELD_NUMBER: _ClassVar[int]
     id: str
@@ -48,7 +48,7 @@ class Job(_message.Message):
     status: str
     def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., start_at: _Optional[str] = ..., end_at: _Optional[str] = ..., interval: _Optional[str] = ..., cron_expr: _Optional[str] = ..., timezone: _Optional[str] = ..., func_name: _Optional[str] = ..., args: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., timeout: _Optional[str] = ..., queues: _Optional[_Iterable[str]] = ..., last_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., next_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., status: _Optional[str] = ...) -> None: ...
 
-class Jobs(_message.Message):
+class JobsResp(_message.Message):
     __slots__ = ("jobs",)
     JOBS_FIELD_NUMBER: _ClassVar[int]
     jobs: _containers.RepeatedCompositeFieldContainer[Job]

@@ -102,8 +102,8 @@ func TestJobsToPbJobsPtr(t *testing.T) {
 	pbJs, err := JobsToPbJobsPtr(js)
 	assert.NoError(t, err)
 
-	assert.IsType(t, &pb.Jobs{}, pbJs)
-	assert.Len(t, pbJs.Jobs, 2)
+	assert.IsType(t, []*pb.Job{}, pbJs)
+	assert.Len(t, pbJs, 2)
 }
 
 func TestPbJobsPtrToJobs(t *testing.T) {

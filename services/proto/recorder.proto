@@ -41,7 +41,7 @@ service Recorder {
 
   rpc GetAllRecords (RecordsAllReq) returns (RecordsResp) {}
 
-  rpc DeleteRecords (JobId) returns (google.protobuf.Empty) {}
+  rpc DeleteRecords (JobReq) returns (google.protobuf.Empty) {}
 
   rpc DeleteAllRecords (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
