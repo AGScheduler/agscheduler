@@ -274,6 +274,8 @@ records, _ := rec.GetRecords(job.Id)
 |---------------|-------------|---------------------------|
 | GetRecords    | GET         | /recorder/records/:job_id |
 | GetAllRecords | GET         | /recorder/records         |
+| DeleteRecords | DELETE      | /recorder/records/:job_id |
+| DeleteAllRecords | DELETE   | /recorder/records         |
 
 ## Examples
 
