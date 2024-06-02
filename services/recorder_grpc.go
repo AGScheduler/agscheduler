@@ -47,8 +47,8 @@ func (rgrs *rGRPCService) GetAllRecords(ctx context.Context, req *pb.RecordsAllR
 	return rgrs._getRecords("", int(req.GetPage()), int(req.GetPageSize()))
 }
 
-func (rgrs *rGRPCService) DeleteRecords(ctx context.Context, jobId *pb.JobId) (*emptypb.Empty, error) {
-	err := rgrs.recorder.DeleteRecords(jobId.GetId())
+func (rgrs *rGRPCService) DeleteRecords(ctx context.Context, req *pb.JobReq) (*emptypb.Empty, error) {
+	err := rgrs.recorder.DeleteRecords(req.GetId())
 	return &emptypb.Empty{}, err
 }
 

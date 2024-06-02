@@ -20,15 +20,15 @@ func dryRunGRPC(ctx context.Context, j agscheduler.Job) (result string) { return
 func testGRPC(t *testing.T, c pb.BaseClient) {
 	ctx := context.Background()
 
-	pbI, err := c.GetInfo(ctx, &emptypb.Empty{})
+	iResp, err := c.GetInfo(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
-	assert.Len(t, pbI.Info.AsMap(), 7)
-	assert.Equal(t, pbI.Info.AsMap()["version"], agscheduler.Version)
+	assert.Len(t, iResp.Info.AsMap(), 7)
+	assert.Equal(t, iResp.Info.AsMap()["version"], agscheduler.Version)
 
-	pbFS, err := c.GetFuncs(ctx, &emptypb.Empty{})
+	fsResp, err := c.GetFuncs(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
 	funcLen := len(agscheduler.FuncMap)
-	assert.Len(t, pbFS.Funcs, funcLen)
+	assert.Len(t, fsResp.Funcs, funcLen)
 }
 
 func TestGRPCService(t *testing.T) {

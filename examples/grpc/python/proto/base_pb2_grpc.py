@@ -18,12 +18,12 @@ class BaseStub(object):
         self.GetInfo = channel.unary_unary(
                 '/services.Base/GetInfo',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-                response_deserializer=base__pb2.Info.FromString,
+                response_deserializer=base__pb2.InfoResp.FromString,
                 )
         self.GetFuncs = channel.unary_unary(
                 '/services.Base/GetFuncs',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-                response_deserializer=base__pb2.Funcs.FromString,
+                response_deserializer=base__pb2.FuncsResp.FromString,
                 )
 
 
@@ -48,12 +48,12 @@ def add_BaseServicer_to_server(servicer, server):
             'GetInfo': grpc.unary_unary_rpc_method_handler(
                     servicer.GetInfo,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
-                    response_serializer=base__pb2.Info.SerializeToString,
+                    response_serializer=base__pb2.InfoResp.SerializeToString,
             ),
             'GetFuncs': grpc.unary_unary_rpc_method_handler(
                     servicer.GetFuncs,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
-                    response_serializer=base__pb2.Funcs.SerializeToString,
+                    response_serializer=base__pb2.FuncsResp.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -78,7 +78,7 @@ class Base(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/services.Base/GetInfo',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-            base__pb2.Info.FromString,
+            base__pb2.InfoResp.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -95,6 +95,6 @@ class Base(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/services.Base/GetFuncs',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-            base__pb2.Funcs.FromString,
+            base__pb2.FuncsResp.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

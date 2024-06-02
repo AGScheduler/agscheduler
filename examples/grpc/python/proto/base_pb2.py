@@ -16,7 +16,7 @@ from google.protobuf import empty_pb2 as google_dot_protobuf_dot_empty__pb2
 from google.protobuf import struct_pb2 as google_dot_protobuf_dot_struct__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nbase.proto\x12\x08services\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"-\n\x04Info\x12%\n\x04info\x18\x01 \x01(\x0b\x32\x17.google.protobuf.Struct\"\"\n\x04\x46unc\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04info\x18\x02 \x01(\t\"&\n\x05\x46uncs\x12\x1d\n\x05\x66uncs\x18\x01 \x03(\x0b\x32\x0e.services.Func2r\n\x04\x42\x61se\x12\x33\n\x07GetInfo\x12\x16.google.protobuf.Empty\x1a\x0e.services.Info\"\x00\x12\x35\n\x08GetFuncs\x12\x16.google.protobuf.Empty\x1a\x0f.services.Funcs\"\x00\x42\rZ\x0b./;servicesb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\nbase.proto\x12\x08services\x1a\x1bgoogle/protobuf/empty.proto\x1a\x1cgoogle/protobuf/struct.proto\"1\n\x08InfoResp\x12%\n\x04info\x18\x01 \x01(\x0b\x32\x17.google.protobuf.Struct\"\"\n\x04\x46unc\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04info\x18\x02 \x01(\t\"*\n\tFuncsResp\x12\x1d\n\x05\x66uncs\x18\x01 \x03(\x0b\x32\x0e.services.Func2z\n\x04\x42\x61se\x12\x37\n\x07GetInfo\x12\x16.google.protobuf.Empty\x1a\x12.services.InfoResp\"\x00\x12\x39\n\x08GetFuncs\x12\x16.google.protobuf.Empty\x1a\x13.services.FuncsResp\"\x00\x42\rZ\x0b./;servicesb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -24,12 +24,12 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'base_pb2', _globals)
 if _descriptor._USE_C_DESCRIPTORS == False:
   _globals['DESCRIPTOR']._options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z\013./;services'
-  _globals['_INFO']._serialized_start=83
-  _globals['_INFO']._serialized_end=128
-  _globals['_FUNC']._serialized_start=130
-  _globals['_FUNC']._serialized_end=164
-  _globals['_FUNCS']._serialized_start=166
-  _globals['_FUNCS']._serialized_end=204
-  _globals['_BASE']._serialized_start=206
-  _globals['_BASE']._serialized_end=320
+  _globals['_INFORESP']._serialized_start=83
+  _globals['_INFORESP']._serialized_end=132
+  _globals['_FUNC']._serialized_start=134
+  _globals['_FUNC']._serialized_end=168
+  _globals['_FUNCSRESP']._serialized_start=170
+  _globals['_FUNCSRESP']._serialized_end=212
+  _globals['_BASE']._serialized_start=214
+  _globals['_BASE']._serialized_end=336
 # @@protoc_insertion_point(module_scope)

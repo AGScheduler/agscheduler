@@ -64,14 +64,14 @@ func runExampleGRPC(c pb.SchedulerClient) {
 	job3 = agscheduler.PbJobPtrToJob(pbJob3)
 	slog.Info(fmt.Sprintf("%s.\n\n", job3))
 
-	pbJobs, _ := c.GetAllJobs(ctx, &emptypb.Empty{})
-	jobs := agscheduler.PbJobsPtrToJobs(pbJobs)
+	jsResp, _ := c.GetAllJobs(ctx, &emptypb.Empty{})
+	jobs := agscheduler.PbJobsPtrToJobs(jsResp.Jobs)
 	slog.Info(fmt.Sprintf("Scheduler get all jobs %s.\n\n", jobs))
 
 	slog.Info("Sleep 5s......\n\n")
 	time.Sleep(5 * time.Second)
 
-	pbJob1, _ = c.GetJob(ctx, &pb.JobId{Id: job1.Id})
+	pbJob1, _ = c.GetJob(ctx, &pb.JobReq{Id: job1.Id})
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 	slog.Info(fmt.Sprintf("Scheduler get job `%s` %s.\n\n", job1.FullName(), job1))
 
@@ -85,16 +85,16 @@ func runExampleGRPC(c pb.SchedulerClient) {
 	slog.Info("Sleep 4s......")
 	time.Sleep(4 * time.Second)
 
-	pbJob1, _ = c.PauseJob(ctx, &pb.JobId{Id: job1.Id})
+	pbJob1, _ = c.PauseJob(ctx, &pb.JobReq{Id: job1.Id})
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
-	pbJob1, _ = c.ResumeJob(ctx, &pb.JobId{Id: job1.Id})
+	pbJob1, _ = c.ResumeJob(ctx, &pb.JobReq{Id: job1.Id})
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 
-	c.DeleteJob(ctx, &pb.JobId{Id: job2.Id})
+	c.DeleteJob(ctx, &pb.JobReq{Id: job2.Id})
 
 	slog.Info("Sleep 4s......\n\n")
 	time.Sleep(4 * time.Second)

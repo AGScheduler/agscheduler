@@ -66,9 +66,9 @@ func TestClusterProxy(t *testing.T) {
 	assert.NoError(t, err)
 	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
-	pbJs, err := client.GetAllJobs(ctx, &emptypb.Empty{})
+	jsResp, err := client.GetAllJobs(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
-	js := agscheduler.PbJobsPtrToJobs(pbJs)
+	js := agscheduler.PbJobsPtrToJobs(jsResp.Jobs)
 	assert.Len(t, js, 0)
 
 	err = cserviceMain.Stop()

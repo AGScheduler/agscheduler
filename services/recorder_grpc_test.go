@@ -52,7 +52,7 @@ func testRecorderGRPC(t *testing.T, sc pb.SchedulerClient, rc pb.RecorderClient)
 	assert.NoError(t, err)
 	assert.Equal(t, 2, int(resp.Total))
 
-	_, err = rc.DeleteRecords(ctx, &pb.JobId{Id: j.Id})
+	_, err = rc.DeleteRecords(ctx, &pb.JobReq{Id: j.Id})
 	assert.NoError(t, err)
 
 	resp, err = rc.GetAllRecords(ctx, &pb.RecordsAllReq{

@@ -28,7 +28,7 @@ class RecorderStub(object):
                 )
         self.DeleteRecords = channel.unary_unary(
                 '/services.Recorder/DeleteRecords',
-                request_serializer=scheduler__pb2.JobId.SerializeToString,
+                request_serializer=scheduler__pb2.JobReq.SerializeToString,
                 response_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
                 )
         self.DeleteAllRecords = channel.unary_unary(
@@ -80,7 +80,7 @@ def add_RecorderServicer_to_server(servicer, server):
             ),
             'DeleteRecords': grpc.unary_unary_rpc_method_handler(
                     servicer.DeleteRecords,
-                    request_deserializer=scheduler__pb2.JobId.FromString,
+                    request_deserializer=scheduler__pb2.JobReq.FromString,
                     response_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
             ),
             'DeleteAllRecords': grpc.unary_unary_rpc_method_handler(
@@ -144,7 +144,7 @@ class Recorder(object):
             timeout=None,
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/services.Recorder/DeleteRecords',
-            scheduler__pb2.JobId.SerializeToString,
+            scheduler__pb2.JobReq.SerializeToString,
             google_dot_protobuf_dot_empty__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

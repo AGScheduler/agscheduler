@@ -28,8 +28,8 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BaseClient interface {
-	GetInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Info, error)
-	GetFuncs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Funcs, error)
+	GetInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*InfoResp, error)
+	GetFuncs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FuncsResp, error)
 }
 
 type baseClient struct {
@@ -40,8 +40,8 @@ func NewBaseClient(cc grpc.ClientConnInterface) BaseClient {
 	return &baseClient{cc}
 }
 
-func (c *baseClient) GetInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Info, error) {
-	out := new(Info)
+func (c *baseClient) GetInfo(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*InfoResp, error) {
+	out := new(InfoResp)
 	err := c.cc.Invoke(ctx, Base_GetInfo_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func (c *baseClient) GetInfo(ctx context.Context, in *emptypb.Empty, opts ...grp
 	return out, nil
 }
 
-func (c *baseClient) GetFuncs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Funcs, error) {
-	out := new(Funcs)
+func (c *baseClient) GetFuncs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*FuncsResp, error) {
+	out := new(FuncsResp)
 	err := c.cc.Invoke(ctx, Base_GetFuncs_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -62,8 +62,8 @@ func (c *baseClient) GetFuncs(ctx context.Context, in *emptypb.Empty, opts ...gr
 // All implementations must embed UnimplementedBaseServer
 // for forward compatibility
 type BaseServer interface {
-	GetInfo(context.Context, *emptypb.Empty) (*Info, error)
-	GetFuncs(context.Context, *emptypb.Empty) (*Funcs, error)
+	GetInfo(context.Context, *emptypb.Empty) (*InfoResp, error)
+	GetFuncs(context.Context, *emptypb.Empty) (*FuncsResp, error)
 	mustEmbedUnimplementedBaseServer()
 }
 
@@ -71,10 +71,10 @@ type BaseServer interface {
 type UnimplementedBaseServer struct {
 }
 
-func (UnimplementedBaseServer) GetInfo(context.Context, *emptypb.Empty) (*Info, error) {
+func (UnimplementedBaseServer) GetInfo(context.Context, *emptypb.Empty) (*InfoResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetInfo not implemented")
 }
-func (UnimplementedBaseServer) GetFuncs(context.Context, *emptypb.Empty) (*Funcs, error) {
+func (UnimplementedBaseServer) GetFuncs(context.Context, *emptypb.Empty) (*FuncsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFuncs not implemented")
 }
 func (UnimplementedBaseServer) mustEmbedUnimplementedBaseServer() {}

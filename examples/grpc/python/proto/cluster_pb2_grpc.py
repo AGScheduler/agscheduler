@@ -18,7 +18,7 @@ class ClusterStub(object):
         self.GetNodes = channel.unary_unary(
                 '/services.Cluster/GetNodes',
                 request_serializer=google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-                response_deserializer=cluster__pb2.Nodes.FromString,
+                response_deserializer=cluster__pb2.NodesResp.FromString,
                 )
 
 
@@ -37,7 +37,7 @@ def add_ClusterServicer_to_server(servicer, server):
             'GetNodes': grpc.unary_unary_rpc_method_handler(
                     servicer.GetNodes,
                     request_deserializer=google_dot_protobuf_dot_empty__pb2.Empty.FromString,
-                    response_serializer=cluster__pb2.Nodes.SerializeToString,
+                    response_serializer=cluster__pb2.NodesResp.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -62,6 +62,6 @@ class Cluster(object):
             metadata=None):
         return grpc.experimental.unary_unary(request, target, '/services.Cluster/GetNodes',
             google_dot_protobuf_dot_empty__pb2.Empty.SerializeToString,
-            cluster__pb2.Nodes.FromString,
+            cluster__pb2.NodesResp.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

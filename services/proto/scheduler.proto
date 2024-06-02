@@ -7,7 +7,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
-message JobId {
+message JobReq {
   string id = 1;
 }
 
@@ -30,26 +30,26 @@ message Job {
   string status = 15;
 }
 
-message Jobs {
+message JobsResp {
   repeated Job jobs = 1;
 }
 
 service Scheduler {
   rpc AddJob (Job) returns (Job) {}
 
-  rpc GetJob (JobId) returns (Job) {}
+  rpc GetJob (JobReq) returns (Job) {}
 
-  rpc GetAllJobs (google.protobuf.Empty) returns (Jobs) {}
+  rpc GetAllJobs (google.protobuf.Empty) returns (JobsResp) {}
 
   rpc UpdateJob (Job) returns (Job) {}
 
-  rpc DeleteJob (JobId) returns (google.protobuf.Empty) {}
+  rpc DeleteJob (JobReq) returns (google.protobuf.Empty) {}
 
   rpc DeleteAllJobs (google.protobuf.Empty) returns (google.protobuf.Empty) {}
 
-  rpc PauseJob (JobId) returns (Job) {}
+  rpc PauseJob (JobReq) returns (Job) {}
 
-  rpc ResumeJob (JobId) returns (Job) {}
+  rpc ResumeJob (JobReq) returns (Job) {}
 
   rpc RunJob (Job) returns (google.protobuf.Empty) {}
 

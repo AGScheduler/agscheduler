@@ -258,26 +258,26 @@ func PbJobPtrToJob(pbJob *pb.Job) Job {
 }
 
 // Used to gRPC Protobuf
-func JobsToPbJobsPtr(js []Job) (*pb.Jobs, error) {
-	pbJs := &pb.Jobs{}
+func JobsToPbJobsPtr(js []Job) ([]*pb.Job, error) {
+	pbJs := []*pb.Job{}
 
 	for _, j := range js {
 		pbJ, err := JobToPbJobPtr(j)
 		if err != nil {
-			return &pb.Jobs{}, err
+			return []*pb.Job{}, err
 		}
 
-		pbJs.Jobs = append(pbJs.Jobs, pbJ)
+		pbJs = append(pbJs, pbJ)
 	}
 
 	return pbJs, nil
 }
 
 // Used to gRPC Protobuf
-func PbJobsPtrToJobs(pbJs *pb.Jobs) []Job {
-	js := make([]Job, 0)
+func PbJobsPtrToJobs(pbJs []*pb.Job) []Job {
+	js := []Job{}
 
-	for _, pbJ := range pbJs.Jobs {
+	for _, pbJ := range pbJs {
 		js = append(js, PbJobPtrToJob(pbJ))
 	}
 

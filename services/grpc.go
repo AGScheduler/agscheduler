@@ -20,25 +20,25 @@ type bGRPCService struct {
 	scheduler *agscheduler.Scheduler
 }
 
-func (bgrs *bGRPCService) GetInfo(ctx context.Context, in *emptypb.Empty) (*pb.Info, error) {
+func (bgrs *bGRPCService) GetInfo(ctx context.Context, in *emptypb.Empty) (*pb.InfoResp, error) {
 	info, err := structpb.NewStruct(bgrs.scheduler.Info())
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.Info{Info: info}, nil
+	return &pb.InfoResp{Info: info}, nil
 }
 
-func (bgrs *bGRPCService) GetFuncs(ctx context.Context, in *emptypb.Empty) (*pb.Funcs, error) {
-	pbFs := &pb.Funcs{}
+func (bgrs *bGRPCService) GetFuncs(ctx context.Context, in *emptypb.Empty) (*pb.FuncsResp, error) {
+	pbFs := []*pb.Func{}
 
 	fs := agscheduler.FuncMapReadable()
 	for _, f := range fs {
 		pbF := &pb.Func{Name: f["name"], Info: f["Info"]}
-		pbFs.Funcs = append(pbFs.Funcs, pbF)
+		pbFs = append(pbFs, pbF)
 	}
 
-	return pbFs, nil
+	return &pb.FuncsResp{Funcs: pbFs}, nil
 }
 
 func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {

@@ -15,6 +15,7 @@ type cGRPCService struct {
 	cn *agscheduler.ClusterNode
 }
 
-func (cgrs *cGRPCService) GetNodes(ctx context.Context, in *emptypb.Empty) (*pb.Nodes, error) {
-	return cgrs.cn.NodeMapToPbNodesPtr(), nil
+func (cgrs *cGRPCService) GetNodes(ctx context.Context, in *emptypb.Empty) (*pb.NodesResp, error) {
+	pbNs := cgrs.cn.NodeMapToPbNodesPtr()
+	return &pb.NodesResp{Nodes: pbNs}, nil
 }

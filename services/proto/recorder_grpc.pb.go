@@ -32,7 +32,7 @@ const (
 type RecorderClient interface {
 	GetRecords(ctx context.Context, in *RecordsReq, opts ...grpc.CallOption) (*RecordsResp, error)
 	GetAllRecords(ctx context.Context, in *RecordsAllReq, opts ...grpc.CallOption) (*RecordsResp, error)
-	DeleteRecords(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	DeleteRecords(ctx context.Context, in *JobReq, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	DeleteAllRecords(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
@@ -62,7 +62,7 @@ func (c *recorderClient) GetAllRecords(ctx context.Context, in *RecordsAllReq, o
 	return out, nil
 }
 
-func (c *recorderClient) DeleteRecords(ctx context.Context, in *JobId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *recorderClient) DeleteRecords(ctx context.Context, in *JobReq, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, Recorder_DeleteRecords_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -86,7 +86,7 @@ func (c *recorderClient) DeleteAllRecords(ctx context.Context, in *emptypb.Empty
 type RecorderServer interface {
 	GetRecords(context.Context, *RecordsReq) (*RecordsResp, error)
 	GetAllRecords(context.Context, *RecordsAllReq) (*RecordsResp, error)
-	DeleteRecords(context.Context, *JobId) (*emptypb.Empty, error)
+	DeleteRecords(context.Context, *JobReq) (*emptypb.Empty, error)
 	DeleteAllRecords(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedRecorderServer()
 }
@@ -101,7 +101,7 @@ func (UnimplementedRecorderServer) GetRecords(context.Context, *RecordsReq) (*Re
 func (UnimplementedRecorderServer) GetAllRecords(context.Context, *RecordsAllReq) (*RecordsResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetAllRecords not implemented")
 }
-func (UnimplementedRecorderServer) DeleteRecords(context.Context, *JobId) (*emptypb.Empty, error) {
+func (UnimplementedRecorderServer) DeleteRecords(context.Context, *JobReq) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteRecords not implemented")
 }
 func (UnimplementedRecorderServer) DeleteAllRecords(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -157,7 +157,7 @@ func _Recorder_GetAllRecords_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _Recorder_DeleteRecords_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobId)
+	in := new(JobReq)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func _Recorder_DeleteRecords_Handler(srv interface{}, ctx context.Context, dec f
 		FullMethod: Recorder_DeleteRecords_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RecorderServer).DeleteRecords(ctx, req.(*JobId))
+		return srv.(RecorderServer).DeleteRecords(ctx, req.(*JobReq))
 	}
 	return interceptor(ctx, in, info, handler)
 }
