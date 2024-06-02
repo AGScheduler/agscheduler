@@ -54,9 +54,21 @@ func (rhs *rHTTPService) getRecords(c *gin.Context) {
 	})
 }
 
+func (rhs *rHTTPService) deleteRecords(c *gin.Context) {
+	err := rhs.recorder.DeleteRecords(c.Param("job_id"))
+	c.JSON(200, gin.H{"data": nil, "error": rhs.handleErr(err)})
+}
+
+func (rhs *rHTTPService) deleteAllRecords(c *gin.Context) {
+	err := rhs.recorder.DeleteAllRecords()
+	c.JSON(200, gin.H{"data": nil, "error": rhs.handleErr(err)})
+}
+
 func (rhs *rHTTPService) registerRoutes(r *gin.Engine) {
 	r.GET("/recorder/records/:job_id", rhs.getRecords)
 	r.GET("/recorder/records", rhs.getRecords)
+	r.DELETE("/recorder/records/:job_id", rhs.deleteRecords)
+	r.DELETE("/recorder/records", rhs.deleteAllRecords)
 }
 
 func fixPositiveNum(num, numDef int) int {
