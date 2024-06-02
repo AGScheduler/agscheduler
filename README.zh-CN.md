@@ -34,7 +34,7 @@
   - [x] [Kafka](https://kafka.apache.org/)
 - 支持多种作业结果后端
   - [x] Memory (不支持集群模式)
-  - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
+  - [x] [GORM](https://gorm.io/) (任何 GORM 支持的 RDBMS 都能运行)
   - [x] [MongoDB](https://www.mongodb.com/)
 - 支持远程调用
   - [x] [gRPC](https://grpc.io/)
