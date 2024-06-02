@@ -25,12 +25,6 @@ English | [简体中文](README.zh-CN.md)
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
   - [x] [Elasticsearch](https://www.elastic.co/elasticsearch)
-- Supports remote call
-  - [x] [gRPC](https://grpc.io/)
-  - [x] HTTP
-- Supports cluster
-  - [x] Remote worker nodes
-  - [x] Scheduler high availability (Experimental)
 - Supports multiple job queues
   - [x] Memory (Cluster mode is not supported)
   - [x] [NSQ](https://nsq.io/)
@@ -42,6 +36,12 @@ English | [简体中文](README.zh-CN.md)
   - [x] Memory (Cluster mode is not supported)
   - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [x] [MongoDB](https://www.mongodb.com/)
+- Supports remote call
+  - [x] [gRPC](https://grpc.io/)
+  - [x] HTTP
+- Supports cluster
+  - [x] Remote worker nodes
+  - [x] Scheduler high availability (Experimental)
 
 ## Framework
 
@@ -128,6 +128,34 @@ func main() {
 
 > **_Since golang can't serialize functions, you need to register them with `RegisterFuncs` before `scheduler.Start()`_**
 
+## Queue
+
+```go
+mq := &queues.MemoryQueue{}
+brk := &agscheduler.Broker{
+	Queues: map[string]agscheduler.Queue{
+		"default": mq,
+	},
+	WorkersPerQueue: 2,
+}
+
+scheduler.SetStore(store)
+scheduler.SetBroker(brk)
+```
+
+## Result Collection
+
+```go
+mb := &backends.MemoryBackend{}
+rec := &agscheduler.Recorder{Backend: mb}
+
+scheduler.SetStore(store)
+scheduler.SetRecorder(rec)
+
+job, _ = scheduler.AddJob(job)
+records, _ := rec.GetRecords(job.Id)
+```
+
 ## gRPC
 
 ```go
@@ -210,34 +238,6 @@ cnNode2 := &agscheduler.ClusterNode{..., Mode: "HA"}
 cnNode3 := &agscheduler.ClusterNode{...}
 ```
 
-## Queue
-
-```go
-mq := &queues.MemoryQueue{}
-brk := &agscheduler.Broker{
-	Queues: map[string]agscheduler.Queue{
-		"default": mq,
-	},
-	WorkersPerQueue: 2,
-}
-
-scheduler.SetStore(store)
-scheduler.SetBroker(brk)
-```
-
-## Result Collection
-
-```go
-mb := &backends.MemoryBackend{}
-rec := &agscheduler.Recorder{Backend: mb}
-
-scheduler.SetStore(store)
-scheduler.SetRecorder(rec)
-
-job, _ = scheduler.AddJob(job)
-records, _ := rec.GetRecords(job.Id)
-```
-
 ## Base API
 
 | gRPC Function | HTTP Method | HTTP Path                 |
@@ -262,12 +262,6 @@ records, _ := rec.GetRecords(job.Id)
 | Start         | POST        | /scheduler/start          |
 | Stop          | POST        | /scheduler/stop           |
 
-## Cluster API
-
-| gRPC Function | HTTP Method | HTTP Path                 |
-|---------------|-------------|---------------------------|
-| GetNodes      | GET         | /cluster/nodes            |
-
 ## Recorder API
 
 | gRPC Function | HTTP Method | HTTP Path                 |
@@ -276,6 +270,12 @@ records, _ := rec.GetRecords(job.Id)
 | GetAllRecords | GET         | /recorder/records         |
 | DeleteRecords | DELETE      | /recorder/records/:job_id |
 | DeleteAllRecords | DELETE   | /recorder/records         |
+
+## Cluster API
+
+| gRPC Function | HTTP Method | HTTP Path                 |
+|---------------|-------------|---------------------------|
+| GetNodes      | GET         | /cluster/nodes            |
 
 ## Examples
 
