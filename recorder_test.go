@@ -170,7 +170,7 @@ func TestRecorderGetAllRecords(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, rs, 3)
 	assert.Equal(t, 3, int(total))
-	rs, _, err = rec.GetAllRecords(10, 10)
+	_, _, err = rec.GetAllRecords(10, 10)
 	assert.NoError(t, err)
 }
 
@@ -184,11 +184,13 @@ func TestRecorderDeleteRecords(t *testing.T) {
 	_, err = rec.RecordMetadata(j)
 	assert.NoError(t, err)
 	rs, _, err := rec.GetRecords(j.Id, 1, 10)
+	assert.NoError(t, err)
 	assert.Len(t, rs, 1)
 
 	err = rec.DeleteRecords(j.Id)
 	assert.NoError(t, err)
 	rs, _, err = rec.GetRecords(j.Id, 1, 10)
+	assert.NoError(t, err)
 	assert.Len(t, rs, 0)
 }
 
@@ -202,11 +204,13 @@ func TestRecorderDeleteAllRecords(t *testing.T) {
 	_, err = rec.RecordMetadata(j)
 	assert.NoError(t, err)
 	rs, _, err := rec.GetRecords(j.Id, 1, 10)
+	assert.NoError(t, err)
 	assert.Len(t, rs, 1)
 
 	err = rec.DeleteAllRecords()
 	assert.NoError(t, err)
 	rs, _, err = rec.GetRecords(j.Id, 1, 10)
+	assert.NoError(t, err)
 	assert.Len(t, rs, 0)
 }
 
