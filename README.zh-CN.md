@@ -25,12 +25,6 @@
   - [x] [MongoDB](https://www.mongodb.com/)
   - [x] [etcd](https://etcd.io/)
   - [x] [Elasticsearch](https://www.elastic.co/elasticsearch)
-- 支持远程调用
-  - [x] [gRPC](https://grpc.io/)
-  - [x] HTTP
-- 支持集群
-  - [x] 远程工作节点
-  - [x] 调度器高可用 (实验性)
 - 支持多种作业队列
   - [x] Memory (不支持集群模式)
   - [x] [NSQ](https://nsq.io/)
@@ -42,6 +36,12 @@
   - [x] Memory (不支持集群模式)
   - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [x] [MongoDB](https://www.mongodb.com/)
+- 支持远程调用
+  - [x] [gRPC](https://grpc.io/)
+  - [x] HTTP
+- 支持集群
+  - [x] 远程工作节点
+  - [x] 调度器高可用 (实验性)
 
 ## 架构
 
@@ -128,6 +128,34 @@ func main() {
 
 > **_由于 golang 无法序列化函数，所以 `scheduler.Start()` 之前需要使用 `RegisterFuncs` 注册函数_**
 
+## 队列
+
+```go
+mq := &queues.MemoryQueue{}
+brk := &agscheduler.Broker{
+	Queues: map[string]agscheduler.Queue{
+		"default": mq,
+	},
+	WorkersPerQueue: 2,
+}
+
+scheduler.SetStore(store)
+scheduler.SetBroker(brk)
+```
+
+## 结果回收
+
+```go
+mb := &backends.MemoryBackend{}
+rec := &agscheduler.Recorder{Backend: mb}
+
+scheduler.SetStore(store)
+scheduler.SetRecorder(rec)
+
+job, _ = scheduler.AddJob(job)
+records, _ := rec.GetRecords(job.Id)
+```
+
 ## gRPC
 
 ```go
@@ -160,7 +188,7 @@ bJob, _ := json.Marshal(mJob)
 resp, _ := http.Post("http://127.0.0.1:36370/scheduler/job", "application/json", bytes.NewReader(bJob))
 ```
 
-## Cluster
+## 集群
 
 ```go
 // Main Node
@@ -189,7 +217,7 @@ cserviceNode := &services.ClusterService{Cn: cnNode}
 cserviceNode.Start()
 ```
 
-## Cluster HA (高可用，实验性)
+## 集群 HA (高可用，实验性)
 
 ```go
 // HA 需要满足以下条件：
@@ -208,34 +236,6 @@ cnNode2 := &agscheduler.ClusterNode{..., Mode: "HA"}
 
 // Worker Node
 cnNode3 := &agscheduler.ClusterNode{...}
-```
-
-## Queue
-
-```go
-mq := &queues.MemoryQueue{}
-brk := &agscheduler.Broker{
-	Queues: map[string]agscheduler.Queue{
-		"default": mq,
-	},
-	WorkersPerQueue: 2,
-}
-
-scheduler.SetStore(store)
-scheduler.SetBroker(brk)
-```
-
-## 结果回收
-
-```go
-mb := &backends.MemoryBackend{}
-rec := &agscheduler.Recorder{Backend: mb}
-
-scheduler.SetStore(store)
-scheduler.SetRecorder(rec)
-
-job, _ = scheduler.AddJob(job)
-records, _ := rec.GetRecords(job.Id)
 ```
 
 ## Base API
@@ -262,12 +262,6 @@ records, _ := rec.GetRecords(job.Id)
 | Start         | POST        | /scheduler/start          |
 | Stop          | POST        | /scheduler/stop           |
 
-## Cluster API
-
-| gRPC Function | HTTP Method | HTTP Path                 |
-|---------------|-------------|---------------------------|
-| GetNodes      | GET         | /cluster/nodes            |
-
 ## Recorder API
 
 | gRPC Function | HTTP Method | HTTP Path                 |
@@ -276,6 +270,12 @@ records, _ := rec.GetRecords(job.Id)
 | GetAllRecords | GET         | /recorder/records         |
 | DeleteRecords | DELETE      | /recorder/records/:job_id |
 | DeleteAllRecords | DELETE   | /recorder/records         |
+
+## Cluster API
+
+| gRPC Function | HTTP Method | HTTP Path                 |
+|---------------|-------------|---------------------------|
+| GetNodes      | GET         | /cluster/nodes            |
 
 ## 示例
 
