@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/sony/sonyflake"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 // constant indicating the status of the job record
@@ -39,6 +42,61 @@ type RecordSlice []Record
 func (rs RecordSlice) Len() int           { return len(rs) }
 func (rs RecordSlice) Less(i, j int) bool { return rs[i].StartAt.After(rs[j].StartAt) }
 func (rs RecordSlice) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+
+// Used to gRPC Protobuf
+func RecordToPbRecordPtr(r Record) (*pb.Record, error) {
+	pbR := &pb.Record{
+		Id:      r.Id,
+		JobId:   r.JobId,
+		JobName: r.JobName,
+		Status:  r.Status,
+		Result:  r.Result,
+		StartAt: timestamppb.New(r.StartAt),
+		EndAt:   timestamppb.New(r.EndAt),
+	}
+
+	return pbR, nil
+}
+
+// Used to gRPC Protobuf
+func PbRecordPtrToRecord(pbRecord *pb.Record) Record {
+	return Record{
+		Id:      pbRecord.GetId(),
+		JobId:   pbRecord.GetJobId(),
+		JobName: pbRecord.GetJobName(),
+		Status:  pbRecord.GetStatus(),
+		Result:  pbRecord.GetResult(),
+		StartAt: pbRecord.GetStartAt().AsTime(),
+		EndAt:   pbRecord.GetEndAt().AsTime(),
+	}
+}
+
+// Used to gRPC Protobuf
+func RecordsToPbRecordsPtr(rs []Record) ([]*pb.Record, error) {
+	pbRs := []*pb.Record{}
+
+	for _, r := range rs {
+		pbR, err := RecordToPbRecordPtr(r)
+		if err != nil {
+			return []*pb.Record{}, err
+		}
+
+		pbRs = append(pbRs, pbR)
+	}
+
+	return pbRs, nil
+}
+
+// Used to gRPC Protobuf
+func PbRecordsPtrToRecords(pbRs []*pb.Record) []Record {
+	rs := []Record{}
+
+	for _, pbR := range pbRs {
+		rs = append(rs, PbRecordPtrToRecord(pbR))
+	}
+
+	return rs
+}
 
 // When using a Recorder, the results of the job runs will be recorded to the specified backend.
 type Recorder struct {

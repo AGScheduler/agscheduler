@@ -40,10 +40,15 @@ func (rhs *rHTTPService) getRecords(c *gin.Context) {
 	var err error
 	jobId := c.Param("job_id")
 	if jobId != "" {
-		rs, total, err = rhs.recorder.GetRecords(c.Param("job_id"), r.Page, r.PageSize)
+		rs, total, err = rhs.recorder.GetRecords(jobId, r.Page, r.PageSize)
 	} else {
 		rs, total, err = rhs.recorder.GetAllRecords(r.Page, r.PageSize)
 	}
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"data": nil, "error": rhs.handleErr(err)})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"res":       rs,

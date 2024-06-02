@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package services;
+option go_package="./;services";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+import "scheduler.proto";
+
+message RecordsReq {
+  string job_id = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+}
+
+message RecordsAllReq {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message Record {
+  uint64 id = 1;
+  string job_id = 2;
+  string job_name = 3;
+  string status = 4;
+  string result = 5;
+  google.protobuf.Timestamp start_at = 6;
+  google.protobuf.Timestamp end_at = 7;
+}
+
+message RecordsResp {
+  repeated Record records = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int64 total = 4;
+}
+
+service Recorder {
+  rpc GetRecords (RecordsReq) returns (RecordsResp) {}
+
+  rpc GetAllRecords (RecordsAllReq) returns (RecordsResp) {}
+
+  rpc DeleteRecords (JobId) returns (google.protobuf.Empty) {}
+
+  rpc DeleteAllRecords (google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}

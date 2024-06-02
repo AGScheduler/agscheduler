@@ -8,7 +8,20 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
+	pb "github.com/agscheduler/agscheduler/services/proto"
 )
+
+func getRecord() agscheduler.Record {
+	return agscheduler.Record{
+		Id:      uint64(1),
+		JobId:   "1",
+		JobName: "Job",
+		Status:  agscheduler.RECORD_STATUS_RUNNING,
+		Result:  "",
+		StartAt: time.Time{},
+		EndAt:   time.Time{},
+	}
+}
 
 func TestRecordSort(t *testing.T) {
 	rs := []agscheduler.Record{}
@@ -26,6 +39,48 @@ func TestRecordSort(t *testing.T) {
 	sort.Sort(agscheduler.RecordSlice(rs))
 
 	assert.Equal(t, r2.StartAt, rs[0].StartAt)
+}
+
+func TestRecordToPbRecordPtr(t *testing.T) {
+	r := getRecord()
+	pbR, err := agscheduler.RecordToPbRecordPtr(r)
+	assert.NoError(t, err)
+
+	assert.IsType(t, &pb.Record{}, pbR)
+	assert.NotEmpty(t, pbR)
+}
+
+func TestPbRecordPtrToRecord(t *testing.T) {
+	r := getRecord()
+	pbR, err := agscheduler.RecordToPbRecordPtr(r)
+	assert.NoError(t, err)
+	r = agscheduler.PbRecordPtrToRecord(pbR)
+
+	assert.IsType(t, agscheduler.Record{}, r)
+	assert.NotEmpty(t, r)
+}
+
+func TestRecordsToPbRecordsPtr(t *testing.T) {
+	rs := []agscheduler.Record{}
+	rs = append(rs, getRecord())
+	rs = append(rs, getRecord())
+	pbRs, err := agscheduler.RecordsToPbRecordsPtr(rs)
+	assert.NoError(t, err)
+
+	assert.IsType(t, []*pb.Record{}, pbRs)
+	assert.Len(t, pbRs, 2)
+}
+
+func TestPbRecordsPtrToRecords(t *testing.T) {
+	rs := []agscheduler.Record{}
+	rs = append(rs, getRecord())
+	rs = append(rs, getRecord())
+	pbRs, err := agscheduler.RecordsToPbRecordsPtr(rs)
+	assert.NoError(t, err)
+	rs = agscheduler.PbRecordsPtrToRecords(pbRs)
+
+	assert.IsType(t, []agscheduler.Record{}, rs)
+	assert.Len(t, rs, 2)
 }
 
 func TestRecorderRecordMetadata(t *testing.T) {
