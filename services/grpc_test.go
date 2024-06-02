@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/backends"
 	pb "github.com/agscheduler/agscheduler/services/proto"
 	"github.com/agscheduler/agscheduler/stores"
 )
@@ -35,10 +36,15 @@ func TestGRPCService(t *testing.T) {
 		agscheduler.FuncPkg{Func: dryRunGRPC},
 	)
 
-	store := &stores.MemoryStore{}
-
 	scheduler := &agscheduler.Scheduler{}
+
+	store := &stores.MemoryStore{}
 	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
+
+	mb := &backends.MemoryBackend{}
+	recorder := &agscheduler.Recorder{Backend: mb}
+	err = scheduler.SetRecorder(recorder)
 	assert.NoError(t, err)
 
 	grservice := GRPCService{
@@ -55,6 +61,8 @@ func TestGRPCService(t *testing.T) {
 	testGRPC(t, clientB)
 	clientS := pb.NewSchedulerClient(conn)
 	testSchedulerGRPC(t, clientS)
+	clientR := pb.NewRecorderClient(conn)
+	testRecorderGRPC(t, clientS, clientR)
 
 	err = grservice.Stop()
 	assert.NoError(t, err)

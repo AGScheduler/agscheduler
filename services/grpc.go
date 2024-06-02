@@ -85,6 +85,11 @@ func (s *GRPCService) Start() error {
 		pb.RegisterClusterServer(s.srv, cgrs)
 	}
 
+	if s.Scheduler.HasRecorder() {
+		rgrs := &rGRPCService{recorder: agscheduler.GetRecorder(s.Scheduler)}
+		pb.RegisterRecorderServer(s.srv, rgrs)
+	}
+
 	slog.Info(fmt.Sprintf("gRPC Service listening at: %s", lis.Addr()))
 
 	go func() {
