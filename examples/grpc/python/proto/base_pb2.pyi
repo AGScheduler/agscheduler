@@ -7,7 +7,7 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class Info(_message.Message):
+class InfoResp(_message.Message):
     __slots__ = ("info",)
     INFO_FIELD_NUMBER: _ClassVar[int]
     info: _struct_pb2.Struct
@@ -21,7 +21,7 @@ class Func(_message.Message):
     info: str
     def __init__(self, name: _Optional[str] = ..., info: _Optional[str] = ...) -> None: ...
 
-class Funcs(_message.Message):
+class FuncsResp(_message.Message):
     __slots__ = ("funcs",)
     FUNCS_FIELD_NUMBER: _ClassVar[int]
     funcs: _containers.RepeatedCompositeFieldContainer[Func]
