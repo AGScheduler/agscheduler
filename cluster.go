@@ -138,12 +138,11 @@ func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
 }
 
 // Used to gRPC Protobuf
-func (cn *ClusterNode) NodeMapToPbNodesPtr() *pb.Nodes {
-	pbN := pb.Nodes{}
-	pbN.Nodes = make(map[string]*pb.Node)
+func (cn *ClusterNode) NodeMapToPbNodesPtr() map[string]*pb.Node {
+	pbNs := make(map[string]*pb.Node)
 
 	for k, v := range cn.NodeMapCopy() {
-		pbN.Nodes[k] = &pb.Node{
+		pbNs[k] = &pb.Node{
 			EndpointMain:      v["endpoint_main"].(string),
 			Endpoint:          v["endpoint"].(string),
 			EndpointGrpc:      v["endpoint_grpc"].(string),
@@ -157,7 +156,7 @@ func (cn *ClusterNode) NodeMapToPbNodesPtr() *pb.Nodes {
 		}
 	}
 
-	return &pbN
+	return pbNs
 }
 
 func (cn *ClusterNode) MainNode() map[string]any {

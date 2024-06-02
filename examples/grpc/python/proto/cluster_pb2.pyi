@@ -31,7 +31,7 @@ class Node(_message.Message):
     last_heartbeat_time: _timestamp_pb2.Timestamp
     def __init__(self, endpoint_main: _Optional[str] = ..., endpoint: _Optional[str] = ..., endpoint_grpc: _Optional[str] = ..., endpoint_http: _Optional[str] = ..., queue: _Optional[str] = ..., mode: _Optional[str] = ..., version: _Optional[str] = ..., health: bool = ..., register_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., last_heartbeat_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
-class Nodes(_message.Message):
+class NodesResp(_message.Message):
     __slots__ = ("nodes",)
     class NodesEntry(_message.Message):
         __slots__ = ("key", "value")

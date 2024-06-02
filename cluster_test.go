@@ -92,7 +92,7 @@ func TestNodeMapToPbNodesPtr(t *testing.T) {
 	cn.registerNode(cn)
 	pbNs := cn.NodeMapToPbNodesPtr()
 
-	assert.IsType(t, &pb.Nodes{}, pbNs)
+	assert.IsType(t, map[string]*pb.Node{}, pbNs)
 	assert.NotEmpty(t, pbNs)
 }
 

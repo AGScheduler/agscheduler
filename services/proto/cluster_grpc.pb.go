@@ -27,7 +27,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ClusterClient interface {
-	GetNodes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Nodes, error)
+	GetNodes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NodesResp, error)
 }
 
 type clusterClient struct {
@@ -38,8 +38,8 @@ func NewClusterClient(cc grpc.ClientConnInterface) ClusterClient {
 	return &clusterClient{cc}
 }
 
-func (c *clusterClient) GetNodes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*Nodes, error) {
-	out := new(Nodes)
+func (c *clusterClient) GetNodes(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*NodesResp, error) {
+	out := new(NodesResp)
 	err := c.cc.Invoke(ctx, Cluster_GetNodes_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (c *clusterClient) GetNodes(ctx context.Context, in *emptypb.Empty, opts ..
 // All implementations must embed UnimplementedClusterServer
 // for forward compatibility
 type ClusterServer interface {
-	GetNodes(context.Context, *emptypb.Empty) (*Nodes, error)
+	GetNodes(context.Context, *emptypb.Empty) (*NodesResp, error)
 	mustEmbedUnimplementedClusterServer()
 }
 
@@ -59,7 +59,7 @@ type ClusterServer interface {
 type UnimplementedClusterServer struct {
 }
 
-func (UnimplementedClusterServer) GetNodes(context.Context, *emptypb.Empty) (*Nodes, error) {
+func (UnimplementedClusterServer) GetNodes(context.Context, *emptypb.Empty) (*NodesResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetNodes not implemented")
 }
 func (UnimplementedClusterServer) mustEmbedUnimplementedClusterServer() {}

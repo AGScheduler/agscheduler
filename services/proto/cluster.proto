@@ -19,10 +19,10 @@ message Node {
   google.protobuf.Timestamp  last_heartbeat_time = 10;
 }
 
-message Nodes {
+message NodesResp {
   map<string, Node> nodes = 1;
 }
 
 service Cluster {
-  rpc GetNodes (google.protobuf.Empty) returns (Nodes) {}
+  rpc GetNodes (google.protobuf.Empty) returns (NodesResp) {}
 }
