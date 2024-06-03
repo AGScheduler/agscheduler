@@ -21,19 +21,19 @@ const (
 // Carry the information of the job run.
 type Record struct {
 	// Unique Id
-	Id uint64
+	Id uint64 `json:"id"`
 	// Job id
-	JobId string
+	JobId string `json:"job_id"`
 	// Job name
-	JobName string
+	JobName string `json:"job_name"`
 	// Optional: `RECORD_STATUS_RUNNING` | `RECORD_STATUS_COMPLETED` | `RECORD_STATUS_ERROR` | `RECORD_STATUS_TIMEOUT`
-	Status string
+	Status string `json:"status"`
 	// The result of the job run
-	Result string
+	Result string `json:"result"`
 	// Start time
-	StartAt time.Time
+	StartAt time.Time `json:"start_at"`
 	// End time
-	EndAt time.Time
+	EndAt time.Time `json:"end_at"`
 }
 
 // `sort.Interface`, sorted by 'StartAt', descend.
