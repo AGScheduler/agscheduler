@@ -81,7 +81,7 @@ func (b *GORMBackend) _getRecords(page, pageSize int, query any, args ...any) ([
 		return nil, total, err
 	}
 
-	var recordList []agscheduler.Record
+	recordList := []agscheduler.Record{}
 	for _, rs := range rsList {
 		recordList = append(recordList, agscheduler.Record{
 			Id:      rs.ID,
