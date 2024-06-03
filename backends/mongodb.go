@@ -100,7 +100,7 @@ func (b *MongoDBBackend) _getRecords(page, pageSize int, filter any) ([]agschedu
 		return nil, total, err
 	}
 
-	var recordList []agscheduler.Record
+	recordList := []agscheduler.Record{}
 	for cursor.Next(ctx) {
 		var result bson.M
 		err := cursor.Decode(&result)
