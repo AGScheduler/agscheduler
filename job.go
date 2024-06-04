@@ -107,6 +107,10 @@ func (j *Job) init() error {
 		j.Timeout = "1h"
 	}
 
+	if j.Queues == nil {
+		j.Queues = []string{}
+	}
+
 	nextRunTime, err := CalcNextRunTime(*j)
 	if err != nil {
 		return err
