@@ -196,6 +196,8 @@ func (cn *ClusterNode) IsMainNode() bool {
 // Initialization functions for each node,
 // called when the scheduler run `SetClusterNode`.
 func (cn *ClusterNode) init(ctx context.Context) error {
+	slog.Info("ClusterNode init...")
+
 	if cn.Endpoint == "" {
 		cn.Endpoint = "127.0.0.1:36380"
 	}
