@@ -53,6 +53,8 @@ func (s *Scheduler) IsRunning() bool {
 
 // Bind the store
 func (s *Scheduler) SetStore(sto Store) error {
+	slog.Info("Scheduler set Store.")
+
 	s.store = sto
 	if err := s.store.Init(); err != nil {
 		return err
@@ -67,6 +69,8 @@ func (s *Scheduler) getStore() Store {
 
 // Bind the cluster node
 func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
+	slog.Info("Scheduler set ClusterNode.")
+
 	s.clusterNode = cn
 	cn.Scheduler = s
 	if err := s.clusterNode.init(ctx); err != nil {
@@ -86,6 +90,8 @@ func (s *Scheduler) getClusterNode() *ClusterNode {
 
 // Bind the broker
 func (s *Scheduler) SetBroker(ctx context.Context, brk *Broker) error {
+	slog.Info("Scheduler set Broker.")
+
 	s.broker = brk
 	brk.scheduler = s
 	if err := s.broker.init(ctx); err != nil {
@@ -105,6 +111,8 @@ func (s *Scheduler) HasBroker() bool {
 
 // Bind the recorder
 func (s *Scheduler) SetRecorder(rec *Recorder) error {
+	slog.Info("Scheduler set Recorder.")
+
 	s.recorder = rec
 	if err := s.recorder.init(); err != nil {
 		return err

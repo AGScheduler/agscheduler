@@ -1,6 +1,8 @@
 package agscheduler
 
 import (
+	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -114,6 +116,8 @@ type Recorder struct {
 // Initialization functions for each Recorder,
 // called when the scheduler run `SetRecorder`.
 func (r *Recorder) init() error {
+	slog.Info("Recorder init...")
+
 	sf, err := sonyflake.New(sonyflake.Settings{
 		StartTime:      time.Date(2014, 9, 1, 0, 0, 0, 0, time.UTC),
 		MachineID:      nil,
@@ -178,12 +182,16 @@ func (r *Recorder) DeleteRecords(jId string) error {
 	r.backendM.Lock()
 	defer r.backendM.Unlock()
 
+	slog.Info(fmt.Sprintf("Recorder delete all Records for JobId `%s`.", jId))
+
 	return r.Backend.DeleteRecords(jId)
 }
 
 func (r *Recorder) DeleteAllRecords() error {
 	r.backendM.Lock()
 	defer r.backendM.Unlock()
+
+	slog.Info("Recorder delete all Records.")
 
 	return r.Backend.DeleteAllRecords()
 }

@@ -201,6 +201,8 @@ func (rf *Raft) RPCHeartbeat(args HeartbeatArgs, reply *HeartbeatReply) error {
 }
 
 func (rf *Raft) start(ctx context.Context) {
+	slog.Info("Raft start.")
+
 	rf.role = RAFT_FOLLOWER
 	rf.currentTerm = 0
 	rf.votedFor = ""

@@ -25,10 +25,13 @@ type Broker struct {
 // Initialization functions for each broker,
 // called when the scheduler run `SetBroker`.
 func (b *Broker) init(ctx context.Context) error {
+	slog.Info("Broker init...")
+
 	if b.WorkersPerQueue <= 0 {
 		b.WorkersPerQueue = 2
 	}
 
+	slog.Info("Broker worker start.")
 	for _, q := range b.Queues {
 		if err := q.Init(ctx); err != nil {
 			return err
