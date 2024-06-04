@@ -43,7 +43,6 @@ func (s *HTTPService) Start() error {
 		s.Address = "127.0.0.1:36370"
 	}
 
-	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.Use(cors.Default())
 
