@@ -1,9 +1,8 @@
 package agscheduler
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"runtime"
@@ -103,6 +102,10 @@ func (j *Job) init() error {
 		j.FuncName = getFuncName(j.Func)
 	}
 
+	if j.Args == nil {
+		j.Args = map[string]any{}
+	}
+
 	if j.Timeout == "" {
 		j.Timeout = "1h"
 	}
@@ -176,11 +179,11 @@ func (j Job) String() string {
 }
 
 func (j Job) DeepCopy() (Job, error) {
-	bJ, err := StateDump(j)
+	bJ, err := JobMarshal(j)
 	if err != nil {
 		return Job{}, err
 	}
-	cJ, err := StateLoad(bJ)
+	cJ, err := JobUnmarshal(bJ)
 	if err != nil {
 		return Job{}, err
 	}
@@ -188,22 +191,14 @@ func (j Job) DeepCopy() (Job, error) {
 }
 
 // Serialize Job and convert to Bytes
-func StateDump(j Job) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(j)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+func JobMarshal(j Job) ([]byte, error) {
+	return json.Marshal(j)
 }
 
 // Deserialize Bytes and convert to Job
-func StateLoad(state []byte) (Job, error) {
+func JobUnmarshal(bJ []byte) (Job, error) {
 	var j Job
-	buf := bytes.NewBuffer(state)
-	dec := gob.NewDecoder(buf)
-	err := dec.Decode(&j)
+	err := json.Unmarshal(bJ, &j)
 	if err != nil {
 		return Job{}, err
 	}

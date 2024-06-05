@@ -32,13 +32,13 @@ func (s *RedisStore) Init() error {
 }
 
 func (s *RedisStore) AddJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
 
 	_, err = s.RDB.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.HSet(ctx, s.JobsKey, j.Id, state)
+		pipe.HSet(ctx, s.JobsKey, j.Id, bJ)
 		pipe.ZAdd(ctx, s.RunTimesKey, redis.Z{Score: float64(j.NextRunTime.UTC().Unix()), Member: j.Id})
 		return nil
 	})
@@ -50,7 +50,7 @@ func (s *RedisStore) AddJob(j agscheduler.Job) error {
 }
 
 func (s *RedisStore) GetJob(id string) (agscheduler.Job, error) {
-	state, err := s.RDB.HGet(ctx, s.JobsKey, id).Bytes()
+	bJ, err := s.RDB.HGet(ctx, s.JobsKey, id).Bytes()
 	if err == redis.Nil {
 		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
@@ -58,18 +58,18 @@ func (s *RedisStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, err
 	}
 
-	return agscheduler.StateLoad(state)
+	return agscheduler.JobUnmarshal(bJ)
 }
 
 func (s *RedisStore) GetAllJobs() ([]agscheduler.Job, error) {
-	mapStates, err := s.RDB.HGetAll(ctx, s.JobsKey).Result()
+	mapBJs, err := s.RDB.HGetAll(ctx, s.JobsKey).Result()
 	if err != nil {
 		return nil, err
 	}
 
 	var jobList []agscheduler.Job
-	for _, v := range mapStates {
-		j, err := agscheduler.StateLoad([]byte(v))
+	for _, v := range mapBJs {
+		j, err := agscheduler.JobUnmarshal([]byte(v))
 		if err != nil {
 			return nil, err
 		}
@@ -80,13 +80,13 @@ func (s *RedisStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *RedisStore) UpdateJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
 
 	_, err = s.RDB.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.HSet(ctx, s.JobsKey, j.Id, state)
+		pipe.HSet(ctx, s.JobsKey, j.Id, bJ)
 		pipe.ZAdd(ctx, s.RunTimesKey, redis.Z{Score: float64(j.NextRunTime.UTC().Unix()), Member: j.Id})
 		return nil
 	})

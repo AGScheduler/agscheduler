@@ -34,7 +34,7 @@ func (s *EtcdStore) Init() error {
 }
 
 func (s *EtcdStore) AddJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func (s *EtcdStore) AddJob(j agscheduler.Job) error {
 	rPath := path.Join(s.RunTimesPath, j.Id)
 
 	txn := s.Cli.Txn(ctx).If().Then(
-		clientv3.OpPut(jPath, string(state)),
+		clientv3.OpPut(jPath, string(bJ)),
 		clientv3.OpPut(rPath, strconv.Itoa(int(j.NextRunTime.UTC().Unix()))),
 	)
 	if _, err := txn.Commit(); err != nil {
@@ -64,8 +64,8 @@ func (s *EtcdStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
 
-	state := resp.Kvs[0].Value
-	return agscheduler.StateLoad(state)
+	bJ := resp.Kvs[0].Value
+	return agscheduler.JobUnmarshal(bJ)
 }
 
 func (s *EtcdStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -76,7 +76,7 @@ func (s *EtcdStore) GetAllJobs() ([]agscheduler.Job, error) {
 
 	var jobList []agscheduler.Job
 	for _, kv := range resp.Kvs {
-		j, err := agscheduler.StateLoad(kv.Value)
+		j, err := agscheduler.JobUnmarshal(kv.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +87,7 @@ func (s *EtcdStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *EtcdStore) UpdateJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (s *EtcdStore) UpdateJob(j agscheduler.Job) error {
 	rPath := path.Join(s.RunTimesPath, j.Id)
 
 	txn := s.Cli.Txn(ctx).If(clientv3.Compare(clientv3.Version(jPath), ">", 0)).Then(
-		clientv3.OpPut(jPath, string(state)),
+		clientv3.OpPut(jPath, string(bJ)),
 		clientv3.OpPut(rPath, strconv.Itoa(int(j.NextRunTime.UTC().Unix()))),
 	)
 	if _, err := txn.Commit(); err != nil {

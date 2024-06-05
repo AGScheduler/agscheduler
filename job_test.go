@@ -49,28 +49,28 @@ func TestJobDeepCopy(t *testing.T) {
 	assert.Empty(t, j.Args)
 }
 
-func TestJobStateDump(t *testing.T) {
+func TestJobMarshal(t *testing.T) {
 	j := getJob()
-	state, err := StateDump(j)
+	bJ, err := JobMarshal(j)
 
-	assert.IsType(t, []byte{}, state)
-	assert.NotEmpty(t, state)
+	assert.IsType(t, []byte{}, bJ)
+	assert.NotEmpty(t, bJ)
 	assert.NoError(t, err)
 }
 
-func TestJobStateLoad(t *testing.T) {
+func TestJobUnmarshal(t *testing.T) {
 	j := getJob()
-	state, err := StateDump(j)
+	bJ, err := JobMarshal(j)
 	assert.NoError(t, err)
-	j, err = StateLoad(state)
+	j, err = JobUnmarshal(bJ)
 	assert.NoError(t, err)
 
 	assert.IsType(t, Job{}, j)
 	assert.NotEmpty(t, j)
 }
 
-func TestJobStateLoadError(t *testing.T) {
-	j, err := StateLoad([]byte("job"))
+func TestJobUnmarshalError(t *testing.T) {
+	j, err := JobUnmarshal([]byte("job"))
 	assert.Error(t, err)
 
 	assert.Empty(t, j)

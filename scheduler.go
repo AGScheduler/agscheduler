@@ -323,7 +323,7 @@ func (s *Scheduler) pushJob(queue string, j Job) {
 		}
 	}()
 
-	bJ, err := StateDump(j)
+	bJ, err := JobMarshal(j)
 	if err != nil {
 		panic(err)
 	}
