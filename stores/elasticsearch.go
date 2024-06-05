@@ -26,7 +26,7 @@ type ElasticsearchStore struct {
 
 type doc struct {
 	NextRunTime int64  `json:"next_run_time"`
-	State       []byte `json:"state"`
+	Data        []byte `json:"data"`
 }
 
 func (s *ElasticsearchStore) Init() error {
@@ -49,7 +49,7 @@ func (s *ElasticsearchStore) Init() error {
 }
 
 func (s *ElasticsearchStore) AddJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (s *ElasticsearchStore) AddJob(j agscheduler.Job) error {
 	_, err = s.TClient.Index(s.Index).Id(j.Id).Request(
 		doc{
 			j.NextRunTime.UTC().Unix(),
-			state,
+			bJ,
 		},
 	).Refresh(refresh.True).Do(ctx)
 
@@ -79,7 +79,7 @@ func (s *ElasticsearchStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, err
 	}
 
-	return agscheduler.StateLoad(d.State)
+	return agscheduler.JobUnmarshal(d.Data)
 }
 
 func (s *ElasticsearchStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -99,7 +99,7 @@ func (s *ElasticsearchStore) GetAllJobs() ([]agscheduler.Job, error) {
 		if err != nil {
 			return nil, err
 		}
-		aj, err := agscheduler.StateLoad(d.State)
+		aj, err := agscheduler.JobUnmarshal(d.Data)
 		if err != nil {
 			return nil, err
 		}
@@ -110,7 +110,7 @@ func (s *ElasticsearchStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *ElasticsearchStore) UpdateJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (s *ElasticsearchStore) UpdateJob(j agscheduler.Job) error {
 	_, err = s.TClient.Update(s.Index, j.Id).Doc(
 		doc{
 			j.NextRunTime.UTC().Unix(),
-			state,
+			bJ,
 		},
 	).Refresh(refresh.True).Do(ctx)
 

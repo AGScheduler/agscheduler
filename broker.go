@@ -51,9 +51,9 @@ func (b *Broker) worker(ctx context.Context, q Queue) {
 		case <-ctx.Done():
 			return
 		case bJ := <-q.PullJob():
-			j, err := StateLoad(bJ)
+			j, err := JobUnmarshal(bJ)
 			if err != nil {
-				slog.Error(fmt.Sprintf("Job `%s` StateLoad error: `%s`", bJ, err))
+				slog.Error(fmt.Sprintf("Job `%s` JobUnmarshal error: `%s`", bJ, err))
 				continue
 			}
 

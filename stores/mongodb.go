@@ -49,7 +49,7 @@ func (s *MongoDBStore) Init() error {
 }
 
 func (s *MongoDBStore) AddJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (s *MongoDBStore) AddJob(j agscheduler.Job) error {
 		bson.M{
 			"_id":           j.Id,
 			"next_run_time": j.NextRunTime.UTC().Unix(),
-			"state":         state,
+			"data":          bJ,
 		},
 	)
 
@@ -75,8 +75,8 @@ func (s *MongoDBStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, err
 	}
 
-	state := result["state"].(primitive.Binary).Data
-	return agscheduler.StateLoad(state)
+	bJ := result["data"].(primitive.Binary).Data
+	return agscheduler.JobUnmarshal(bJ)
 }
 
 func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -92,8 +92,8 @@ func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
 		if err != nil {
 			return nil, err
 		}
-		state := result["state"].(primitive.Binary).Data
-		aj, err := agscheduler.StateLoad(state)
+		bJ := result["data"].(primitive.Binary).Data
+		aj, err := agscheduler.JobUnmarshal(bJ)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +104,7 @@ func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *MongoDBStore) UpdateJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
@@ -114,7 +114,7 @@ func (s *MongoDBStore) UpdateJob(j agscheduler.Job) error {
 		bson.M{"_id": j.Id},
 		bson.M{
 			"next_run_time": j.NextRunTime.UTC().Unix(),
-			"state":         state,
+			"data":          bJ,
 		},
 	).Decode(&result)
 

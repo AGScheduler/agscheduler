@@ -15,7 +15,7 @@ const GORM_TABLE_NAME = "jobs"
 type Jobs struct {
 	ID          string    `gorm:"size:64;primaryKey"`
 	NextRunTime time.Time `gorm:"index"`
-	State       []byte    `gorm:"type:bytes;not null"`
+	Data        []byte    `gorm:"type:bytes;not null"`
 }
 
 // Stores jobs in a database table using GORM.
@@ -38,12 +38,12 @@ func (s *GORMStore) Init() error {
 }
 
 func (s *GORMStore) AddJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
 
-	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State: state}
+	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, Data: bJ}
 
 	return s.DB.Table(s.TableName).Create(&js).Error
 }
@@ -59,7 +59,7 @@ func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 		return agscheduler.Job{}, agscheduler.JobNotFoundError(id)
 	}
 
-	return agscheduler.StateLoad(js.State)
+	return agscheduler.JobUnmarshal(js.Data)
 }
 
 func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
@@ -71,7 +71,7 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 
 	var jobList []agscheduler.Job
 	for _, js := range jsList {
-		aj, err := agscheduler.StateLoad(js.State)
+		aj, err := agscheduler.JobUnmarshal(js.Data)
 		if err != nil {
 			return nil, err
 		}
@@ -82,12 +82,12 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 }
 
 func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
-	state, err := agscheduler.StateDump(j)
+	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
 	}
 
-	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, State: state}
+	js := Jobs{ID: j.Id, NextRunTime: j.NextRunTime, Data: bJ}
 
 	return s.DB.Table(s.TableName).Save(js).Error
 }
