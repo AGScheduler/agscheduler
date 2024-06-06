@@ -39,14 +39,19 @@ type Job struct {
 	// Optional: `JOB_TYPE_DATETIME` | `JOB_TYPE_INTERVAL` | `JOB_TYPE_CRON`
 	Type string `json:"type"`
 	// It can be used when Type is `JOB_TYPE_DATETIME`.
+	// e.g. `2023-09-22 07:30:08`
 	StartAt string `json:"start_at"`
 	// This field is useless.
 	EndAt string `json:"end_at"`
 	// It can be used when Type is `JOB_TYPE_INTERVAL`.
+	// e.g. `2s`
 	Interval string `json:"interval"`
 	// It can be used when Type is `JOB_TYPE_CRON`.
+	// See `https://en.wikipedia.org/wiki/Cron`.
+	// e.g. `*/1 * * * *`
 	CronExpr string `json:"cron_expr"`
 	// Refer to `time.LoadLocation`.
+	// See `https://en.wikipedia.org/wiki/List_of_tz_database_time_zones`
 	// Default: `UTC`
 	Timezone string `json:"timezone"`
 	// The job actually runs the function,
@@ -56,6 +61,8 @@ type Job struct {
 	Func func(context.Context, Job) (result string) `json:"-"`
 	// The actual path of `Func`.
 	// This field has a higher priority than `Func`
+	// e.g. `main.xxxFunc`
+	//      `github.com/agscheduler/agscheduler/examples.PrintMsg`
 	FuncName string `json:"func_name"`
 	// Arguments for `Func`.
 	Args map[string]any `json:"args"`
