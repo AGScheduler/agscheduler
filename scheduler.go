@@ -178,8 +178,15 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 
 	slog.Info(fmt.Sprintf("Scheduler add job `%s`.", j.FullName()))
 
+	lastNextWakeupInterval := s.getNextWakeupInterval()
+
 	if err := s.store.AddJob(j); err != nil {
 		return Job{}, err
+	}
+
+	nextWakeupInterval := s.getNextWakeupInterval()
+	if nextWakeupInterval < lastNextWakeupInterval {
+		s.wakeup()
 	}
 
 	return j, nil
