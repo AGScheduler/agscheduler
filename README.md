@@ -163,6 +163,7 @@ records, _ := rec.GetRecords(job.Id)
 grservice := services.GRPCService{
 	Scheduler: scheduler,
 	Address:   "127.0.0.1:36360",
+	// PasswordSha2: "xxxxxx",
 }
 grservice.Start()
 
@@ -179,7 +180,7 @@ client.AddJob(ctx, job)
 hservice := services.HTTPService{
 	Scheduler: scheduler,
 	Address:   "127.0.0.1:36370",
-	// PasswordSha2: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+	// PasswordSha2: "xxxxxx",
 }
 hservice.Start()
 

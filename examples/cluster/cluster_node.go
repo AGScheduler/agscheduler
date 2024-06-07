@@ -65,7 +65,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	cservice := &services.ClusterService{Cn: cn}
+	cservice := &services.ClusterService{
+		Cn: cn,
+		// PasswordSha2: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+	}
 	err = cservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start cluster service: %s", err))
