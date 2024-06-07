@@ -30,6 +30,7 @@ func main() {
 	hservice := services.HTTPService{
 		Scheduler: scheduler,
 		Address:   "127.0.0.1:36370",
+		// PasswordSha2: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
 	}
 	err = hservice.Start()
 	if err != nil {

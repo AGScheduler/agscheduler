@@ -34,6 +34,10 @@ type HTTPService struct {
 
 	// Default: `127.0.0.1:36370`
 	Address string
+	// SHA256 encrypted authorization password, e.g. here is admin
+	// echo -n admin | shasum -a 256
+	// `8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918`
+	PasswordSha2 string
 
 	srv *http.Server
 }
@@ -45,6 +49,7 @@ func (s *HTTPService) Start() error {
 
 	r := gin.Default()
 	r.Use(cors.Default())
+	r.Use(ginVerifyPassword(s.PasswordSha2))
 
 	cp := &ClusterProxy{Scheduler: s.Scheduler}
 	r.Use(cp.GinProxy())
