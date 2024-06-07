@@ -20,6 +20,8 @@ type result struct {
 }
 
 func runExampleHTTP(baseUrl string) {
+	client := &http.Client{}
+
 	mJob1 := map[string]any{
 		"name":      "Job1",
 		"type":      "interval",
@@ -29,7 +31,9 @@ func runExampleHTTP(baseUrl string) {
 		"args":      map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
 	bJob1, _ := json.Marshal(mJob1)
-	resp, _ := http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJob1))
+	req, _ := http.NewRequest(http.MethodPost, baseUrl+"/scheduler/job", bytes.NewReader(bJob1))
+	// req.Header.Add("Auth-Password-SHA2", "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918")
+	resp, _ := client.Do(req)
 	body, _ := io.ReadAll(resp.Body)
 	rJob1 := &result{}
 	json.Unmarshal(body, &rJob1)
