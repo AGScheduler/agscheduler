@@ -9,7 +9,8 @@ import (
 )
 
 type ClusterService struct {
-	Cn *agscheduler.ClusterNode
+	Cn           *agscheduler.ClusterNode
+	PasswordSha2 string
 
 	grs *GRPCService
 	hs  *HTTPService
@@ -24,7 +25,10 @@ func (s *ClusterService) Start() error {
 		return err
 	}
 
-	s.hs = &HTTPService{Scheduler: s.Cn.Scheduler}
+	s.hs = &HTTPService{
+		Scheduler:    s.Cn.Scheduler,
+		PasswordSha2: s.PasswordSha2,
+	}
 	s.hs.Address = s.Cn.EndpointHTTP
 	err = s.hs.Start()
 	if err != nil {
