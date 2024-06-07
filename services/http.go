@@ -54,7 +54,7 @@ func (s *HTTPService) Start() error {
 	r.Use(ginVerifyPassword(s.PasswordSha2))
 
 	cp := &ClusterProxy{Scheduler: s.Scheduler}
-	r.Use(cp.GinProxy())
+	r.Use(cp.ginProxy())
 
 	bhs := &bHTTPService{scheduler: s.Scheduler}
 	bhs.registerRoutes(r)

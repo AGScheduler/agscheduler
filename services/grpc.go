@@ -41,22 +41,17 @@ func (bgrs *bGRPCService) GetFuncs(ctx context.Context, in *emptypb.Empty) (*pb.
 	return &pb.FuncsResp{Funcs: pbFs}, nil
 }
 
-func panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-	defer func() {
-		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("gRPC Service method: `%s`, err: `%s`", info.FullMethod, err))
-		}
-	}()
-
-	resp, err = handler(ctx, req)
-	return resp, err
-}
-
 type GRPCService struct {
 	Scheduler *agscheduler.Scheduler
 
 	// Default: `127.0.0.1:36360`
 	Address string
+	// SHA256 encrypted authorization password, e.g. here is admin
+	// echo -n admin | shasum -a 256
+	// `8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918`
+	//
+	// Add `auth-password-sha2` metadata on request.
+	PasswordSha2 string
 
 	srv *grpc.Server
 }
@@ -72,7 +67,11 @@ func (s *GRPCService) Start() error {
 	}
 
 	cp := &ClusterProxy{Scheduler: s.Scheduler}
-	s.srv = grpc.NewServer(grpc.ChainUnaryInterceptor(panicInterceptor, cp.GRPCProxyInterceptor))
+	s.srv = grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			s.panicInterceptor, s.verifyPassword, cp.gRPCProxyInterceptor,
+		),
+	)
 
 	bgrs := &bGRPCService{scheduler: s.Scheduler}
 	pb.RegisterBaseServer(s.srv, bgrs)
@@ -107,4 +106,23 @@ func (s *GRPCService) Stop() error {
 	s.srv.Stop()
 
 	return nil
+}
+
+func (s *GRPCService) panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	defer func() {
+		if err := recover(); err != nil {
+			slog.Error(fmt.Sprintf("gRPC Service method: `%s`, err: `%s`", info.FullMethod, err))
+		}
+	}()
+
+	return handler(ctx, req)
+}
+
+func (s *GRPCService) verifyPassword(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	err = gRPCVerifyPassword(ctx, s.PasswordSha2)
+	if err != nil {
+		return nil, err
+	}
+
+	return handler(ctx, req)
 }

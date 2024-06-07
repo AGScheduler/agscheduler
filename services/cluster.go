@@ -18,7 +18,10 @@ type ClusterService struct {
 }
 
 func (s *ClusterService) Start() error {
-	s.grs = &GRPCService{Scheduler: s.Cn.Scheduler}
+	s.grs = &GRPCService{
+		Scheduler:    s.Cn.Scheduler,
+		PasswordSha2: s.PasswordSha2,
+	}
 	s.grs.Address = s.Cn.EndpointGRPC
 	err := s.grs.Start()
 	if err != nil {

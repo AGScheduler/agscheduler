@@ -1,9 +1,12 @@
 package services
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc/metadata"
 )
 
 func ginVerifyPassword(passwordSha2 string) gin.HandlerFunc {
@@ -14,4 +17,24 @@ func ginVerifyPassword(passwordSha2 string) gin.HandlerFunc {
 			c.Abort()
 		}
 	}
+}
+
+func gRPCVerifyPassword(ctx context.Context, passwordSha2 string) (err error) {
+	if passwordSha2 != "" {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return fmt.Errorf("no metadata information")
+		}
+		vals, ok := md["auth-password-sha2"]
+		if !ok {
+			return fmt.Errorf("no `auth-password-sha2` key")
+		}
+		authPasswordSha2 := vals[0]
+
+		if passwordSha2 != authPasswordSha2 {
+			return fmt.Errorf("unauthorized")
+		}
+	}
+
+	return
 }

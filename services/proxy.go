@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/agscheduler/agscheduler"
 	pb "github.com/agscheduler/agscheduler/services/proto"
@@ -22,7 +23,7 @@ type ClusterProxy struct {
 	Scheduler *agscheduler.Scheduler
 }
 
-func (c *ClusterProxy) GinProxy() gin.HandlerFunc {
+func (c *ClusterProxy) ginProxy() gin.HandlerFunc {
 	return func(gc *gin.Context) {
 		if !c.Scheduler.IsClusterMode() {
 			return
@@ -58,7 +59,7 @@ func (c *ClusterProxy) GinProxy() gin.HandlerFunc {
 	}
 }
 
-func (c *ClusterProxy) GRPCProxyInterceptor(
+func (c *ClusterProxy) gRPCProxyInterceptor(
 	ctx context.Context,
 	req any,
 	info *grpc.UnaryServerInfo,
@@ -87,6 +88,16 @@ func (c *ClusterProxy) GRPCProxyInterceptor(
 
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
+
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, fmt.Errorf("no metadata information")
+	}
+	vals, ok := md["auth-password-sha2"]
+	if ok {
+		authPasswordSha2 := vals[0]
+		ctx = metadata.AppendToOutgoingContext(ctx, "auth-password-sha2", authPasswordSha2)
+	}
 
 	methodParts := strings.Split(info.FullMethod, "/")
 	methodName := methodParts[len(methodParts)-1]
