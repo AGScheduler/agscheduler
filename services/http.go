@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
 	"github.com/agscheduler/agscheduler"
@@ -50,7 +49,7 @@ func (s *HTTPService) Start() error {
 	}
 
 	r := gin.Default()
-	r.Use(cors.Default())
+	r.Use(ginCors())
 	r.Use(ginVerifyPassword(s.PasswordSha2))
 
 	cp := &ClusterProxy{Scheduler: s.Scheduler}

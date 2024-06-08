@@ -5,9 +5,18 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/metadata"
 )
+
+func ginCors() gin.HandlerFunc {
+	config := cors.DefaultConfig()
+	config.AllowHeaders = append(config.AllowHeaders, "Auth-Password-SHA2")
+	config.AllowAllOrigins = true
+
+	return cors.New(config)
+}
 
 func ginVerifyPassword(passwordSha2 string) gin.HandlerFunc {
 	return func(c *gin.Context) {
