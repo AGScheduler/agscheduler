@@ -21,7 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	store := &stores.GORMStore{DB: db, TableName: "example_jobs"}
+	store := &stores.GormStore{DB: db, TableName: "example_jobs"}
 
 	runExample(store)
 }

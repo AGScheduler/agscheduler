@@ -15,6 +15,10 @@ type MemoryBackend struct {
 	records []agscheduler.Record
 }
 
+func (b *MemoryBackend) Name() string {
+	return "Memory"
+}
+
 func (b *MemoryBackend) Init() error {
 	return nil
 }

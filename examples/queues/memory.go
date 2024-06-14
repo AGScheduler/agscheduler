@@ -10,10 +10,12 @@ import (
 func main() {
 	mq := &queues.MemoryQueue{}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			exampleQueue: mq,
+		Queues: map[string]agscheduler.QueuePkg{
+			exampleQueue: {
+				Queue:   mq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	runExample(brk)

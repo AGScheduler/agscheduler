@@ -28,6 +28,10 @@ type RedisQueue struct {
 	jobC chan []byte
 }
 
+func (q *RedisQueue) Name() string {
+	return "Redis"
+}
+
 func (q *RedisQueue) Init(ctx context.Context) error {
 	if q.Stream == "" {
 		q.Stream = REDIS_STREAM

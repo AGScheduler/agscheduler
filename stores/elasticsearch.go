@@ -29,6 +29,10 @@ type doc struct {
 	Data        []byte `json:"data"`
 }
 
+func (s *ElasticsearchStore) Name() string {
+	return "Elasticsearch"
+}
+
 func (s *ElasticsearchStore) Init() error {
 	if s.Index == "" {
 		s.Index = ES_INDEX

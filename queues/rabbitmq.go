@@ -34,6 +34,10 @@ type RabbitMQQueue struct {
 	jobC chan []byte
 }
 
+func (q *RabbitMQQueue) Name() string {
+	return "RabbitMQ"
+}
+
 func (q *RabbitMQQueue) Init(ctx context.Context) error {
 	if q.Exchange == "" {
 		q.Exchange = RABBITMQ_EXCHANGE

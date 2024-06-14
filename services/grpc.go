@@ -79,14 +79,19 @@ func (s *GRPCService) Start() error {
 	sgrs := &sGRPCService{scheduler: s.Scheduler}
 	pb.RegisterSchedulerServer(s.srv, sgrs)
 
-	if s.Scheduler.IsClusterMode() {
-		cgrs := &cGRPCService{cn: agscheduler.GetClusterNode(s.Scheduler)}
-		pb.RegisterClusterServer(s.srv, cgrs)
+	if s.Scheduler.HasBroker() {
+		bgrs := &brkGRPCService{broker: agscheduler.GetBroker(s.Scheduler)}
+		pb.RegisterBrokerServer(s.srv, bgrs)
 	}
 
 	if s.Scheduler.HasRecorder() {
 		rgrs := &rGRPCService{recorder: agscheduler.GetRecorder(s.Scheduler)}
 		pb.RegisterRecorderServer(s.srv, rgrs)
+	}
+
+	if s.Scheduler.IsClusterMode() {
+		cgrs := &cGRPCService{cn: agscheduler.GetClusterNode(s.Scheduler)}
+		pb.RegisterClusterServer(s.srv, cgrs)
 	}
 
 	slog.Info(fmt.Sprintf("gRPC Service listening at: %s", lis.Addr()))

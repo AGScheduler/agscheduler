@@ -20,12 +20,16 @@ type Jobs struct {
 
 // Stores jobs in a database table using GORM.
 // The table will be created if it doesn't exist in the database.
-type GORMStore struct {
+type GormStore struct {
 	DB        *gorm.DB
 	TableName string
 }
 
-func (s *GORMStore) Init() error {
+func (s *GormStore) Name() string {
+	return "GORM"
+}
+
+func (s *GormStore) Init() error {
 	if s.TableName == "" {
 		s.TableName = GORM_TABLE_NAME
 	}
@@ -37,7 +41,7 @@ func (s *GORMStore) Init() error {
 	return nil
 }
 
-func (s *GORMStore) AddJob(j agscheduler.Job) error {
+func (s *GormStore) AddJob(j agscheduler.Job) error {
 	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
@@ -48,7 +52,7 @@ func (s *GORMStore) AddJob(j agscheduler.Job) error {
 	return s.DB.Table(s.TableName).Create(&js).Error
 }
 
-func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
+func (s *GormStore) GetJob(id string) (agscheduler.Job, error) {
 	var js Jobs
 
 	result := s.DB.Table(s.TableName).Where("id = ?", id).Limit(1).Find(&js)
@@ -62,7 +66,7 @@ func (s *GORMStore) GetJob(id string) (agscheduler.Job, error) {
 	return agscheduler.JobUnmarshal(js.Data)
 }
 
-func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
+func (s *GormStore) GetAllJobs() ([]agscheduler.Job, error) {
 	var jsList []*Jobs
 	err := s.DB.Table(s.TableName).Find(&jsList).Error
 	if err != nil {
@@ -81,7 +85,7 @@ func (s *GORMStore) GetAllJobs() ([]agscheduler.Job, error) {
 	return jobList, nil
 }
 
-func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
+func (s *GormStore) UpdateJob(j agscheduler.Job) error {
 	bJ, err := agscheduler.JobMarshal(j)
 	if err != nil {
 		return err
@@ -92,15 +96,15 @@ func (s *GORMStore) UpdateJob(j agscheduler.Job) error {
 	return s.DB.Table(s.TableName).Save(js).Error
 }
 
-func (s *GORMStore) DeleteJob(id string) error {
+func (s *GormStore) DeleteJob(id string) error {
 	return s.DB.Table(s.TableName).Where("id = ?", id).Delete(&Jobs{}).Error
 }
 
-func (s *GORMStore) DeleteAllJobs() error {
+func (s *GormStore) DeleteAllJobs() error {
 	return s.DB.Table(s.TableName).Where("1 = 1").Delete(&Jobs{}).Error
 }
 
-func (s *GORMStore) GetNextRunTime() (time.Time, error) {
+func (s *GormStore) GetNextRunTime() (time.Time, error) {
 	var js Jobs
 
 	result := s.DB.Table(s.TableName).Order("next_run_time").Limit(1).Find(&js)
@@ -115,6 +119,6 @@ func (s *GORMStore) GetNextRunTime() (time.Time, error) {
 	return nextRunTimeMin, nil
 }
 
-func (s *GORMStore) Clear() error {
+func (s *GormStore) Clear() error {
 	return s.DB.Migrator().DropTable(s.TableName)
 }

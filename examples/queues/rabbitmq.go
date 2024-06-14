@@ -35,10 +35,12 @@ func main() {
 		Password: password,
 	}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			exampleQueue: rmq,
+		Queues: map[string]agscheduler.QueuePkg{
+			exampleQueue: {
+				Queue:   rmq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	runExample(brk)

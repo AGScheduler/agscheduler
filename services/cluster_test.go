@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -16,6 +17,8 @@ import (
 )
 
 func TestClusterService(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
 	store := &stores.MemoryStore{}
 	cnMain := &agscheduler.ClusterNode{
 		EndpointMain: "127.0.0.1:36380",

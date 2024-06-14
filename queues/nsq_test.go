@@ -40,10 +40,12 @@ func TestNsqQueue(t *testing.T) {
 		HttpAddr: httpAddr,
 	}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			testQueue: nq,
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   nq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	runTest(t, brk)

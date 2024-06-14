@@ -62,16 +62,18 @@ func getBroker() *agscheduler.Broker {
 	mq := &queues.MemoryQueue{}
 
 	return &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			"default": mq,
+		Queues: map[string]agscheduler.QueuePkg{
+			"default": {
+				Queue:   mq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 }
 
 func getRecorder() *agscheduler.Recorder {
-	bn := &backends.MemoryBackend{}
-	return &agscheduler.Recorder{Backend: bn}
+	mb := &backends.MemoryBackend{}
+	return &agscheduler.Recorder{Backend: mb}
 }
 
 func TestSchedulerSetStore(t *testing.T) {
@@ -415,6 +417,12 @@ func TestSchedulerScheduleJobBrokerQueueNotExist(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestSchedulerBrokerGetQueues(t *testing.T) {
+	brk := getBroker()
+	qs := brk.GetQueues()
+	assert.Len(t, qs, 1)
+}
+
 func TestSchedulerRecorderRecordMetadata(t *testing.T) {
 	rec := getRecorder()
 	s := getSchedulerWithStore(t)
@@ -572,10 +580,10 @@ func TestCalcNextRunTimeCronExprError(t *testing.T) {
 }
 
 func TestInfo(t *testing.T) {
-	cn := getClusterNode()
+	s := getSchedulerWithStore(t)
 	brk := getBroker()
 	rec := getRecorder()
-	s := &agscheduler.Scheduler{}
+	cn := getClusterNode()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -588,6 +596,6 @@ func TestInfo(t *testing.T) {
 
 	info := s.Info()
 
-	assert.Len(t, info, 7)
+	assert.Len(t, info, 5)
 	assert.Equal(t, info["version"], agscheduler.Version)
 }

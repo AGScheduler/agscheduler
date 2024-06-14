@@ -133,10 +133,12 @@ func main() {
 ```go
 mq := &queues.MemoryQueue{}
 brk := &agscheduler.Broker{
-	Queues: map[string]agscheduler.Queue{
-		"default": mq,
+	Queues: map[string]agscheduler.QueuePkg{
+		"default": {
+			Queue:   mq,
+			Workers: 2,
+		},
 	},
-	WorkersPerQueue: 2,
 }
 
 scheduler.SetStore(store)
@@ -263,6 +265,12 @@ cnNode3 := &agscheduler.ClusterNode{...}
 | ScheduleJob   | POST        | /scheduler/job/schedule   |
 | Start         | POST        | /scheduler/start          |
 | Stop          | POST        | /scheduler/stop           |
+
+## Broker API
+
+| gRPC Function | HTTP Method | HTTP Path                 |
+|---------------|-------------|---------------------------|
+| GetQueues     | GET         | /broker/queues            |
 
 ## Recorder API
 

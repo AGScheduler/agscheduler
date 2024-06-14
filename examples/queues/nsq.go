@@ -56,10 +56,12 @@ func main() {
 		HttpAddr: httpAddr,
 	}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			exampleQueue: nq,
+		Queues: map[string]agscheduler.QueuePkg{
+			exampleQueue: {
+				Queue:   nq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	runExample(brk)

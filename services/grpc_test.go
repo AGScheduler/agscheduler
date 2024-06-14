@@ -11,6 +11,7 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/backends"
+	"github.com/agscheduler/agscheduler/queues"
 	pb "github.com/agscheduler/agscheduler/services/proto"
 	"github.com/agscheduler/agscheduler/stores"
 )
@@ -22,7 +23,7 @@ func testGRPC(t *testing.T, c pb.BaseClient) {
 
 	iResp, err := c.GetInfo(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
-	assert.Len(t, iResp.Info.AsMap(), 7)
+	assert.Len(t, iResp.Info.AsMap(), 5)
 	assert.Equal(t, iResp.Info.AsMap()["version"], agscheduler.Version)
 
 	fsResp, err := c.GetFuncs(ctx, &emptypb.Empty{})
@@ -40,6 +41,19 @@ func TestGRPCService(t *testing.T) {
 
 	store := &stores.MemoryStore{}
 	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
+
+	mq := &queues.MemoryQueue{}
+	broker := &agscheduler.Broker{
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   mq,
+				Workers: 2,
+			},
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	err = scheduler.SetBroker(ctx, broker)
 	assert.NoError(t, err)
 
 	mb := &backends.MemoryBackend{}
@@ -61,12 +75,17 @@ func TestGRPCService(t *testing.T) {
 	testGRPC(t, clientB)
 	clientS := pb.NewSchedulerClient(conn)
 	testSchedulerGRPC(t, clientS)
+	clientBrk := pb.NewBrokerClient(conn)
+	testBrokerGRPC(t, clientBrk)
 	clientR := pb.NewRecorderClient(conn)
 	testRecorderGRPC(t, clientS, clientR)
 
 	err = grservice.Stop()
 	assert.NoError(t, err)
 
+	cancel()
+	err = broker.Clear(testQueue)
+	assert.NoError(t, err)
 	err = store.Clear()
 	assert.NoError(t, err)
 }

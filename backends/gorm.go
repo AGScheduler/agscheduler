@@ -24,12 +24,16 @@ type Records struct {
 
 // Store job records in a database table using GORM.
 // The table will be created if it doesn't exist in the database.
-type GORMBackend struct {
+type GormBackend struct {
 	DB        *gorm.DB
 	TableName string
 }
 
-func (b *GORMBackend) Init() error {
+func (b *GormBackend) Name() string {
+	return "GORM"
+}
+
+func (b *GormBackend) Init() error {
 	if b.TableName == "" {
 		b.TableName = GORM_TABLE_NAME
 	}
@@ -41,7 +45,7 @@ func (b *GORMBackend) Init() error {
 	return nil
 }
 
-func (b *GORMBackend) RecordMetadata(r agscheduler.Record) error {
+func (b *GormBackend) RecordMetadata(r agscheduler.Record) error {
 	rs := Records{
 		ID:      r.Id,
 		JobId:   r.JobId,
@@ -55,7 +59,7 @@ func (b *GORMBackend) RecordMetadata(r agscheduler.Record) error {
 	return b.DB.Table(b.TableName).Create(&rs).Error
 }
 
-func (b *GORMBackend) RecordResult(id uint64, status string, result string) error {
+func (b *GormBackend) RecordResult(id uint64, status string, result string) error {
 	return b.DB.Table(b.TableName).Where("id = ?", id).
 		Update("status", status).
 		Update("result", result).
@@ -63,7 +67,7 @@ func (b *GORMBackend) RecordResult(id uint64, status string, result string) erro
 		Error
 }
 
-func (b *GORMBackend) _getRecords(page, pageSize int, query any, args ...any) ([]agscheduler.Record, int64, error) {
+func (b *GormBackend) _getRecords(page, pageSize int, query any, args ...any) ([]agscheduler.Record, int64, error) {
 	var rsList []*Records
 	total := int64(0)
 
@@ -97,22 +101,22 @@ func (b *GORMBackend) _getRecords(page, pageSize int, query any, args ...any) ([
 	return recordList, total, nil
 }
 
-func (b *GORMBackend) GetRecords(jId string, page, pageSize int) ([]agscheduler.Record, int64, error) {
+func (b *GormBackend) GetRecords(jId string, page, pageSize int) ([]agscheduler.Record, int64, error) {
 	return b._getRecords(page, pageSize, "job_id = ?", jId)
 }
 
-func (b *GORMBackend) GetAllRecords(page, pageSize int) ([]agscheduler.Record, int64, error) {
+func (b *GormBackend) GetAllRecords(page, pageSize int) ([]agscheduler.Record, int64, error) {
 	return b._getRecords(page, pageSize, "1 = 1")
 }
 
-func (b *GORMBackend) DeleteRecords(jId string) error {
+func (b *GormBackend) DeleteRecords(jId string) error {
 	return b.DB.Table(b.TableName).Where("job_id = ?", jId).Delete(&Records{}).Error
 }
 
-func (b *GORMBackend) DeleteAllRecords() error {
+func (b *GormBackend) DeleteAllRecords() error {
 	return b.DB.Table(b.TableName).Where("1 = 1").Delete(&Records{}).Error
 }
 
-func (b *GORMBackend) Clear() error {
+func (b *GormBackend) Clear() error {
 	return b.DB.Migrator().DropTable(b.TableName)
 }

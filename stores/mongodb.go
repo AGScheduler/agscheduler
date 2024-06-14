@@ -25,6 +25,10 @@ type MongoDBStore struct {
 	coll       *mongo.Collection
 }
 
+func (s *MongoDBStore) Name() string {
+	return "MongoDB"
+}
+
 func (s *MongoDBStore) Init() error {
 	if s.Database == "" {
 		s.Database = MONGODB_DATABASE

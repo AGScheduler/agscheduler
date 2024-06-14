@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package services;
+option go_package="./;services";
+
+import "google/protobuf/empty.proto";
+
+message Queue {
+  string name = 1;
+  string type = 2;
+  int64 count = 3;
+  int32 workers = 4;
+}
+
+message QueuesResp {
+  repeated Queue queues = 1;
+}
+
+service Broker {
+  rpc GetQueues (google.protobuf.Empty) returns (QueuesResp) {}
+}

@@ -35,10 +35,12 @@ func main() {
 		Consumer: "agscheduler_example_consumer",
 	}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			exampleQueue: rq,
+		Queues: map[string]agscheduler.QueuePkg{
+			exampleQueue: {
+				Queue:   rq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	runExample(brk)

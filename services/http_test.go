@@ -8,12 +8,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/backends"
+	"github.com/agscheduler/agscheduler/queues"
 	"github.com/agscheduler/agscheduler/stores"
 )
+
+var testQueue = "agscheduler_test_queue"
 
 type result struct {
 	Data  any    `json:"data"`
@@ -31,7 +35,7 @@ func testHTTP(t *testing.T, baseUrl string) {
 	rJ := &result{}
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
-	assert.Len(t, rJ.Data.(map[string]any), 7)
+	assert.Len(t, rJ.Data.(map[string]any), 5)
 	assert.Equal(t, agscheduler.Version, rJ.Data.(map[string]any)["version"])
 
 	resp, err = http.Get(baseUrl + "/funcs")
@@ -47,6 +51,8 @@ func testHTTP(t *testing.T, baseUrl string) {
 }
 
 func TestHTTPService(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: dryRunHTTP},
 	)
@@ -55,6 +61,19 @@ func TestHTTPService(t *testing.T) {
 
 	store := &stores.MemoryStore{}
 	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
+
+	mq := &queues.MemoryQueue{}
+	broker := &agscheduler.Broker{
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   mq,
+				Workers: 2,
+			},
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	err = scheduler.SetBroker(ctx, broker)
 	assert.NoError(t, err)
 
 	mb := &backends.MemoryBackend{}
@@ -71,11 +90,15 @@ func TestHTTPService(t *testing.T) {
 	baseUrl := "http://" + hservice.Address
 	testHTTP(t, baseUrl)
 	testSchedulerHTTP(t, baseUrl)
+	testBrokerHTTP(t, baseUrl)
 	testRecorderHTTP(t, baseUrl)
 
 	err = hservice.Stop()
 	assert.NoError(t, err)
 
+	cancel()
+	err = broker.Clear(testQueue)
+	assert.NoError(t, err)
 	err = store.Clear()
 	assert.NoError(t, err)
 }
