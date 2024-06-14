@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -54,6 +55,8 @@ func testGRPCAuth(t *testing.T, c pb.BaseClient) {
 }
 
 func TestAuth(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
 	scheduler := &agscheduler.Scheduler{}
 
 	store := &stores.MemoryStore{}

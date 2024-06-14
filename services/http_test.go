@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
@@ -47,6 +48,8 @@ func testHTTP(t *testing.T, baseUrl string) {
 }
 
 func TestHTTPService(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: dryRunHTTP},
 	)
