@@ -21,8 +21,6 @@ func TestMqttQueue(t *testing.T) {
 		Cli:         c,
 		TopicPrefix: MQTT_TOPIC_PREFIX,
 		Topic:       "test_topic",
-
-		size: 5,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

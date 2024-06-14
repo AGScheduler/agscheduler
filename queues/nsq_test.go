@@ -38,8 +38,6 @@ func TestNsqQueue(t *testing.T) {
 		Mh:       messageHandler,
 		Topic:    testTopic,
 		HttpAddr: httpAddr,
-
-		size: 5,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

@@ -14,7 +14,12 @@ import (
 )
 
 func main() {
-	c, err := amqp.Dial("amqp://guest:guest@127.0.0.1:5672/")
+	username := "guest"
+	password := "guest"
+	tcpAddr := fmt.Sprintf("amqp://%s:%s@127.0.0.1:5672/", username, password)
+	httpAddr := "http://127.0.0.1:15672"
+
+	c, err := amqp.Dial(tcpAddr)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
@@ -25,6 +30,9 @@ func main() {
 		Conn:     c,
 		Exchange: "agscheduler_example_exchange",
 		Queue:    exampleQueue,
+		HttpAddr: httpAddr,
+		Username: username,
+		Password: password,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

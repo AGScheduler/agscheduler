@@ -51,6 +51,10 @@ type Queue interface {
 	// Pull job from this queue.
 	PullJob() <-chan []byte
 
+	// Count the number of jobs in this queue.
+	//  @return -1, nil, if the queue does not support this feature or error.
+	CountJobs() (int, error)
+
 	// Clear all resources bound to this queue.
 	Clear() error
 }

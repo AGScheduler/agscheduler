@@ -36,7 +36,7 @@ func runExample(brk *agscheduler.Broker) {
 		os.Exit(1)
 	}
 
-	for i := range 5 {
+	for i := range 6 {
 		job := agscheduler.Job{
 			Name:    "Job" + strconv.Itoa(i+1),
 			Type:    agscheduler.JOB_TYPE_DATETIME,
@@ -49,14 +49,22 @@ func runExample(brk *agscheduler.Broker) {
 
 	s.Start()
 
-	slog.Info("Sleep 6s......\n\n")
-	time.Sleep(6 * time.Second)
+	slog.Info("Sleep 1s......\n\n")
+	time.Sleep(1 * time.Second)
+	count, _ := brk.CountJobs(exampleQueue)
+	slog.Info(fmt.Sprintf("Number of jobs in this queue: %d\n\n", count))
+	slog.Info("Sleep 2s......\n\n")
+	time.Sleep(2 * time.Second)
+	count, _ = brk.CountJobs(exampleQueue)
+	slog.Info(fmt.Sprintf("Number of jobs in this queue: %d\n\n", count))
+	slog.Info("Sleep 3s......\n\n")
+	time.Sleep(3 * time.Second)
 
 	s.DeleteAllJobs()
 
 	s.Stop()
 
 	cancel()
-	brk.Queues[exampleQueue].Clear()
+	brk.Clear(exampleQueue)
 	sto.Clear()
 }
