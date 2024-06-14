@@ -79,6 +79,21 @@ func (q *RedisQueue) PullJob() <-chan []byte {
 	return q.jobC
 }
 
+func (q *RedisQueue) CountJobs() (int, error) {
+	count := 0
+
+	gsInfo, err := q.RDB.XInfoGroups(ctx, q.Stream).Result()
+	if err != nil {
+		return -1, err
+	}
+
+	for _, g := range gsInfo {
+		count += int(g.Lag + g.Pending)
+	}
+
+	return count, nil
+}
+
 func (q *RedisQueue) Clear() error {
 	defer close(q.jobC)
 

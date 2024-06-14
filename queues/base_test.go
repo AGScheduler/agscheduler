@@ -33,7 +33,7 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 	err = s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 
-	for i := range 3 {
+	for i := range 6 {
 		job := agscheduler.Job{
 			Name:    "Job" + strconv.Itoa(i+1),
 			Type:    agscheduler.JOB_TYPE_DATETIME,
@@ -44,15 +44,20 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 		assert.NoError(t, err)
 	}
 
-	ch := brk.Queues[testQueue].PullJob()
-	assert.Len(t, ch, 0)
-
 	s.Start()
-	time.Sleep(1 * time.Second)
-	assert.Len(t, ch, 1)
 
-	time.Sleep(1500 * time.Millisecond)
-	assert.Len(t, ch, 0)
+	time.Sleep(1 * time.Second)
+	count, err := brk.CountJobs(testQueue)
+	assert.NoError(t, err)
+	if count != -1 {
+		assert.Equal(t, 4, count)
+	}
+	time.Sleep(2 * time.Second)
+	count, err = brk.CountJobs(testQueue)
+	assert.NoError(t, err)
+	if count != -1 {
+		assert.Equal(t, 2, count)
+	}
 
 	err = s.DeleteAllJobs()
 	assert.NoError(t, err)
@@ -60,7 +65,7 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 	s.Stop()
 
 	cancel()
-	err = brk.Queues[testQueue].Clear()
+	err = brk.Clear(testQueue)
 	assert.NoError(t, err)
 	err = sto.Clear()
 	assert.NoError(t, err)

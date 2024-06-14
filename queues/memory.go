@@ -32,6 +32,10 @@ func (q *MemoryQueue) PullJob() <-chan []byte {
 	return q.jobC
 }
 
+func (q *MemoryQueue) CountJobs() (int, error) {
+	return len(q.jobC), nil
+}
+
 func (q *MemoryQueue) Clear() error {
 	defer close(q.jobC)
 

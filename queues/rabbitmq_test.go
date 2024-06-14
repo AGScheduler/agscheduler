@@ -1,6 +1,7 @@
 package queues
 
 import (
+	"fmt"
 	"testing"
 
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -10,7 +11,12 @@ import (
 )
 
 func TestRabbitMQQueue(t *testing.T) {
-	c, err := amqp.Dial("amqp://guest:guest@127.0.0.1:5672/")
+	username := "guest"
+	password := "guest"
+	tcpAddr := fmt.Sprintf("amqp://%s:%s@127.0.0.1:5672/", username, password)
+	httpAddr := "http://127.0.0.1:15672"
+
+	c, err := amqp.Dial(tcpAddr)
 	assert.NoError(t, err)
 	defer c.Close()
 
@@ -18,8 +24,9 @@ func TestRabbitMQQueue(t *testing.T) {
 		Conn:     c,
 		Exchange: "agscheduler_test_exchange",
 		Queue:    testQueue,
-
-		size: 5,
+		HttpAddr: httpAddr,
+		Username: username,
+		Password: password,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{

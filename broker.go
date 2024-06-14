@@ -82,3 +82,11 @@ func (b *Broker) choiceQueue(queues []string) (string, error) {
 
 	return "", fmt.Errorf("queue not found")
 }
+
+func (b *Broker) CountJobs(queue string) (int, error) {
+	return b.Queues[queue].CountJobs()
+}
+
+func (b *Broker) Clear(queue string) error {
+	return b.Queues[queue].Clear()
+}

@@ -2,9 +2,12 @@ package queues
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"math"
+	"net/http"
+	"net/url"
 	"runtime/debug"
 	"time"
 
@@ -21,6 +24,9 @@ type RabbitMQQueue struct {
 	Conn     *amqp.Connection
 	Exchange string
 	Queue    string
+	HttpAddr string
+	Username string
+	Password string
 
 	ch *amqp.Channel
 
@@ -114,6 +120,75 @@ func (q *RabbitMQQueue) PushJob(bJ []byte) error {
 
 func (q *RabbitMQQueue) PullJob() <-chan []byte {
 	return q.jobC
+}
+
+type binding struct {
+	Destination string `json:"destination"`
+}
+
+func (q *RabbitMQQueue) getExchangeBindings() ([]binding, error) {
+	url, err := url.JoinPath(
+		q.HttpAddr, fmt.Sprintf("/api/exchanges/%%2f/%s/bindings/source", q.Exchange),
+	)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(q.Username, q.Password)
+
+	c := &http.Client{Timeout: 3 * time.Second}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var bindings []binding
+	if err := json.NewDecoder(resp.Body).Decode(&bindings); err != nil {
+		return nil, err
+	}
+	return bindings, nil
+}
+
+// There is a delay when using the HTTP API,
+// so we use `QueueDeclarePassive` to get the number of messages,
+// but it lacks the `unacknowledged` data, and when `Messages == 0`, the count will be inaccurate.
+func (q *RabbitMQQueue) CountJobs() (int, error) {
+	if q.HttpAddr == "" {
+		return -1, nil
+	}
+
+	count := 0
+
+	bindings, err := q.getExchangeBindings()
+	if err != nil {
+		return -1, fmt.Errorf("failed to get bindings: %s", err)
+	}
+	for _, binding := range bindings {
+		queueName := binding.Destination
+		queue, err := q.ch.QueueDeclarePassive(
+			queueName, // name
+			true,      // durable
+			false,     // delete when unused
+			false,     // exclusive
+			false,     // no-wait
+			nil,       // arguments
+		)
+		if err != nil {
+			return -1, err
+		}
+		count += queue.Messages
+		// Because of the lack of `unacknowledged` data, when `Messages > 0`,
+		// consumers on the same queue are blocking, so the number of consumers needs to be added here.
+		if queue.Messages > 0 {
+			count += queue.Consumers
+		}
+	}
+
+	return count, nil
 }
 
 func (q *RabbitMQQueue) Clear() error {

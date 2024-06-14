@@ -61,6 +61,10 @@ func (q *MqttQueue) PullJob() <-chan []byte {
 	return q.jobC
 }
 
+func (q *MqttQueue) CountJobs() (int, error) {
+	return -1, nil
+}
+
 func (q *MqttQueue) Clear() error {
 	defer close(q.jobC)
 

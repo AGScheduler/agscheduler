@@ -16,12 +16,17 @@ import (
 
 const (
 	KAFKA_TOPIC = "agscheduler-topic"
+	KAFKA_GROUP = "agscheduler-group"
 )
 
 // Queue jobs in Kafka.
+//
+// Producer and consumer must be separated,
+// otherwise the offset will be fetched incorrectly.
 type KafkaQueue struct {
-	Cli   *kgo.Client
-	Topic string
+	Producer *kgo.Client
+	Consumer *kgo.Client
+	Topic    string
 
 	aCli *kadm.Client
 
@@ -37,7 +42,7 @@ func (q *KafkaQueue) Init(ctx context.Context) error {
 	q.size = int(math.Abs(float64(q.size)))
 	q.jobC = make(chan []byte, q.size)
 
-	q.aCli = kadm.NewClient(q.Cli)
+	q.aCli = kadm.NewClient(q.Producer)
 
 	go q.handleMessage(ctx)
 
@@ -59,7 +64,7 @@ func (q *KafkaQueue) PushJob(bJ []byte) error {
 	key := []byte(strconv.Itoa(int(ps[i])))
 
 	record := &kgo.Record{Topic: q.Topic, Key: key, Value: bJ}
-	if err := q.Cli.ProduceSync(ctx, record).FirstErr(); err != nil {
+	if err := q.Producer.ProduceSync(ctx, record).FirstErr(); err != nil {
 		return err
 	}
 
@@ -68,6 +73,35 @@ func (q *KafkaQueue) PushJob(bJ []byte) error {
 
 func (q *KafkaQueue) PullJob() <-chan []byte {
 	return q.jobC
+}
+
+func (q *KafkaQueue) CountJobs() (int, error) {
+	countNewest := 0
+	countCommitted := 0
+	count := 0
+
+	aCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	newestOffsets, err := q.aCli.ListEndOffsets(aCtx, q.Topic)
+	if err != nil {
+		return -1, err
+	}
+	for _, oMap := range newestOffsets.KOffsets() {
+		for _, o := range oMap {
+			countNewest += int(o.EpochOffset().Offset)
+		}
+	}
+
+	committedOffsets := q.Consumer.CommittedOffsets()
+	for _, oMap := range committedOffsets {
+		for _, o := range oMap {
+			countCommitted += int(o.Offset)
+		}
+	}
+
+	count = countNewest - countCommitted
+
+	return count, nil
 }
 
 func (q *KafkaQueue) Clear() error {
@@ -96,7 +130,7 @@ func (q *KafkaQueue) handleMessage(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			fetches := q.Cli.PollFetches(ctx)
+			fetches := q.Consumer.PollFetches(ctx)
 			if errs := fetches.Errors(); len(errs) > 0 {
 				slog.Error(fmt.Sprintf("KafkaQueue poll fetches error: `%s`", fmt.Sprint(errs)))
 				time.Sleep(1 * time.Second)
@@ -107,6 +141,13 @@ func (q *KafkaQueue) handleMessage(ctx context.Context) {
 			for !iter.Done() {
 				record := iter.Next()
 				q.jobC <- record.Value
+				q.Consumer.CommitOffsets(ctx, map[string]map[int32]kgo.EpochOffset{
+					record.Topic: {
+						record.Partition: {
+							Offset: record.Offset + 1,
+						},
+					},
+				}, nil)
 			}
 		}
 	}

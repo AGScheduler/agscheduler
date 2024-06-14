@@ -2,6 +2,7 @@ package queues
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log/slog"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime/debug"
+	"time"
 
 	"github.com/nsqio/go-nsq"
 )
@@ -33,6 +35,9 @@ func (q *NsqQueue) Init(ctx context.Context) error {
 	if q.Topic == "" {
 		q.Topic = NSQ_TOPIC
 	}
+	if q.HttpAddr == "" {
+		return fmt.Errorf("`HttpAddr` cannot be null")
+	}
 
 	q.size = int(math.Abs(float64(q.size)))
 	q.jobC = make(chan []byte, q.size)
@@ -54,6 +59,61 @@ func (q *NsqQueue) PullJob() <-chan []byte {
 	return q.jobC
 }
 
+type topicStats struct {
+	TopicName string `json:"topic_name"`
+	Channels  []struct {
+		Depth         int `json:"depth"`
+		InFlightCount int `json:"in_flight_count"`
+	} `json:"channels"`
+}
+
+func (q *NsqQueue) CountJobs() (int, error) {
+	count := 0
+
+	u, err := url.JoinPath(q.HttpAddr, "/stats")
+	if err != nil {
+		return -1, err
+	}
+	req, err := http.NewRequest(
+		"GET", u+"?format=json&include_clients=false&include_mem=false&topic="+q.Topic, nil,
+	)
+	if err != nil {
+		return -1, err
+	}
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return -1, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return -1, err
+		}
+		return -1, fmt.Errorf("failed to get stats: `%s`", body)
+	}
+
+	var stats struct {
+		Topics []topicStats `json:"topics"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&stats)
+	if err != nil {
+		return -1, err
+	}
+
+	for _, t := range stats.Topics {
+		if t.TopicName != q.Topic {
+			continue
+		}
+		for _, c := range t.Channels {
+			count += c.Depth + c.InFlightCount
+		}
+	}
+
+	return count, nil
+}
+
 func (q *NsqQueue) Clear() error {
 	defer close(q.jobC)
 
@@ -67,6 +127,7 @@ func (q *NsqQueue) Clear() error {
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {

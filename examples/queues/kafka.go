@@ -17,13 +17,24 @@ import (
 
 func main() {
 	exampleTopic := "agscheduler-example-topic"
+	exampleGroup := "agscheduler-example-group"
 
 	seeds := []string{"127.0.0.1:9092"}
-	c, err := kgo.NewClient(
+	p, err := kgo.NewClient(
 		kgo.SeedBrokers(seeds...),
 		kgo.ConsumeTopics(exampleTopic),
 		kgo.AllowAutoTopicCreation(),
-		kgo.ConsumerGroup("agscheduler-example-group"),
+	)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
+		os.Exit(1)
+	}
+	defer p.Close()
+	c, err := kgo.NewClient(
+		kgo.SeedBrokers(seeds...),
+		kgo.ConsumeTopics(exampleTopic),
+		kgo.ConsumerGroup(exampleGroup),
+		kgo.DisableAutoCommit(),
 	)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
@@ -33,7 +44,7 @@ func main() {
 
 	// Used to ensure that partitions are allocated to consumer.
 	// For examples and testing only.
-	aC := kadm.NewClient(c)
+	aC := kadm.NewClient(p)
 	_, err = aC.CreatePartitions(ctx, 1, exampleTopic)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to create partition: %s", err))
@@ -41,8 +52,9 @@ func main() {
 	}
 
 	kq := &queues.KafkaQueue{
-		Cli:   c,
-		Topic: exampleTopic,
+		Producer: p,
+		Consumer: c,
+		Topic:    exampleTopic,
 	}
 	brk := &agscheduler.Broker{
 		Queues: map[string]agscheduler.Queue{
