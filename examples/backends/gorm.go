@@ -22,7 +22,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	gb := &backends.GORMBackend{DB: db, TableName: "example_records"}
+	gb := &backends.GormBackend{DB: db, TableName: "example_records"}
 	recorder := &agscheduler.Recorder{Backend: gb}
 
 	runExample(recorder)
