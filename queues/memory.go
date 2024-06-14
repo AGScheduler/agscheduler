@@ -12,6 +12,10 @@ type MemoryQueue struct {
 	jobC chan []byte
 }
 
+func (q *MemoryQueue) Name() string {
+	return "Memory"
+}
+
 func (q *MemoryQueue) Init(ctx context.Context) error {
 	if q.Size <= 0 {
 		q.Size = 32

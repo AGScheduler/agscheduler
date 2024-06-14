@@ -31,6 +31,10 @@ type NsqQueue struct {
 	jobC chan []byte
 }
 
+func (q *NsqQueue) Name() string {
+	return "NSQ"
+}
+
 func (q *NsqQueue) Init(ctx context.Context) error {
 	if q.Topic == "" {
 		q.Topic = NSQ_TOPIC

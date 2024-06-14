@@ -25,6 +25,10 @@ type GORMStore struct {
 	TableName string
 }
 
+func (s *GORMStore) Name() string {
+	return "GORM"
+}
+
 func (s *GORMStore) Init() error {
 	if s.TableName == "" {
 		s.TableName = GORM_TABLE_NAME

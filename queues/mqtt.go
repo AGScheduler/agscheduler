@@ -27,6 +27,10 @@ type MqttQueue struct {
 	jobC chan []byte
 }
 
+func (q *MqttQueue) Name() string {
+	return "MQTT"
+}
+
 func (q *MqttQueue) Init(ctx context.Context) error {
 	if q.TopicPrefix == "" {
 		q.TopicPrefix = MQTT_TOPIC_PREFIX

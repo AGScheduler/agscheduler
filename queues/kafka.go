@@ -34,6 +34,10 @@ type KafkaQueue struct {
 	jobC chan []byte
 }
 
+func (q *KafkaQueue) Name() string {
+	return "Kafka"
+}
+
 func (q *KafkaQueue) Init(ctx context.Context) error {
 	if q.Topic == "" {
 		q.Topic = KAFKA_TOPIC

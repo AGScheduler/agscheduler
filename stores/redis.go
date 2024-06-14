@@ -20,6 +20,10 @@ type RedisStore struct {
 	RunTimesKey string
 }
 
+func (s *RedisStore) Name() string {
+	return "Redis"
+}
+
 func (s *RedisStore) Init() error {
 	if s.JobsKey == "" {
 		s.JobsKey = REDIS_JOBS_KEY

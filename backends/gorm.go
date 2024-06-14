@@ -29,6 +29,10 @@ type GORMBackend struct {
 	TableName string
 }
 
+func (b *GORMBackend) Name() string {
+	return "GORM"
+}
+
 func (b *GORMBackend) Init() error {
 	if b.TableName == "" {
 		b.TableName = GORM_TABLE_NAME

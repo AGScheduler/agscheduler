@@ -14,6 +14,10 @@ type MemoryStore struct {
 	jobs []agscheduler.Job
 }
 
+func (s *MemoryStore) Name() string {
+	return "Memory"
+}
+
 func (s *MemoryStore) Init() error {
 	return nil
 }

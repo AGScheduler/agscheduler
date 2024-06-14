@@ -22,6 +22,10 @@ type EtcdStore struct {
 	RunTimesPath string
 }
 
+func (s *EtcdStore) Name() string {
+	return "etcd"
+}
+
 func (s *EtcdStore) Init() error {
 	if s.JobsPath == "" {
 		s.JobsPath = ETCD_JOBS_PATH

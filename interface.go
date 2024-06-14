@@ -7,6 +7,9 @@ import (
 
 // Defines the interface that each store must implement.
 type Store interface {
+	// Store name.
+	Name() string
+
 	// Initialization functions for each store,
 	// called when the scheduler run `SetStore`.
 	Init() error
@@ -41,6 +44,9 @@ type Store interface {
 
 // Defines the interface that each queue must implement.
 type Queue interface {
+	// Queue name.
+	Name() string
+
 	// Initialization functions for each queue,
 	// called when the scheduler run `SetBroker`.
 	Init(ctx context.Context) error
@@ -61,6 +67,9 @@ type Queue interface {
 
 // Defines the interface that each backend must implement.
 type Backend interface {
+	// Backend name.
+	Name() string
+
 	// Initialization functions for each backend,
 	// called when the scheduler run `SetBackend`.
 	Init() error

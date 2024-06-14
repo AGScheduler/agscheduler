@@ -24,6 +24,10 @@ type MongoDBBackend struct {
 	coll       *mongo.Collection
 }
 
+func (b *MongoDBBackend) Name() string {
+	return "MongoDB"
+}
+
 func (b *MongoDBBackend) Init() error {
 	if b.Database == "" {
 		b.Database = MONGODB_DATABASE
