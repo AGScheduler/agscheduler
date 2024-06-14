@@ -632,23 +632,23 @@ func (s *Scheduler) wakeup() {
 
 func (s *Scheduler) Info() map[string]any {
 	info := map[string]any{
-		"is_cluster_mode":   s.IsClusterMode(),
-		"cluster_main_node": map[string]any{},
-		"has_broker":        s.HasBroker(),
-		"broker":            map[string]any{},
-		"has_recorder":      s.HasRecorder(),
-		"is_running":        s.IsRunning(),
-		"version":           Version,
-	}
-
-	if s.IsClusterMode() {
-		info["cluster_main_node"] = map[string]any{
-			"endpoint_main": s.clusterNode.GetEndpointMain(),
-			"endpoint":      s.clusterNode.Endpoint,
-			"endpoint_grpc": s.clusterNode.EndpointGRPC,
-			"endpoint_http": s.clusterNode.EndpointHTTP,
-			"mode":          s.clusterNode.Mode,
-		}
+		"scheduler": map[string]any{
+			"is_running": s.IsRunning(),
+			"store":      s.store.Name(),
+		},
+		"broker": map[string]any{
+			"has_broker": s.HasBroker(),
+			"queues":     "",
+		},
+		"recorder": map[string]any{
+			"has_recorder": s.HasRecorder(),
+			"backend":      "",
+		},
+		"cluster": map[string]any{
+			"is_cluster_mode": s.IsClusterMode(),
+			"main_node":       map[string]any{},
+		},
+		"version": Version,
 	}
 
 	if s.HasBroker() {
@@ -656,8 +656,20 @@ func (s *Scheduler) Info() map[string]any {
 		for k := range s.broker.Queues {
 			queues = append(queues, k)
 		}
-		info["broker"] = map[string]any{
-			"queues": queues,
+		info["broker"].(map[string]any)["queues"] = strings.Join(queues, ",")
+	}
+
+	if s.HasRecorder() {
+		info["recorder"].(map[string]any)["backend"] = s.recorder.Backend.Name()
+	}
+
+	if s.IsClusterMode() {
+		info["cluster"].(map[string]any)["main_node"] = map[string]any{
+			"endpoint_main": s.clusterNode.GetEndpointMain(),
+			"endpoint":      s.clusterNode.Endpoint,
+			"endpoint_grpc": s.clusterNode.EndpointGRPC,
+			"endpoint_http": s.clusterNode.EndpointHTTP,
+			"mode":          s.clusterNode.Mode,
 		}
 	}
 

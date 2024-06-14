@@ -72,8 +72,8 @@ func getBroker() *agscheduler.Broker {
 }
 
 func getRecorder() *agscheduler.Recorder {
-	bn := &backends.MemoryBackend{}
-	return &agscheduler.Recorder{Backend: bn}
+	mb := &backends.MemoryBackend{}
+	return &agscheduler.Recorder{Backend: mb}
 }
 
 func TestSchedulerSetStore(t *testing.T) {
@@ -574,10 +574,10 @@ func TestCalcNextRunTimeCronExprError(t *testing.T) {
 }
 
 func TestInfo(t *testing.T) {
-	cn := getClusterNode()
+	s := getSchedulerWithStore(t)
 	brk := getBroker()
 	rec := getRecorder()
-	s := &agscheduler.Scheduler{}
+	cn := getClusterNode()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -590,6 +590,6 @@ func TestInfo(t *testing.T) {
 
 	info := s.Info()
 
-	assert.Len(t, info, 7)
+	assert.Len(t, info, 5)
 	assert.Equal(t, info["version"], agscheduler.Version)
 }

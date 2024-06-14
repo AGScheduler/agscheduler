@@ -18,7 +18,7 @@ func testClusterRPC(t *testing.T, c *rpc.Client) {
 
 	err := c.Call("CRPCService.GetInfo", filters, &info)
 	assert.NoError(t, err)
-	assert.Len(t, info, 7)
+	assert.Len(t, info, 5)
 
 	assert.Equal(t, info["version"], agscheduler.Version)
 }

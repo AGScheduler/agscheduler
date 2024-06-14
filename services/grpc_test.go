@@ -22,7 +22,7 @@ func testGRPC(t *testing.T, c pb.BaseClient) {
 
 	iResp, err := c.GetInfo(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
-	assert.Len(t, iResp.Info.AsMap(), 7)
+	assert.Len(t, iResp.Info.AsMap(), 5)
 	assert.Equal(t, iResp.Info.AsMap()["version"], agscheduler.Version)
 
 	fsResp, err := c.GetFuncs(ctx, &emptypb.Empty{})
