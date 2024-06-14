@@ -61,14 +61,19 @@ func (s *HTTPService) Start() error {
 	shs := &sHTTPService{scheduler: s.Scheduler}
 	shs.registerRoutes(r)
 
-	if s.Scheduler.IsClusterMode() {
-		chs := &cHTTPService{cn: agscheduler.GetClusterNode(s.Scheduler)}
-		chs.registerRoutes(r)
+	if s.Scheduler.HasBroker() {
+		bhs := &brkHTTPService{broker: agscheduler.GetBroker(s.Scheduler)}
+		bhs.registerRoutes(r)
 	}
 
 	if s.Scheduler.HasRecorder() {
 		rhs := &rHTTPService{recorder: agscheduler.GetRecorder(s.Scheduler)}
 		rhs.registerRoutes(r)
+	}
+
+	if s.Scheduler.IsClusterMode() {
+		chs := &cHTTPService{cn: agscheduler.GetClusterNode(s.Scheduler)}
+		chs.registerRoutes(r)
 	}
 
 	slog.Info(fmt.Sprintf("HTTP Service listening at: %s", s.Address))

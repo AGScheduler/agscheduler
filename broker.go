@@ -101,3 +101,21 @@ func (b *Broker) CountJobs(queue string) (int, error) {
 func (b *Broker) Clear(queue string) error {
 	return b.Queues[queue].Queue.Clear()
 }
+
+func (b *Broker) GetQueues() []map[string]any {
+	queues := []map[string]any{}
+	for qName, qPkg := range b.Queues {
+		count, err := qPkg.Queue.CountJobs()
+		if err != nil {
+			slog.Warn(fmt.Sprintf("Broker count `%s` jobs error: %s", qName, err))
+		}
+		queues = append(queues, map[string]any{
+			"name":    qName,
+			"type":    qPkg.Queue.Name(),
+			"count":   count,
+			"workers": qPkg.Workers,
+		})
+	}
+
+	return queues
+}

@@ -13,8 +13,11 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/backends"
+	"github.com/agscheduler/agscheduler/queues"
 	"github.com/agscheduler/agscheduler/stores"
 )
+
+var testQueue = "agscheduler_test_queue"
 
 type result struct {
 	Data  any    `json:"data"`
@@ -60,6 +63,19 @@ func TestHTTPService(t *testing.T) {
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
 
+	mq := &queues.MemoryQueue{}
+	broker := &agscheduler.Broker{
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   mq,
+				Workers: 2,
+			},
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	err = scheduler.SetBroker(ctx, broker)
+	assert.NoError(t, err)
+
 	mb := &backends.MemoryBackend{}
 	recorder := &agscheduler.Recorder{Backend: mb}
 	err = scheduler.SetRecorder(recorder)
@@ -74,11 +90,15 @@ func TestHTTPService(t *testing.T) {
 	baseUrl := "http://" + hservice.Address
 	testHTTP(t, baseUrl)
 	testSchedulerHTTP(t, baseUrl)
+	testBrokerHTTP(t, baseUrl)
 	testRecorderHTTP(t, baseUrl)
 
 	err = hservice.Stop()
 	assert.NoError(t, err)
 
+	cancel()
+	err = broker.Clear(testQueue)
+	assert.NoError(t, err)
 	err = store.Clear()
 	assert.NoError(t, err)
 }

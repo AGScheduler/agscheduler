@@ -266,6 +266,12 @@ cnNode3 := &agscheduler.ClusterNode{...}
 | Start         | POST        | /scheduler/start          |
 | Stop          | POST        | /scheduler/stop           |
 
+## Broker API
+
+| gRPC Function | HTTP Method | HTTP Path                 |
+|---------------|-------------|---------------------------|
+| GetQueues     | GET         | /broker/queues            |
+
 ## Recorder API
 
 | gRPC Function | HTTP Method | HTTP Path                 |
