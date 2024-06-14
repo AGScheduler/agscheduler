@@ -417,6 +417,12 @@ func TestSchedulerScheduleJobBrokerQueueNotExist(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestSchedulerBrokerGetQueues(t *testing.T) {
+	brk := getBroker()
+	qs := brk.GetQueues()
+	assert.Len(t, qs, 1)
+}
+
 func TestSchedulerRecorderRecordMetadata(t *testing.T) {
 	rec := getRecorder()
 	s := getSchedulerWithStore(t)

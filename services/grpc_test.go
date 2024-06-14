@@ -11,6 +11,7 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/backends"
+	"github.com/agscheduler/agscheduler/queues"
 	pb "github.com/agscheduler/agscheduler/services/proto"
 	"github.com/agscheduler/agscheduler/stores"
 )
@@ -42,6 +43,19 @@ func TestGRPCService(t *testing.T) {
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
 
+	mq := &queues.MemoryQueue{}
+	broker := &agscheduler.Broker{
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   mq,
+				Workers: 2,
+			},
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	err = scheduler.SetBroker(ctx, broker)
+	assert.NoError(t, err)
+
 	mb := &backends.MemoryBackend{}
 	recorder := &agscheduler.Recorder{Backend: mb}
 	err = scheduler.SetRecorder(recorder)
@@ -61,12 +75,17 @@ func TestGRPCService(t *testing.T) {
 	testGRPC(t, clientB)
 	clientS := pb.NewSchedulerClient(conn)
 	testSchedulerGRPC(t, clientS)
+	clientBrk := pb.NewBrokerClient(conn)
+	testBrokerGRPC(t, clientBrk)
 	clientR := pb.NewRecorderClient(conn)
 	testRecorderGRPC(t, clientS, clientR)
 
 	err = grservice.Stop()
 	assert.NoError(t, err)
 
+	cancel()
+	err = broker.Clear(testQueue)
+	assert.NoError(t, err)
 	err = store.Clear()
 	assert.NoError(t, err)
 }
