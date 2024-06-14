@@ -29,10 +29,12 @@ func TestRabbitMQQueue(t *testing.T) {
 		Password: password,
 	}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			testQueue: rmq,
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   rmq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	runTest(t, brk)

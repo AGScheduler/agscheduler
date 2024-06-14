@@ -44,10 +44,12 @@ func TestKafkaQueue(t *testing.T) {
 		Topic:    testTopic,
 	}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			testQueue: kq,
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   kq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	// PS: On any new group, Kafka internally forces a 3s wait.

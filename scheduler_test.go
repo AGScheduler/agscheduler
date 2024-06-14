@@ -62,10 +62,12 @@ func getBroker() *agscheduler.Broker {
 	mq := &queues.MemoryQueue{}
 
 	return &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			"default": mq,
+		Queues: map[string]agscheduler.QueuePkg{
+			"default": {
+				Queue:   mq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 }
 

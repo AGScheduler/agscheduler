@@ -334,7 +334,7 @@ func (s *Scheduler) pushJob(queue string, j Job) {
 	if err != nil {
 		panic(err)
 	}
-	if err := s.broker.Queues[queue].PushJob(bJ); err != nil {
+	if err := s.broker.pushJob(queue, bJ); err != nil {
 		panic(err)
 	}
 }
@@ -657,8 +657,7 @@ func (s *Scheduler) Info() map[string]any {
 			queues = append(queues, k)
 		}
 		info["broker"] = map[string]any{
-			"queues":            queues,
-			"workers_per_queue": s.broker.WorkersPerQueue,
+			"queues": queues,
 		}
 	}
 

@@ -57,10 +57,12 @@ func main() {
 		Topic:    exampleTopic,
 	}
 	brk := &agscheduler.Broker{
-		Queues: map[string]agscheduler.Queue{
-			exampleQueue: kq,
+		Queues: map[string]agscheduler.QueuePkg{
+			exampleQueue: {
+				Queue:   kq,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 
 	// PS: On any new group, Kafka internally forces a 3s wait.

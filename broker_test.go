@@ -8,10 +8,12 @@ import (
 
 func getBroker() *Broker {
 	return &Broker{
-		Queues: map[string]Queue{
-			"default": nil,
+		Queues: map[string]QueuePkg{
+			"default": {
+				Queue:   nil,
+				Workers: 2,
+			},
 		},
-		WorkersPerQueue: 2,
 	}
 }
 
