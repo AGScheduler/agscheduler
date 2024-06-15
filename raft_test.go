@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
@@ -13,6 +14,8 @@ import (
 )
 
 func TestRaft(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
