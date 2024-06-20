@@ -24,8 +24,9 @@ func runTest(t *testing.T, brk *agscheduler.Broker) {
 		agscheduler.FuncPkg{Func: runQueuesSleep},
 	)
 
-	sto := &stores.MemoryStore{}
 	s := &agscheduler.Scheduler{}
+
+	sto := &stores.MemoryStore{}
 	err := s.SetStore(sto)
 	assert.NoError(t, err)
 

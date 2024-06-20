@@ -85,8 +85,8 @@ func TestPbRecordsPtrToRecords(t *testing.T) {
 
 func TestRecorderRecordMetadata(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 
@@ -101,8 +101,8 @@ func TestRecorderRecordMetadata(t *testing.T) {
 
 func TestRecorderRecordResult(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 
@@ -119,8 +119,8 @@ func TestRecorderRecordResult(t *testing.T) {
 
 func TestRecorderGetRecords(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 
@@ -141,8 +141,8 @@ func TestRecorderGetRecords(t *testing.T) {
 func TestRecorderGetAllRecords(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
 	j2 := agscheduler.Job{Id: "2"}
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 
@@ -176,8 +176,8 @@ func TestRecorderGetAllRecords(t *testing.T) {
 
 func TestRecorderDeleteRecords(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 
@@ -196,8 +196,8 @@ func TestRecorderDeleteRecords(t *testing.T) {
 
 func TestRecorderDeleteAllRecords(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 
@@ -216,8 +216,8 @@ func TestRecorderDeleteAllRecords(t *testing.T) {
 
 func TestRecorderClear(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 

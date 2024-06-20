@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/agscheduler/agscheduler)
 [![license](https://img.shields.io/github/license/agscheduler/agscheduler)](https://github.com/agscheduler/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度库，支持多种调度类型，支持动态更改和持久化作业，支持作业队列，支持作业结果回收，支持远程调用，支持集群
+> Advanced Golang Scheduler (AGScheduler) 是一款适用于 Golang 的任务调度库，支持多种调度类型，支持动态更改和持久化作业，支持作业队列，支持作业结果回收，支持事件监听, 支持远程调用，支持集群
 
 [English](README.md) | 简体中文
 
@@ -36,6 +36,9 @@
   - [x] Memory (不支持集群模式)
   - [x] [GORM](https://gorm.io/) (任何 GORM 支持的 RDBMS 都能运行)
   - [x] [MongoDB](https://www.mongodb.com/)
+- 支持事件监听
+  - [x] 调度器事件
+  - [x] 作业事件
 - 支持远程调用
   - [x] [gRPC](https://grpc.io/)
   - [x] HTTP
@@ -78,8 +81,9 @@ func main() {
 		agscheduler.FuncPkg{Func: printMsg},
 	)
 
-	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
+
+	store := &stores.MemoryStore{}
 	scheduler.SetStore(store)
 
 	job1 := agscheduler.Job{
@@ -132,7 +136,7 @@ func main() {
 
 ```go
 mq := &queues.MemoryQueue{}
-brk := &agscheduler.Broker{
+broker := &agscheduler.Broker{
 	Queues: map[string]agscheduler.QueuePkg{
 		"default": {
 			Queue:   mq,
@@ -141,21 +145,39 @@ brk := &agscheduler.Broker{
 	},
 }
 
-scheduler.SetStore(store)
-scheduler.SetBroker(brk)
+scheduler.SetBroker(broker)
 ```
 
 ## 结果回收
 
 ```go
 mb := &backends.MemoryBackend{}
-rec := &agscheduler.Recorder{Backend: mb}
+recorder := &agscheduler.Recorder{Backend: mb}
 
-scheduler.SetStore(store)
-scheduler.SetRecorder(rec)
+scheduler.SetRecorder(recorder)
 
 job, _ = scheduler.AddJob(job)
-records, _ := rec.GetRecords(job.Id)
+records, _ := recorder.GetRecords(job.Id)
+```
+
+## 事件监听
+```go
+func jobCallback(ep agscheduler.EventPkg) {
+	slog.Info(fmt.Sprintf("Event code: `%d`, job `%s`.\n\n", ep.Event, ep.JobId))
+}
+
+......
+
+listener := &agscheduler.Listener{
+	Callbacks: []agscheduler.CallbackPkg{
+		{
+			Callback: jobCallback,
+			Event:    agscheduler.EVENT_JOB_ADDED | agscheduler.EVENT_JOB_DELETED,
+		},
+	},
+}
+
+scheduler.SetListener(listener)
 ```
 
 ## gRPC
@@ -202,7 +224,6 @@ cnMain := &agscheduler.ClusterNode{
 	EndpointHTTP: "127.0.0.1:36370",
 	Queue:        "default",
 }
-schedulerMain.SetStore(storeMain)
 schedulerMain.SetClusterNode(ctx, cnMain)
 cserviceMain := &services.ClusterService{Cn: cnMain}
 cserviceMain.Start()
@@ -215,7 +236,6 @@ cnNode := &agscheduler.ClusterNode{
 	EndpointHTTP: "127.0.0.1:36371",
 	Queue:        "worker",
 }
-schedulerNode.SetStore(storeNode)
 schedulerNode.SetClusterNode(ctx, cnNode)
 cserviceNode := &services.ClusterService{Cn: cnNode}
 cserviceNode.Start()

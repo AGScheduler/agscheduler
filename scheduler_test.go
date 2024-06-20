@@ -18,9 +18,11 @@ func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result string) { r
 
 func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result string) { panic(nil); return }
 
+func dryCallbackScheduler(ep agscheduler.EventPkg) {}
+
 func getSchedulerWithStore(t *testing.T) *agscheduler.Scheduler {
-	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
+	store := &stores.MemoryStore{}
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
 
@@ -76,12 +78,22 @@ func getRecorder() *agscheduler.Recorder {
 	return &agscheduler.Recorder{Backend: mb}
 }
 
-func TestSchedulerSetStore(t *testing.T) {
-	store := &stores.MemoryStore{}
-	s := &agscheduler.Scheduler{}
+func getListener() *agscheduler.Listener {
+	return &agscheduler.Listener{
+		Callbacks: []agscheduler.CallbackPkg{
+			{
+				Callback: dryCallbackScheduler,
+				Event:    agscheduler.EVENT_JOB_ADDED | agscheduler.EVENT_JOB_DELETED,
+			},
+		},
+	}
+}
 
+func TestSchedulerSetStore(t *testing.T) {
+	s := &agscheduler.Scheduler{}
 	assert.Nil(t, agscheduler.GetStore(s))
 
+	store := &stores.MemoryStore{}
 	err := s.SetStore(store)
 	assert.NoError(t, err)
 
@@ -89,13 +101,12 @@ func TestSchedulerSetStore(t *testing.T) {
 }
 
 func TestSchedulerSetClusterNode(t *testing.T) {
-	cn := getClusterNode()
 	s := &agscheduler.Scheduler{}
-
 	assert.Nil(t, agscheduler.GetClusterNode(s))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	cn := getClusterNode()
 	err := s.SetClusterNode(ctx, cn)
 	assert.NoError(t, err)
 
@@ -103,13 +114,12 @@ func TestSchedulerSetClusterNode(t *testing.T) {
 }
 
 func TestSchedulerSetBroker(t *testing.T) {
-	brk := &agscheduler.Broker{}
 	s := &agscheduler.Scheduler{}
-
 	assert.Nil(t, agscheduler.GetBroker(s))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	brk := &agscheduler.Broker{}
 	err := s.SetBroker(ctx, brk)
 	assert.NoError(t, err)
 
@@ -117,15 +127,25 @@ func TestSchedulerSetBroker(t *testing.T) {
 }
 
 func TestSchedulerSetRecorder(t *testing.T) {
-	rec := getRecorder()
 	s := &agscheduler.Scheduler{}
-
 	assert.Nil(t, agscheduler.GetRecorder(s))
 
+	rec := getRecorder()
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
 
 	assert.NotNil(t, agscheduler.GetRecorder(s))
+}
+
+func TestSchedulerSetListener(t *testing.T) {
+	s := &agscheduler.Scheduler{}
+	assert.Nil(t, agscheduler.GetListener(s))
+
+	lis := getListener()
+	err := s.SetListener(lis)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, agscheduler.GetListener(s))
 }
 
 func TestSchedulerAddJob(t *testing.T) {

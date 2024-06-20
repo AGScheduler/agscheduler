@@ -19,6 +19,7 @@ var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 var GetBroker = (*Scheduler).getBroker
 var GetRecorder = (*Scheduler).getRecorder
+var GetListener = (*Scheduler).getListener
 
 // In standalone mode, the scheduler only needs to run jobs on a regular basis.
 // In cluster mode, the scheduler also needs to be responsible for allocating jobs to cluster nodes.
@@ -39,6 +40,7 @@ type Scheduler struct {
 	broker *Broker
 	// When recorder exist, record the results of job runs.
 	recorder *Recorder
+	listener *Listener
 
 	statusM sync.RWMutex
 	storeM  sync.RWMutex
@@ -129,6 +131,26 @@ func (s *Scheduler) HasRecorder() bool {
 	return s.recorder != nil
 }
 
+// Bind the listener
+func (s *Scheduler) SetListener(lis *Listener) error {
+	slog.Info("Scheduler set Listener.")
+
+	s.listener = lis
+	if err := s.listener.init(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Scheduler) getListener() *Listener {
+	return s.listener
+}
+
+func (s *Scheduler) HasListener() bool {
+	return s.listener != nil
+}
+
 // Calculate the next run time, different job type will be calculated in different ways,
 // when the job is paused, will return `9999-09-09 09:09:09`.
 func CalcNextRunTime(j Job) (time.Time, error) {
@@ -189,6 +211,7 @@ func (s *Scheduler) AddJob(j Job) (Job, error) {
 		s.wakeup()
 	}
 
+	s.dispatchEvent(EventPkg{EVENT_JOB_ADDED, j.Id, nil})
 	return j, nil
 }
 
@@ -238,6 +261,7 @@ func (s *Scheduler) _updateJob(j Job) (Job, error) {
 		s.wakeup()
 	}
 
+	s.dispatchEvent(EventPkg{EVENT_JOB_UPDATED, j.Id, nil})
 	return j, nil
 }
 
@@ -260,7 +284,12 @@ func (s *Scheduler) _deleteJob(id string) error {
 		return err
 	}
 
-	return s.store.DeleteJob(id)
+	if err := s.store.DeleteJob(id); err != nil {
+		return err
+	}
+
+	s.dispatchEvent(EventPkg{EVENT_JOB_DELETED, id, nil})
+	return nil
 }
 
 func (s *Scheduler) DeleteJob(id string) error {
@@ -276,7 +305,12 @@ func (s *Scheduler) DeleteAllJobs() error {
 
 	slog.Info("Scheduler delete all jobs.")
 
-	return s.store.DeleteAllJobs()
+	if err := s.store.DeleteAllJobs(); err != nil {
+		return err
+	}
+
+	s.dispatchEvent(EventPkg{EVENT_ALL_JOBS_DELETED, "", nil})
+	return nil
 }
 
 func (s *Scheduler) PauseJob(id string) (Job, error) {
@@ -297,6 +331,7 @@ func (s *Scheduler) PauseJob(id string) (Job, error) {
 		return Job{}, err
 	}
 
+	s.dispatchEvent(EventPkg{EVENT_JOB_PAUSED, j.Id, nil})
 	return j, nil
 }
 
@@ -318,6 +353,7 @@ func (s *Scheduler) ResumeJob(id string) (Job, error) {
 		return Job{}, err
 	}
 
+	s.dispatchEvent(EventPkg{EVENT_JOB_RESUMED, j.Id, nil})
 	return j, nil
 }
 
@@ -374,6 +410,7 @@ func (s *Scheduler) _runJob(j Job) {
 			defer func() {
 				if err := recover(); err != nil {
 					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
+					s.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, err})
 					slog.Debug(string(debug.Stack()))
 					status = RECORD_STATUS_ERROR
 					result = fmt.Sprintf("%s", err)
@@ -386,11 +423,13 @@ func (s *Scheduler) _runJob(j Job) {
 
 		select {
 		case <-ch:
+			s.dispatchEvent(EventPkg{EVENT_JOB_EXECUTED, j.Id, nil})
 			if status == "" {
 				status = RECORD_STATUS_COMPLETED
 			}
 		case <-ctx.Done():
 			slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
+			s.dispatchEvent(EventPkg{EVENT_JOB_TIMEOUT, j.Id, nil})
 			status = RECORD_STATUS_TIMEOUT
 		}
 
@@ -588,6 +627,7 @@ func (s *Scheduler) Start() {
 	go s.run()
 
 	slog.Info("Scheduler start.")
+	s.dispatchEvent(EventPkg{EVENT_SCHEDULER_STARTED, "", nil})
 }
 
 // In addition to being called manually,
@@ -605,9 +645,10 @@ func (s *Scheduler) Stop() {
 	s.isRunning = false
 
 	slog.Info("Scheduler stop.")
+	s.dispatchEvent(EventPkg{EVENT_SCHEDULER_STOPPED, "", nil})
 }
 
-// Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler
+// Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler.
 func (s *Scheduler) getNextWakeupInterval() time.Duration {
 	nextRunTimeMin, err := s.store.GetNextRunTime()
 	if err != nil {
@@ -628,6 +669,14 @@ func (s *Scheduler) wakeup() {
 	if s.timer != nil {
 		s.timer.Reset(0)
 	}
+}
+
+// Send an event to the listener.
+func (s *Scheduler) dispatchEvent(eP EventPkg) {
+	if !s.HasListener() {
+		return
+	}
+	s.listener.handleEvent(eP)
 }
 
 func (s *Scheduler) Info() map[string]any {

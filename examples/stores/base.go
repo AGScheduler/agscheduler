@@ -19,6 +19,7 @@ func runExample(sto agscheduler.Store) {
 	)
 
 	s := &agscheduler.Scheduler{}
+
 	err := s.SetStore(sto)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set store: %s", err))

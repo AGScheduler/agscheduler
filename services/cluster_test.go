@@ -19,14 +19,15 @@ import (
 func TestClusterService(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 
-	store := &stores.MemoryStore{}
-	cnMain := &agscheduler.ClusterNode{
-		EndpointMain: "127.0.0.1:36380",
-	}
 	scheduler := &agscheduler.Scheduler{}
+
+	store := &stores.MemoryStore{}
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
 
+	cnMain := &agscheduler.ClusterNode{
+		EndpointMain: "127.0.0.1:36380",
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	err = scheduler.SetClusterNode(ctx, cnMain)

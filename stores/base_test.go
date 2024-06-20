@@ -17,6 +17,7 @@ func runTest(t *testing.T, sto agscheduler.Store) {
 	)
 
 	s := &agscheduler.Scheduler{}
+
 	err := s.SetStore(sto)
 	assert.NoError(t, err)
 

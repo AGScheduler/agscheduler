@@ -22,13 +22,15 @@ func runExample(brk *agscheduler.Broker) {
 		agscheduler.FuncPkg{Func: examples.PrintMsgSleep},
 	)
 
-	sto := &stores.MemoryStore{}
 	s := &agscheduler.Scheduler{}
+
+	sto := &stores.MemoryStore{}
 	err := s.SetStore(sto)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
 		os.Exit(1)
 	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	err = s.SetBroker(ctx, brk)
 	if err != nil {
