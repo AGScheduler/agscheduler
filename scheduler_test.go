@@ -18,6 +18,8 @@ func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result string) { r
 
 func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result string) { panic(nil); return }
 
+func dryCallbackScheduler(ep agscheduler.EventPkg) {}
+
 func getSchedulerWithStore(t *testing.T) *agscheduler.Scheduler {
 	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
@@ -76,6 +78,17 @@ func getRecorder() *agscheduler.Recorder {
 	return &agscheduler.Recorder{Backend: mb}
 }
 
+func getListener() *agscheduler.Listener {
+	return &agscheduler.Listener{
+		Callbacks: []agscheduler.CallbackPkg{
+			{
+				Callback: dryCallbackScheduler,
+				Event:    agscheduler.EVENT_JOB_ADDED | agscheduler.EVENT_JOB_DELETED,
+			},
+		},
+	}
+}
+
 func TestSchedulerSetStore(t *testing.T) {
 	store := &stores.MemoryStore{}
 	s := &agscheduler.Scheduler{}
@@ -114,6 +127,18 @@ func TestSchedulerSetBroker(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, agscheduler.GetBroker(s))
+}
+
+func TestSchedulerSetListener(t *testing.T) {
+	lis := getListener()
+	s := &agscheduler.Scheduler{}
+
+	assert.Nil(t, agscheduler.GetListener(s))
+
+	err := s.SetListener(lis)
+	assert.NoError(t, err)
+
+	assert.NotNil(t, agscheduler.GetListener(s))
 }
 
 func TestSchedulerSetRecorder(t *testing.T) {

@@ -8,7 +8,7 @@
 ![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/agscheduler/agscheduler)
 [![license](https://img.shields.io/github/license/agscheduler/agscheduler)](https://github.com/agscheduler/agscheduler/blob/main/LICENSE)
 
-> Advanced Golang Scheduler (AGScheduler) is a task scheduling library for Golang that supports multiple scheduling types, dynamically changing and persistent jobs, job queues, job result collection, remote call, and cluster
+> Advanced Golang Scheduler (AGScheduler) is a task scheduling library for Golang that supports multiple scheduling types, dynamically changing and persistent jobs, job queues, job result collection, event listening, remote call, and cluster
 
 English | [简体中文](README.zh-CN.md)
 
@@ -36,6 +36,9 @@ English | [简体中文](README.zh-CN.md)
   - [x] Memory (Cluster mode is not supported)
   - [x] [GORM](https://gorm.io/) (any RDBMS supported by GORM works)
   - [x] [MongoDB](https://www.mongodb.com/)
+- Supports event listening
+  - [x] Scheduler event
+  - [x] Job event
 - Supports remote call
   - [x] [gRPC](https://grpc.io/)
   - [x] HTTP
@@ -78,8 +81,9 @@ func main() {
 		agscheduler.FuncPkg{Func: printMsg},
 	)
 
-	store := &stores.MemoryStore{}
 	scheduler := &agscheduler.Scheduler{}
+
+	store := &stores.MemoryStore{}
 	scheduler.SetStore(store)
 
 	job1 := agscheduler.Job{
@@ -132,7 +136,7 @@ func main() {
 
 ```go
 mq := &queues.MemoryQueue{}
-brk := &agscheduler.Broker{
+broker := &agscheduler.Broker{
 	Queues: map[string]agscheduler.QueuePkg{
 		"default": {
 			Queue:   mq,
@@ -141,21 +145,40 @@ brk := &agscheduler.Broker{
 	},
 }
 
-scheduler.SetStore(store)
-scheduler.SetBroker(brk)
+scheduler.SetBroker(broker)
 ```
 
 ## Result Collection
 
 ```go
 mb := &backends.MemoryBackend{}
-rec := &agscheduler.Recorder{Backend: mb}
+recorder := &agscheduler.Recorder{Backend: mb}
 
-scheduler.SetStore(store)
-scheduler.SetRecorder(rec)
+scheduler.SetRecorder(recorder)
 
 job, _ = scheduler.AddJob(job)
-records, _ := rec.GetRecords(job.Id)
+records, _ := recorder.GetRecords(job.Id)
+```
+
+## Event listening
+
+```go
+func jobCallback(ep agscheduler.EventPkg) {
+	slog.Info(fmt.Sprintf("Event code: `%d`, job `%s`.\n\n", ep.Event, ep.JobId))
+}
+
+......
+
+listener := &agscheduler.Listener{
+	Callbacks: []agscheduler.CallbackPkg{
+		{
+			Callback: jobCallback,
+			Event:    agscheduler.EVENT_JOB_ADDED | agscheduler.EVENT_JOB_DELETED,
+		},
+	},
+}
+
+scheduler.SetListener(listener)
 ```
 
 ## gRPC
@@ -202,7 +225,6 @@ cnMain := &agscheduler.ClusterNode{
 	EndpointHTTP: "127.0.0.1:36370",
 	Queue:        "default",
 }
-schedulerMain.SetStore(storeMain)
 schedulerMain.SetClusterNode(ctx, cnMain)
 cserviceMain := &services.ClusterService{Cn: cnMain}
 cserviceMain.Start()
@@ -215,7 +237,6 @@ cnNode := &agscheduler.ClusterNode{
 	EndpointHTTP: "127.0.0.1:36371",
 	Queue:        "worker",
 }
-schedulerNode.SetStore(storeNode)
 schedulerNode.SetClusterNode(ctx, cnNode)
 cserviceNode := &services.ClusterService{Cn: cnNode}
 cserviceNode.Start()

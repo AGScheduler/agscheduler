@@ -119,5 +119,9 @@ examples-backend:
 	go run examples/backends/base.go examples/backends/gorm.go
 	go run examples/backends/base.go examples/backends/mongodb.go
 
+.PHONY: examples-event
+examples-event:
+	go run examples/event/event.go
+
 .PHONY: examples-all
-examples-all: examples-store examples-api examples-queue examples-backend
+examples-all: examples-store examples-api examples-queue examples-backend examples-event
