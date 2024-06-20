@@ -42,7 +42,14 @@ func main() {
 
 	flag.Parse()
 
+	scheduler := &agscheduler.Scheduler{}
+
 	store := &stores.MemoryStore{}
+	err := scheduler.SetStore(store)
+	if err != nil {
+		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
+		os.Exit(1)
+	}
 
 	cn := &agscheduler.ClusterNode{
 		EndpointMain: *endpointMain,
@@ -51,13 +58,6 @@ func main() {
 		EndpointHTTP: *endpointHTTP,
 		Queue:        *queue,
 		Mode:         *mode,
-	}
-
-	scheduler := &agscheduler.Scheduler{}
-	err := scheduler.SetStore(store)
-	if err != nil {
-		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
-		os.Exit(1)
 	}
 	err = scheduler.SetClusterNode(context.TODO(), cn)
 	if err != nil {

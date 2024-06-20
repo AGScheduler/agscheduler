@@ -145,9 +145,9 @@ func main() {
 		agscheduler.FuncPkg{Func: examples.PrintMsg},
 	)
 
-	store := &stores.MemoryStore{}
-
 	scheduler := &agscheduler.Scheduler{}
+
+	store := &stores.MemoryStore{}
 	err := scheduler.SetStore(store)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set store: %s", err))

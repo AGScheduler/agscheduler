@@ -47,7 +47,7 @@ type CallbackPkg struct {
 }
 
 // Initialization functions for each Listener,
-// called when the scheduler run `SetBroker`.
+// called when the scheduler run `SetListener`.
 func (l *Listener) init() error {
 	slog.Info("Listener init...")
 

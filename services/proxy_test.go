@@ -23,7 +23,11 @@ func TestClusterProxy(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	schedulerMain := &agscheduler.Scheduler{}
+
 	store := &stores.MemoryStore{}
+	err := schedulerMain.SetStore(store)
+	assert.NoError(t, err)
 
 	cnMain := &agscheduler.ClusterNode{
 		EndpointMain: "127.0.0.1:36380",
@@ -31,9 +35,6 @@ func TestClusterProxy(t *testing.T) {
 		EndpointGRPC: "127.0.0.1:36360",
 		EndpointHTTP: "127.0.0.1:36370",
 	}
-	schedulerMain := &agscheduler.Scheduler{}
-	err := schedulerMain.SetStore(store)
-	assert.NoError(t, err)
 	err = schedulerMain.SetClusterNode(ctx, cnMain)
 	assert.NoError(t, err)
 	cserviceMain := &ClusterService{Cn: cnMain}
@@ -42,6 +43,10 @@ func TestClusterProxy(t *testing.T) {
 
 	time.Sleep(2 * time.Second)
 
+	scheduler := &agscheduler.Scheduler{}
+	err = scheduler.SetStore(store)
+	assert.NoError(t, err)
+
 	cnNode := &agscheduler.ClusterNode{
 		EndpointMain: cnMain.Endpoint,
 		Endpoint:     "127.0.0.1:36381",
@@ -49,9 +54,6 @@ func TestClusterProxy(t *testing.T) {
 		EndpointHTTP: "127.0.0.1:36371",
 		Queue:        "node",
 	}
-	scheduler := &agscheduler.Scheduler{}
-	err = scheduler.SetStore(store)
-	assert.NoError(t, err)
 	err = scheduler.SetClusterNode(ctx, cnNode)
 	assert.NoError(t, err)
 	cservice := &ClusterService{Cn: cnNode}
