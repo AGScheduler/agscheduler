@@ -1,6 +1,7 @@
 package backends
 
 import (
+	"context"
 	"log/slog"
 	"testing"
 	"time"
@@ -8,13 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/examples"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
+func dryRunRecorder(ctx context.Context, j agscheduler.Job) (result string) { return }
+
 func runTest(t *testing.T, rec *agscheduler.Recorder) {
 	agscheduler.RegisterFuncs(
-		agscheduler.FuncPkg{Func: examples.PrintMsg},
+		agscheduler.FuncPkg{Func: dryRunRecorder},
 	)
 
 	s := &agscheduler.Scheduler{}
@@ -28,7 +30,7 @@ func runTest(t *testing.T, rec *agscheduler.Recorder) {
 		Name:     "Job",
 		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "2s",
-		Func:     examples.PrintMsg,
+		Func:     dryRunRecorder,
 	}
 	job, err = s.AddJob(job)
 	assert.NoError(t, err)
@@ -37,7 +39,7 @@ func runTest(t *testing.T, rec *agscheduler.Recorder) {
 		Name:    "Job2",
 		Type:    agscheduler.JOB_TYPE_DATETIME,
 		StartAt: "2023-09-22 07:30:08",
-		Func:    examples.PrintMsg,
+		Func:    dryRunRecorder,
 	}
 	_, err = s.AddJob(job2)
 	assert.NoError(t, err)
