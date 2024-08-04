@@ -9,7 +9,7 @@ import (
 
 func main() {
 	mq := &queues.MemoryQueue{}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			exampleQueue: {
 				Queue:   mq,
@@ -18,5 +18,5 @@ func main() {
 		},
 	}
 
-	runExample(brk)
+	runExample(broker)
 }

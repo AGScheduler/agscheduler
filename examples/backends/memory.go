@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	mb := &backends.MemoryBackend{}
-	recorder := &agscheduler.Recorder{Backend: mb}
+	backend := &backends.MemoryBackend{}
+	recorder := &agscheduler.Recorder{Backend: backend}
 
 	runExample(recorder)
 }

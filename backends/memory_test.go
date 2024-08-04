@@ -7,8 +7,8 @@ import (
 )
 
 func TestMemoryBackend(t *testing.T) {
-	mb := &MemoryBackend{}
-	recorder := &agscheduler.Recorder{Backend: mb}
+	backend := &MemoryBackend{}
+	recorder := &agscheduler.Recorder{Backend: backend}
 
 	runTest(t, recorder)
 }

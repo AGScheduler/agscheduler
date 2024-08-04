@@ -24,7 +24,7 @@ func TestRedisQueue(t *testing.T) {
 		Group:    "agscheduler_test_group",
 		Consumer: "agscheduler_test_consumer",
 	}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			testQueue: {
 				Queue:   rq,
@@ -33,5 +33,5 @@ func TestRedisQueue(t *testing.T) {
 		},
 	}
 
-	runTest(t, brk)
+	runTest(t, broker)
 }

@@ -56,7 +56,7 @@ func main() {
 		Consumer: c,
 		Topic:    exampleTopic,
 	}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			exampleQueue: {
 				Queue:   kq,
@@ -70,5 +70,5 @@ func main() {
 	slog.Info("Sleep 5s......\n\n")
 	time.Sleep(5 * time.Second)
 
-	runExample(brk)
+	runExample(broker)
 }

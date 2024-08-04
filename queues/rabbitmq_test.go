@@ -28,7 +28,7 @@ func TestRabbitMQQueue(t *testing.T) {
 		Username: username,
 		Password: password,
 	}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			testQueue: {
 				Queue:   rmq,
@@ -37,5 +37,5 @@ func TestRabbitMQQueue(t *testing.T) {
 		},
 	}
 
-	runTest(t, brk)
+	runTest(t, broker)
 }
