@@ -105,7 +105,7 @@ func main() {
 		FuncName: "main.printMsg",
 		Args:     map[string]any{"arg4": "4", "arg5": "5", "arg6": "6", "arg7": "7"},
 	}
-	job2, _ = s.AddJob(job2)
+	job2, _ = scheduler.AddJob(job2)
 	slog.Info(fmt.Sprintf("%s.\n\n", job2))
 
 	job3 := agscheduler.Job{
@@ -116,10 +116,10 @@ func main() {
 		Func:     printMsg,
 		Args:     map[string]any{"arg8": "8", "arg9": "9"},
 	}
-	job3, _ = s.AddJob(job3)
+	job3, _ = scheduler.AddJob(job3)
 	slog.Info(fmt.Sprintf("%s.\n\n", job3))
 
-	jobs, _ := s.GetAllJobs()
+	jobs, _ := scheduler.GetAllJobs()
 	slog.Info(fmt.Sprintf("Scheduler get all jobs %s.\n\n", jobs))
 
 	scheduler.Start()
@@ -151,8 +151,8 @@ scheduler.SetBroker(broker)
 ## Result Collection
 
 ```go
-mb := &backends.MemoryBackend{}
-recorder := &agscheduler.Recorder{Backend: mb}
+backend := &backends.MemoryBackend{}
+recorder := &agscheduler.Recorder{Backend: backend}
 
 scheduler.SetRecorder(recorder)
 
