@@ -39,7 +39,7 @@ func TestNsqQueue(t *testing.T) {
 		Topic:    testTopic,
 		HttpAddr: httpAddr,
 	}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			testQueue: {
 				Queue:   nq,
@@ -48,5 +48,5 @@ func TestNsqQueue(t *testing.T) {
 		},
 	}
 
-	runTest(t, brk)
+	runTest(t, broker)
 }

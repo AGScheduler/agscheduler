@@ -8,7 +8,7 @@ import (
 
 func TestMemoryQueue(t *testing.T) {
 	mq := &MemoryQueue{}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			testQueue: {
 				Queue:   mq,
@@ -17,5 +17,5 @@ func TestMemoryQueue(t *testing.T) {
 		},
 	}
 
-	runTest(t, brk)
+	runTest(t, broker)
 }

@@ -23,12 +23,12 @@ func main() {
 	}
 	defer client.Disconnect(ctx)
 
-	mb := &backends.MongoDBBackend{
+	backend := &backends.MongoDBBackend{
 		Client:     client,
 		Database:   backends.MONGODB_DATABASE,
 		Collection: "example_records",
 	}
-	recorder := &agscheduler.Recorder{Backend: mb}
+	recorder := &agscheduler.Recorder{Backend: backend}
 
 	runExample(recorder)
 }

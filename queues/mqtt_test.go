@@ -22,7 +22,7 @@ func TestMqttQueue(t *testing.T) {
 		TopicPrefix: MQTT_TOPIC_PREFIX,
 		Topic:       "test_topic",
 	}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			testQueue: {
 				Queue:   mq,
@@ -31,5 +31,5 @@ func TestMqttQueue(t *testing.T) {
 		},
 	}
 
-	runTest(t, brk)
+	runTest(t, broker)
 }

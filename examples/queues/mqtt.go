@@ -27,7 +27,7 @@ func main() {
 		TopicPrefix: queues.MQTT_TOPIC_PREFIX,
 		Topic:       "example_topic",
 	}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			exampleQueue: {
 				Queue:   mq,
@@ -36,5 +36,5 @@ func main() {
 		},
 	}
 
-	runExample(brk)
+	runExample(broker)
 }

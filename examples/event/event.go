@@ -22,16 +22,16 @@ func main() {
 		agscheduler.FuncPkg{Func: examples.PrintMsg},
 	)
 
-	s := &agscheduler.Scheduler{}
+	scheduler := &agscheduler.Scheduler{}
 
-	sto := &stores.MemoryStore{}
-	err := s.SetStore(sto)
+	store := &stores.MemoryStore{}
+	err := scheduler.SetStore(store)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set store: %s", err))
 		os.Exit(1)
 	}
 
-	lis := &agscheduler.Listener{
+	listener := &agscheduler.Listener{
 		Callbacks: []agscheduler.CallbackPkg{
 			{
 				Callback: jobCallback,
@@ -39,7 +39,7 @@ func main() {
 			},
 		},
 	}
-	err = s.SetListener(lis)
+	err = scheduler.SetListener(listener)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set listener: %s", err))
 		os.Exit(1)
@@ -51,11 +51,11 @@ func main() {
 		Interval: "2s",
 		Func:     examples.PrintMsg,
 	}
-	job, _ = s.AddJob(job)
+	job, _ = scheduler.AddJob(job)
 
-	job, _ = s.PauseJob(job.Id)
+	job, _ = scheduler.PauseJob(job.Id)
 
-	_ = s.DeleteJob(job.Id)
+	_ = scheduler.DeleteJob(job.Id)
 
 	time.Sleep(1 * time.Second)
 }

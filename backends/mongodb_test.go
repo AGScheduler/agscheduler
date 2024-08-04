@@ -16,12 +16,12 @@ func TestMongoDBBackend(t *testing.T) {
 	assert.NoError(t, err)
 	defer client.Disconnect(ctx)
 
-	mb := &MongoDBBackend{
+	backend := &MongoDBBackend{
 		Client:     client,
 		Database:   MONGODB_DATABASE,
 		Collection: "test_records",
 	}
-	recorder := &agscheduler.Recorder{Backend: mb}
+	recorder := &agscheduler.Recorder{Backend: backend}
 
 	runTest(t, recorder)
 }

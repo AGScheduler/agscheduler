@@ -43,7 +43,7 @@ func TestKafkaQueue(t *testing.T) {
 		Consumer: c,
 		Topic:    testTopic,
 	}
-	brk := &agscheduler.Broker{
+	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
 			testQueue: {
 				Queue:   kq,
@@ -56,5 +56,5 @@ func TestKafkaQueue(t *testing.T) {
 	// https://github.com/twmb/franz-go/issues/732
 	time.Sleep(5 * time.Second)
 
-	runTest(t, brk)
+	runTest(t, broker)
 }

@@ -15,8 +15,8 @@ func TestGormBackend(t *testing.T) {
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	assert.NoError(t, err)
 
-	gb := &GormBackend{DB: db, TableName: "test_records"}
-	recorder := &agscheduler.Recorder{Backend: gb}
+	backend := &GormBackend{DB: db, TableName: "test_records"}
+	recorder := &agscheduler.Recorder{Backend: backend}
 
 	runTest(t, recorder)
 }
