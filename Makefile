@@ -43,7 +43,7 @@ down-cluster-ci-service:
 .PHONY: down-cluster-ci-service_second
 down-cluster-ci-service_second:
 	ps -ef | grep "cluster_node -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670" \
-	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
+	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service-second"
 
 .PHONY: test
 test: down-cluster-ci-service up-cluster-ci-service
@@ -59,9 +59,10 @@ test: down-cluster-ci-service up-cluster-ci-service
 		-v
 	go tool cover -func=coverage.out
 	go tool cover -html=coverage.out -o coverage.html
+	$(MAKE) down-cluster-ci-service_second
 
 .PHONY: check-all
-check-all: format-check isort-check lint test down-cluster-ci-service_second
+check-all: format-check isort-check lint test
 
 .PHONY: up-ci-services
 up-ci-services:
