@@ -1,10 +1,13 @@
+import datetime
+
 from google.protobuf import empty_pb2 as _empty_pb2
 from google.protobuf import struct_pb2 as _struct_pb2
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from collections.abc import Iterable as _Iterable, Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -15,7 +18,7 @@ class JobReq(_message.Message):
     def __init__(self, id: _Optional[str] = ...) -> None: ...
 
 class Job(_message.Message):
-    __slots__ = ("id", "name", "type", "start_at", "end_at", "interval", "cron_expr", "timezone", "func_name", "args", "timeout", "queues", "last_run_time", "next_run_time", "status")
+    __slots__ = ("id", "name", "type", "start_at", "end_at", "interval", "cron_expr", "timezone", "func_name", "args", "timeout", "queues", "max_instances", "last_run_time", "next_run_time", "status")
     ID_FIELD_NUMBER: _ClassVar[int]
     NAME_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -28,6 +31,7 @@ class Job(_message.Message):
     ARGS_FIELD_NUMBER: _ClassVar[int]
     TIMEOUT_FIELD_NUMBER: _ClassVar[int]
     QUEUES_FIELD_NUMBER: _ClassVar[int]
+    MAX_INSTANCES_FIELD_NUMBER: _ClassVar[int]
     LAST_RUN_TIME_FIELD_NUMBER: _ClassVar[int]
     NEXT_RUN_TIME_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
@@ -43,10 +47,11 @@ class Job(_message.Message):
     args: _struct_pb2.Struct
     timeout: str
     queues: _containers.RepeatedScalarFieldContainer[str]
+    max_instances: int
     last_run_time: _timestamp_pb2.Timestamp
     next_run_time: _timestamp_pb2.Timestamp
     status: str
-    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., start_at: _Optional[str] = ..., end_at: _Optional[str] = ..., interval: _Optional[str] = ..., cron_expr: _Optional[str] = ..., timezone: _Optional[str] = ..., func_name: _Optional[str] = ..., args: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., timeout: _Optional[str] = ..., queues: _Optional[_Iterable[str]] = ..., last_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., next_run_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., status: _Optional[str] = ...) -> None: ...
+    def __init__(self, id: _Optional[str] = ..., name: _Optional[str] = ..., type: _Optional[str] = ..., start_at: _Optional[str] = ..., end_at: _Optional[str] = ..., interval: _Optional[str] = ..., cron_expr: _Optional[str] = ..., timezone: _Optional[str] = ..., func_name: _Optional[str] = ..., args: _Optional[_Union[_struct_pb2.Struct, _Mapping]] = ..., timeout: _Optional[str] = ..., queues: _Optional[_Iterable[str]] = ..., max_instances: _Optional[int] = ..., last_run_time: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., next_run_time: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., status: _Optional[str] = ...) -> None: ...
 
 class JobsResp(_message.Message):
     __slots__ = ("jobs",)

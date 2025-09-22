@@ -42,6 +42,10 @@ type Scheduler struct {
 	recorder *Recorder
 	listener *Listener
 
+	// Track running job instances for max_instances control
+	runningJobs   map[string]int
+	jobInstancesM sync.RWMutex
+
 	statusM sync.RWMutex
 	storeM  sync.RWMutex
 }
@@ -62,11 +66,46 @@ func (s *Scheduler) SetStore(sto Store) error {
 		return err
 	}
 
+	s.init()
 	return nil
 }
 
 func (s *Scheduler) getStore() Store {
 	return s.store
+}
+
+func (s *Scheduler) init() {
+	s.runningJobs = make(map[string]int)
+}
+
+func (s *Scheduler) canRunJob(jobName string, maxInstances int) bool {
+	s.jobInstancesM.RLock()
+	defer s.jobInstancesM.RUnlock()
+
+	return s.runningJobs[jobName] < maxInstances
+}
+
+func (s *Scheduler) incrementJobInstance(jobName string) {
+	s.jobInstancesM.Lock()
+	defer s.jobInstancesM.Unlock()
+
+	s.runningJobs[jobName]++
+}
+
+func (s *Scheduler) decrementJobInstance(jobName string) {
+	s.jobInstancesM.Lock()
+	defer s.jobInstancesM.Unlock()
+
+	if s.runningJobs[jobName] > 0 {
+		s.runningJobs[jobName]--
+	}
+}
+
+func (s *Scheduler) getJobInstanceCount(jobName string) int {
+	s.jobInstancesM.RLock()
+	defer s.jobInstancesM.RUnlock()
+
+	return s.runningJobs[jobName]
 }
 
 // Bind the cluster node
@@ -377,6 +416,15 @@ func (s *Scheduler) pushJob(queue string, j Job) {
 
 // Used in standalone mode.
 func (s *Scheduler) _runJob(j Job) {
+	if !s.canRunJob(j.Name, j.MaxInstances) {
+		slog.Warn(fmt.Sprintf("Job `%s` skipped due to max_instances limit (%d/%d)", j.FullName(), s.getJobInstanceCount(j.Name), j.MaxInstances))
+		s.dispatchEvent(EventPkg{EVENT_JOB_MAX_INSTANCES, j.Id, nil})
+		return
+	}
+
+	s.incrementJobInstance(j.Name)
+	defer s.decrementJobInstance(j.Name)
+
 	f := reflect.ValueOf(FuncMap[j.FuncName].Func)
 	if f.IsNil() {
 		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered", j.FullName(), j.FuncName))
@@ -514,7 +562,7 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 		go s.pushJob(queue, j)
 	} else {
 		if s.IsClusterMode() {
-			// In cluster mode
+			// In cluster mode.
 			node, err := s.clusterNode.choiceNode(j.Queues)
 			if err != nil {
 				return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)

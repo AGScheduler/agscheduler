@@ -72,6 +72,11 @@ type Job struct {
 	// Used in cluster mode, if empty, randomly pick a node to run `Func`,
 	// but when broker exist, if empty, randomly pick a queue to run `Func`.
 	Queues []string `json:"queues"`
+	// Maximum number of concurrent instances for this job.
+	// Minimum value is 1, cannot be set to 0 or negative.
+	// Default: 1
+	// Note: In protobuf, values ≤ 0 will be treated as 1.
+	MaxInstances int `json:"max_instances"`
 
 	// Automatic update, not manual setting.
 	LastRunTime time.Time `json:"last_run_time"`
@@ -121,6 +126,10 @@ func (j *Job) init() error {
 		j.Queues = []string{}
 	}
 
+	if j.MaxInstances <= 0 {
+		j.MaxInstances = 1
+	}
+
 	nextRunTime, err := CalcNextRunTime(*j)
 	if err != nil {
 		return err
@@ -143,6 +152,10 @@ func (j *Job) check() error {
 	_, err := time.ParseDuration(j.Timeout)
 	if err != nil {
 		return &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	}
+
+	if j.MaxInstances <= 0 {
+		return fmt.Errorf("job `%s` MaxInstances must be greater than 0, got %d", j.FullName(), j.MaxInstances)
 	}
 
 	return nil
@@ -176,11 +189,11 @@ func (j Job) String() string {
 	return fmt.Sprintf(
 		"Job{'Id':'%s', 'Name':'%s', 'Type':'%s', 'StartAt':'%s', 'EndAt':'%s', "+
 			"'Interval':'%s', 'CronExpr':'%s', 'Timezone':'%s', "+
-			"'FuncName':'%s', 'Args':'%s', 'Timeout':'%s', 'Queues':'%s', "+
+			"'FuncName':'%s', 'Args':'%s', 'Timeout':'%s', 'Queues':'%s', 'MaxInstances':'%d', "+
 			"'LastRunTime':'%s', 'NextRunTime':'%s', 'Status':'%s'}",
 		j.Id, j.Name, j.Type, j.StartAt, j.EndAt,
 		j.Interval, j.CronExpr, j.Timezone,
-		j.FuncName, j.Args, j.Timeout, j.Queues,
+		j.FuncName, j.Args, j.Timeout, j.Queues, j.MaxInstances,
 		j.LastRunTimeWithTimezone(), j.NextRunTimeWithTimezone(), j.Status,
 	)
 }
@@ -220,18 +233,19 @@ func JobToPbJobPtr(j Job) (*pb.Job, error) {
 	}
 
 	pbJ := &pb.Job{
-		Id:       j.Id,
-		Name:     j.Name,
-		Type:     j.Type,
-		StartAt:  j.StartAt,
-		EndAt:    j.EndAt,
-		Interval: j.Interval,
-		CronExpr: j.CronExpr,
-		Timezone: j.Timezone,
-		FuncName: j.FuncName,
-		Args:     args,
-		Timeout:  j.Timeout,
-		Queues:   j.Queues,
+		Id:           j.Id,
+		Name:         j.Name,
+		Type:         j.Type,
+		StartAt:      j.StartAt,
+		EndAt:        j.EndAt,
+		Interval:     j.Interval,
+		CronExpr:     j.CronExpr,
+		Timezone:     j.Timezone,
+		FuncName:     j.FuncName,
+		Args:         args,
+		Timeout:      j.Timeout,
+		Queues:       j.Queues,
+		MaxInstances: int32(j.MaxInstances),
 
 		LastRunTime: timestamppb.New(j.LastRunTime),
 		NextRunTime: timestamppb.New(j.NextRunTime),
@@ -244,18 +258,19 @@ func JobToPbJobPtr(j Job) (*pb.Job, error) {
 // Used to gRPC Protobuf
 func PbJobPtrToJob(pbJob *pb.Job) Job {
 	return Job{
-		Id:       pbJob.GetId(),
-		Name:     pbJob.GetName(),
-		Type:     pbJob.GetType(),
-		StartAt:  pbJob.GetStartAt(),
-		EndAt:    pbJob.GetEndAt(),
-		Interval: pbJob.GetInterval(),
-		CronExpr: pbJob.GetCronExpr(),
-		Timezone: pbJob.GetTimezone(),
-		FuncName: pbJob.GetFuncName(),
-		Args:     pbJob.GetArgs().AsMap(),
-		Timeout:  pbJob.GetTimeout(),
-		Queues:   pbJob.GetQueues(),
+		Id:           pbJob.GetId(),
+		Name:         pbJob.GetName(),
+		Type:         pbJob.GetType(),
+		StartAt:      pbJob.GetStartAt(),
+		EndAt:        pbJob.GetEndAt(),
+		Interval:     pbJob.GetInterval(),
+		CronExpr:     pbJob.GetCronExpr(),
+		Timezone:     pbJob.GetTimezone(),
+		FuncName:     pbJob.GetFuncName(),
+		Args:         pbJob.GetArgs().AsMap(),
+		Timeout:      pbJob.GetTimeout(),
+		Queues:       pbJob.GetQueues(),
+		MaxInstances: max(1, int(pbJob.GetMaxInstances())),
 
 		LastRunTime: pbJob.GetLastRunTime().AsTime(),
 		NextRunTime: pbJob.GetNextRunTime().AsTime(),

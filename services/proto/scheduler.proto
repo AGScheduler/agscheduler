@@ -24,10 +24,11 @@ message Job {
   google.protobuf.Struct args = 10;
   string timeout = 11;
   repeated string queues = 12;
+  int32 max_instances = 13;
 
-  google.protobuf.Timestamp  last_run_time = 13;
-  google.protobuf.Timestamp  next_run_time = 14;
-  string status = 15;
+  google.protobuf.Timestamp  last_run_time = 14;
+  google.protobuf.Timestamp  next_run_time = 15;
+  string status = 16;
 }
 
 message JobsResp {

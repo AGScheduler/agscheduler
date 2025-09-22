@@ -1,9 +1,12 @@
+import datetime
+
 from google.protobuf import empty_pb2 as _empty_pb2
 from google.protobuf import timestamp_pb2 as _timestamp_pb2
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from collections.abc import Mapping as _Mapping
+from typing import ClassVar as _ClassVar, Optional as _Optional, Union as _Union
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -29,7 +32,7 @@ class Node(_message.Message):
     health: bool
     register_time: _timestamp_pb2.Timestamp
     last_heartbeat_time: _timestamp_pb2.Timestamp
-    def __init__(self, endpoint_main: _Optional[str] = ..., endpoint: _Optional[str] = ..., endpoint_grpc: _Optional[str] = ..., endpoint_http: _Optional[str] = ..., queue: _Optional[str] = ..., mode: _Optional[str] = ..., version: _Optional[str] = ..., health: bool = ..., register_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ..., last_heartbeat_time: _Optional[_Union[_timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
+    def __init__(self, endpoint_main: _Optional[str] = ..., endpoint: _Optional[str] = ..., endpoint_grpc: _Optional[str] = ..., endpoint_http: _Optional[str] = ..., queue: _Optional[str] = ..., mode: _Optional[str] = ..., version: _Optional[str] = ..., health: bool = ..., register_time: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ..., last_heartbeat_time: _Optional[_Union[datetime.datetime, _timestamp_pb2.Timestamp, _Mapping]] = ...) -> None: ...
 
 class NodesResp(_message.Message):
     __slots__ = ("nodes",)
