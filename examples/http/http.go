@@ -56,7 +56,8 @@ func runExampleHTTP(baseUrl string) {
 	body, _ = io.ReadAll(resp.Body)
 	rJob2 := &result{}
 	json.Unmarshal(body, &rJob2)
-	slog.Info(fmt.Sprintf("%s.\n\n", rJob2.Data))
+	mJob2 = rJob2.Data.(map[string]any)
+	slog.Info(fmt.Sprintf("%s.\n\n", mJob2))
 
 	http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
 
@@ -101,7 +102,8 @@ func runExampleHTTP(baseUrl string) {
 	body, _ = io.ReadAll(resp.Body)
 	rJob2 = &result{}
 	json.Unmarshal(body, &rJob2)
-	slog.Info(fmt.Sprintf("Scheduler update job `%s:%s` %s.\n\n", rJob2.Data.(map[string]any)["id"].(string), rJob2.Data.(map[string]any)["name"].(string), rJob2.Data))
+	mJob2 = rJob2.Data.(map[string]any)
+	slog.Info(fmt.Sprintf("Scheduler update job `%s:%s` %s.\n\n", mJob2["id"].(string), mJob2["name"].(string), mJob2))
 
 	slog.Info("Sleep 4s......")
 	time.Sleep(4 * time.Second)

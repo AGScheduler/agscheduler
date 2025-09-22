@@ -38,7 +38,8 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	rJ := &result{}
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.JOB_STATUS_RUNNING, rJ.Data.(map[string]any)["status"].(string))
+	mJ = rJ.Data.(map[string]any)
+	assert.Equal(t, agscheduler.JOB_STATUS_RUNNING, mJ["status"].(string))
 
 	id := rJ.Data.(map[string]any)["id"].(string)
 	mJ["id"] = id
@@ -58,7 +59,8 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	rJ = &result{}
 	err = json.Unmarshal(body, &rJ)
 	assert.NoError(t, err)
-	assert.Equal(t, agscheduler.JOB_TYPE_CRON, rJ.Data.(map[string]any)["type"].(string))
+	mJ = rJ.Data.(map[string]any)
+	assert.Equal(t, agscheduler.JOB_TYPE_CRON, mJ["type"].(string))
 
 	timezone, err := time.LoadLocation(rJ.Data.(map[string]any)["timezone"].(string))
 	assert.NoError(t, err)
