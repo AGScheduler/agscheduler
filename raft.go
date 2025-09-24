@@ -63,7 +63,9 @@ func (rf *Raft) sendRequestVote(address string, args VoteArgs) {
 		slog.Error(fmt.Sprintf("Failed to connect to cluster node while sending request vote: `%s`, error: %s", address, err))
 		return
 	}
-	defer rClient.Close()
+	defer func() {
+		_ = rClient.Close()
+	}()
 
 	var reply VoteReply
 	err = rClient.Call("CRPCService.RaftRequestVote", args, &reply)
@@ -148,7 +150,9 @@ func (rf *Raft) sendHeartbeat(address string, args HeartbeatArgs) {
 		slog.Debug(fmt.Sprintf("Failed to connect to cluster node while sending heartbeat: `%s`, error: %s", address, err))
 		return
 	}
-	defer rClient.Close()
+	defer func() {
+		_ = rClient.Close()
+	}()
 
 	var reply HeartbeatReply
 	err = rClient.Call("CRPCService.RaftHeartbeat", args, &reply)

@@ -1,4 +1,4 @@
-// go run examples/grpc/grpc_server.go
+// go run examples/http/http_server/main.go
 
 package main
 
@@ -27,12 +27,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	grservice := services.GRPCService{
+	hservice := services.HTTPService{
 		Scheduler: scheduler,
-		Address:   "127.0.0.1:36360",
+		Address:   "127.0.0.1:36370",
 		// PasswordSha2: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
 	}
-	err = grservice.Start()
+	err = hservice.Start()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to start service: %s", err))
 		os.Exit(1)

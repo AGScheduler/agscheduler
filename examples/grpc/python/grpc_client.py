@@ -1,4 +1,4 @@
-# 1. go run examples/grpc/grpc_server.go
+# 1. go run examples/grpc/grpc_server/main.go
 # 2. python3 examples/grpc/python/grpc_client.py
 
 import grpc

@@ -16,7 +16,7 @@ import (
 
 func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result string) { return }
 
-func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result string) { panic(nil); return }
+func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result string) { panic(nil) }
 
 func dryCallbackScheduler(ep agscheduler.EventPkg) {}
 
