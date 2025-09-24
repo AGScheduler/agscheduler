@@ -79,7 +79,10 @@ func TestAuth(t *testing.T) {
 
 	conn, err := grpc.NewClient(grservice.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
-	defer conn.Close()
+	defer func() {
+		err = conn.Close()
+		assert.NoError(t, err)
+	}()
 
 	time.Sleep(time.Second)
 

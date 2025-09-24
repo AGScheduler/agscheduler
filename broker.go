@@ -92,9 +92,9 @@ func (b *Broker) pushJob(queue string, bJ []byte) error {
 	return b.Queues[queue].Queue.PushJob(bJ)
 }
 
-func (b *Broker) pullJob(queue string) <-chan []byte {
-	return b.Queues[queue].Queue.PullJob()
-}
+// func (b *Broker) pullJob(queue string) <-chan []byte {
+// 	return b.Queues[queue].Queue.PullJob()
+// }
 
 func (b *Broker) CountJobs(queue string) (int, error) {
 	return b.Queues[queue].Queue.CountJobs()

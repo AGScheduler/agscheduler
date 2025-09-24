@@ -1,4 +1,4 @@
-// go run examples/stores/base.go examples/stores/redis.go
+// go run examples/stores/redis/main.go
 
 package main
 
@@ -9,6 +9,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
+	es "github.com/agscheduler/agscheduler/examples/stores"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
@@ -20,12 +21,14 @@ func main() {
 		os.Exit(1)
 	}
 	rdb := redis.NewClient(opt)
-	_, err = rdb.Ping(ctx).Result()
+	_, err = rdb.Ping(es.Ctx).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
-	defer rdb.Close()
+	defer func() {
+		_ = rdb.Close()
+	}()
 
 	store := &stores.RedisStore{
 		RDB:         rdb,
@@ -33,5 +36,5 @@ func main() {
 		RunTimesKey: "agscheduler.example_run_times",
 	}
 
-	runExample(store)
+	es.RunExample(store)
 }

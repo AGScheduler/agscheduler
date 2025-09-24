@@ -1,4 +1,4 @@
-// go run examples/grpc/grpc.go
+// go run examples/grpc/main.go
 
 package main
 
@@ -49,7 +49,7 @@ func runExampleGRPC(c pb.SchedulerClient) {
 	job2 = agscheduler.PbJobPtrToJob(pbJob2)
 	slog.Info(fmt.Sprintf("%s.\n\n", job2))
 
-	c.Start(ctx, &emptypb.Empty{})
+	_, _ = c.Start(ctx, &emptypb.Empty{})
 
 	job3 := agscheduler.Job{
 		Name:     "Job3",
@@ -94,28 +94,28 @@ func runExampleGRPC(c pb.SchedulerClient) {
 	pbJob1, _ = c.ResumeJob(ctx, &pb.JobReq{Id: job1.Id})
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 
-	c.DeleteJob(ctx, &pb.JobReq{Id: job2.Id})
+	_, _ = c.DeleteJob(ctx, &pb.JobReq{Id: job2.Id})
 
 	slog.Info("Sleep 4s......\n\n")
 	time.Sleep(4 * time.Second)
 
-	c.Stop(ctx, &emptypb.Empty{})
+	_, _ = c.Stop(ctx, &emptypb.Empty{})
 
-	c.RunJob(ctx, pbJob1)
+	_, _ = c.RunJob(ctx, pbJob1)
 
-	c.ScheduleJob(ctx, pbJob1)
-
-	slog.Info("Sleep 3s......\n\n")
-	time.Sleep(3 * time.Second)
-
-	c.Start(ctx, &emptypb.Empty{})
+	_, _ = c.ScheduleJob(ctx, pbJob1)
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
-	c.DeleteAllJobs(ctx, &emptypb.Empty{})
+	_, _ = c.Start(ctx, &emptypb.Empty{})
 
-	c.Stop(ctx, &emptypb.Empty{})
+	slog.Info("Sleep 3s......\n\n")
+	time.Sleep(3 * time.Second)
+
+	_, _ = c.DeleteAllJobs(ctx, &emptypb.Empty{})
+
+	_, _ = c.Stop(ctx, &emptypb.Empty{})
 }
 
 func main() {
@@ -143,7 +143,9 @@ func main() {
 	}
 
 	conn, _ := grpc.NewClient("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	client := pb.NewSchedulerClient(conn)
 
 	runExampleGRPC(client)

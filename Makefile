@@ -2,10 +2,10 @@ SHELL=/bin/bash
 
 .PHONY: install
 install:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.2
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.9
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
-	go install golang.org/x/tools/cmd/goimports@v0.23.0
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
+	go install golang.org/x/tools/cmd/goimports@v0.37.0
 	go mod tidy
 
 	pip3 install grpcio-tools
@@ -28,21 +28,21 @@ isort-check:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=5m
+	golangci-lint run --timeout=5m -v
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
-	go run examples/cluster/cluster_node.go -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670 &
+	go run examples/cluster/cluster_node/main.go -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670 &
 	sleep 2s
 
 .PHONY: down-cluster-ci-service
 down-cluster-ci-service:
-	ps -ef | grep "cluster_node -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670" \
+	ps -ef | grep "main -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service"
 
 .PHONY: down-cluster-ci-service_second
 down-cluster-ci-service_second:
-	ps -ef | grep "cluster_node -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670" \
+	ps -ef | grep "main -e 127.0.0.1:36680 -egr 127.0.0.1:36660 -eh 127.0.0.1:36670" \
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service-second"
 
 .PHONY: test
@@ -93,36 +93,36 @@ protobuf:
 
 .PHONY: examples-store
 examples-store:
-	go run examples/stores/base.go examples/stores/memory.go
-	go run examples/stores/base.go examples/stores/gorm.go
-	go run examples/stores/base.go examples/stores/redis.go
-	go run examples/stores/base.go examples/stores/mongodb.go
-	go run examples/stores/base.go examples/stores/etcd.go
-	go run examples/stores/base.go examples/stores/elasticsearch.go
+	go run examples/stores/memory/main.go
+	go run examples/stores/gorm/main.go
+	go run examples/stores/redis/main.go
+	go run examples/stores/mongodb/main.go
+	go run examples/stores/etcd/main.go
+	go run examples/stores/elasticsearch/main.go
 
 .PHONY: examples-api
 examples-api:
-	go run examples/grpc/grpc.go
-	go run examples/http/http.go
+	go run examples/grpc/main.go
+	go run examples/http/main.go
 
 .PHONY: examples-queue
 examples-queue:
-	go run examples/queues/base.go examples/queues/memory.go
-	go run examples/queues/base.go examples/queues/nsq.go
-	go run examples/queues/base.go examples/queues/rabbitmq.go
-	go run examples/queues/base.go examples/queues/redis.go
-	go run examples/queues/base.go examples/queues/mqtt.go
-	go run examples/queues/base.go examples/queues/kafka.go
+	go run examples/queues/memory/main.go
+	go run examples/queues/nsq/main.go
+	go run examples/queues/rabbitmq/main.go
+	go run examples/queues/redis/main.go
+	go run examples/queues/mqtt/main.go
+	go run examples/queues/kafka/main.go
 
 .PHONY: examples-backend
 examples-backend:
-	go run examples/backends/base.go examples/backends/memory.go
-	go run examples/backends/base.go examples/backends/gorm.go
-	go run examples/backends/base.go examples/backends/mongodb.go
+	go run examples/backends/memory/main.go
+	go run examples/backends/gorm/main.go
+	go run examples/backends/mongodb/main.go
 
 .PHONY: examples-event
 examples-event:
-	go run examples/event/event.go
+	go run examples/event/main.go
 
 .PHONY: examples-all
 examples-all: examples-store examples-api examples-queue examples-backend examples-event

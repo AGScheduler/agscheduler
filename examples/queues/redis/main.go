@@ -1,4 +1,4 @@
-// go run examples/queues/base.go examples/queues/redis.go
+// go run examples/queues/redis/main.go
 
 package main
 
@@ -10,6 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/agscheduler/agscheduler"
+	eq "github.com/agscheduler/agscheduler/examples/queues"
 	"github.com/agscheduler/agscheduler/queues"
 )
 
@@ -21,12 +22,14 @@ func main() {
 		os.Exit(1)
 	}
 	rdb := redis.NewClient(opt)
-	_, err = rdb.Ping(ctx).Result()
+	_, err = rdb.Ping(eq.Ctx).Result()
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
 	}
-	defer rdb.Close()
+	defer func() {
+		_ = rdb.Close()
+	}()
 
 	rq := &queues.RedisQueue{
 		RDB:      rdb,
@@ -36,12 +39,12 @@ func main() {
 	}
 	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
-			exampleQueue: {
+			eq.ExampleQueue: {
 				Queue:   rq,
 				Workers: 2,
 			},
 		},
 	}
 
-	runExample(broker)
+	eq.RunExample(broker)
 }
