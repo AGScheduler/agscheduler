@@ -2,10 +2,10 @@ SHELL=/bin/bash
 
 .PHONY: install
 install:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.2
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.9
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.59.1
-	go install golang.org/x/tools/cmd/goimports@v0.23.0
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
+	go install golang.org/x/tools/cmd/goimports@v0.37.0
 	go mod tidy
 
 	pip3 install grpcio-tools
@@ -28,7 +28,7 @@ isort-check:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=5m
+	golangci-lint run --timeout=5m -v
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
