@@ -1,4 +1,4 @@
-// go run examples/event/main.go
+// go run examples/event/event.go
 
 package main
 

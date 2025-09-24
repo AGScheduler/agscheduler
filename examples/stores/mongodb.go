@@ -1,4 +1,4 @@
-// go run examples/stores/mongodb/main.go
+// go run examples/stores/base.go examples/stores/mongodb.go
 
 package main
 
@@ -10,20 +10,17 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	es "github.com/agscheduler/agscheduler/examples/stores"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
 func main() {
 	uri := "mongodb://127.0.0.1:27017/"
-	client, err := mongo.Connect(es.Ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
-	defer func() {
-		_ = client.Disconnect(es.Ctx)
-	}()
+	defer client.Disconnect(ctx)
 
 	store := &stores.MongoDBStore{
 		Client:     client,
@@ -31,5 +28,5 @@ func main() {
 		Collection: "example_jobs",
 	}
 
-	es.RunExample(store)
+	runExample(store)
 }

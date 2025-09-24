@@ -1,4 +1,4 @@
-// go run examples/stores/etcd/main.go
+// go run examples/stores/base.go examples/stores/etcd.go
 
 package main
 
@@ -10,7 +10,6 @@ import (
 
 	clientv3 "go.etcd.io/etcd/client/v3"
 
-	es "github.com/agscheduler/agscheduler/examples/stores"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
@@ -23,9 +22,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
 	}
-	defer func() {
-		_ = cli.Close()
-	}()
+	defer cli.Close()
 
 	store := &stores.EtcdStore{
 		Cli:          cli,
@@ -33,5 +30,5 @@ func main() {
 		RunTimesPath: "/agscheduler/example_run_times",
 	}
 
-	es.RunExample(store)
+	runExample(store)
 }

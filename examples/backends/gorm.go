@@ -1,4 +1,4 @@
-// go run examples/stores/gorm/main.go
+// go run examples/backends/base.go examples/backends/gorm.go
 
 package main
 
@@ -10,8 +10,8 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
-	es "github.com/agscheduler/agscheduler/examples/stores"
-	"github.com/agscheduler/agscheduler/stores"
+	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/backends"
 )
 
 func main() {
@@ -22,7 +22,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	store := &stores.GormStore{DB: db, TableName: "example_jobs"}
+	backend := &backends.GormBackend{DB: db, TableName: "example_records"}
+	recorder := &agscheduler.Recorder{Backend: backend}
 
-	es.RunExample(store)
+	runExample(recorder)
 }

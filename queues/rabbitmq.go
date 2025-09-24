@@ -148,9 +148,7 @@ func (q *RabbitMQQueue) getExchangeBindings() ([]binding, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 
 	var bindings []binding
 	if err := json.NewDecoder(resp.Body).Decode(&bindings); err != nil {
@@ -208,7 +206,7 @@ func (q *RabbitMQQueue) Clear() error {
 	if err != nil {
 		return err
 	}
-	_ = q.ch.Close()
+	q.ch.Close()
 
 	return nil
 }

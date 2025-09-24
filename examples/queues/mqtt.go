@@ -1,4 +1,4 @@
-// go run examples/queues/mqtt/main.go
+// go run examples/queues/base.go examples/queues/mqtt.go
 
 package main
 
@@ -10,7 +10,6 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"github.com/agscheduler/agscheduler"
-	eq "github.com/agscheduler/agscheduler/examples/queues"
 	"github.com/agscheduler/agscheduler/queues"
 )
 
@@ -30,12 +29,12 @@ func main() {
 	}
 	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
-			eq.ExampleQueue: {
+			exampleQueue: {
 				Queue:   mq,
 				Workers: 2,
 			},
 		},
 	}
 
-	eq.RunExample(broker)
+	runExample(broker)
 }

@@ -1,5 +1,5 @@
-// 1. go run examples/http/http_server/main.go
-// 2. go run examples/http/http_client/main.go
+// 1. go run examples/http/http_server.go
+// 2. go run examples/http/http_client.go
 
 package main
 
@@ -36,10 +36,10 @@ func runExampleHTTP(baseUrl string) {
 	resp, _ := client.Do(req)
 	body, _ := io.ReadAll(resp.Body)
 	rJob1 := &result{}
-	_ = json.Unmarshal(body, &rJob1)
+	json.Unmarshal(body, &rJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", rJob1.Data))
 
-	_, _ = http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
+	http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
 }
 
 func main() {

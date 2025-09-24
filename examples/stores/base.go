@@ -1,4 +1,4 @@
-package stores
+package main
 
 import (
 	"context"
@@ -11,9 +11,9 @@ import (
 	"github.com/agscheduler/agscheduler/examples"
 )
 
-var Ctx = context.Background()
+var ctx = context.Background()
 
-func RunExample(sto agscheduler.Store) {
+func runExample(sto agscheduler.Store) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: examples.PrintMsg},
 	)
@@ -85,16 +85,16 @@ func RunExample(sto agscheduler.Store) {
 
 	job1, _ = s.ResumeJob(job1.Id)
 
-	_ = s.DeleteJob(job2.Id)
+	s.DeleteJob(job2.Id)
 
 	slog.Info("Sleep 4s......\n\n")
 	time.Sleep(4 * time.Second)
 
 	s.Stop()
 
-	_ = s.RunJob(job1)
+	s.RunJob(job1)
 
-	_ = s.ScheduleJob(job1)
+	s.ScheduleJob(job1)
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
@@ -104,9 +104,9 @@ func RunExample(sto agscheduler.Store) {
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
-	_ = s.DeleteAllJobs()
+	s.DeleteAllJobs()
 
 	s.Stop()
 
-	_ = sto.Clear()
+	sto.Clear()
 }
