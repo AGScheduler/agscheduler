@@ -1,4 +1,4 @@
-// go run examples/queues/base.go examples/queues/nsq.go
+// go run examples/queues/nsq/main.go
 
 package main
 
@@ -10,6 +10,7 @@ import (
 	"github.com/nsqio/go-nsq"
 
 	"github.com/agscheduler/agscheduler"
+	eq "github.com/agscheduler/agscheduler/examples/queues"
 	"github.com/agscheduler/agscheduler/queues"
 )
 
@@ -35,7 +36,7 @@ func main() {
 	}
 	defer producer.Stop()
 
-	consumer, err := nsq.NewConsumer(exampleTopic, exampleQueue, config)
+	consumer, err := nsq.NewConsumer(exampleTopic, eq.ExampleQueue, config)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to create consumer: %s", err))
 		os.Exit(1)
@@ -57,12 +58,12 @@ func main() {
 	}
 	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
-			exampleQueue: {
+			eq.ExampleQueue: {
 				Queue:   nq,
 				Workers: 2,
 			},
 		},
 	}
 
-	runExample(broker)
+	eq.RunExample(broker)
 }

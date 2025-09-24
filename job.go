@@ -96,7 +96,7 @@ func (js JobSlice) Less(i, j int) bool { return js[i].NextRunTime.Before(js[j].N
 func (js JobSlice) Swap(i, j int)      { js[i], js[j] = js[j], js[i] }
 
 func (j *Job) setId() {
-	j.Id = strings.Replace(uuid.New().String(), "-", "", -1)[:16]
+	j.Id = strings.ReplaceAll(uuid.New().String(), "-", "")[:16]
 }
 
 // Initialization functions for each job,
