@@ -1,5 +1,5 @@
-// 1. go run examples/grpc/grpc_server/main.go
-// 2. go run examples/grpc/grpc_client/main.go
+// 1. go run examples/grpc/grpc_server.go
+// 2. go run examples/grpc/grpc_client.go
 
 package main
 
@@ -33,14 +33,12 @@ func runExampleGRPC(c pb.SchedulerClient) {
 	job1 = agscheduler.PbJobPtrToJob(pbJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", job1))
 
-	_, _ = c.Start(ctx, &emptypb.Empty{})
+	c.Start(ctx, &emptypb.Empty{})
 }
 
 func main() {
 	conn, _ := grpc.NewClient("127.0.0.1:36360", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	defer func() {
-		_ = conn.Close()
-	}()
+	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 
 	runExampleGRPC(client)

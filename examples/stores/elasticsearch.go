@@ -1,4 +1,4 @@
-// go run examples/stores/elasticsearch/main.go
+// go run examples/stores/base.go examples/stores/elasticsearch.go
 
 package main
 
@@ -9,7 +9,6 @@ import (
 
 	es8 "github.com/elastic/go-elasticsearch/v8"
 
-	es "github.com/agscheduler/agscheduler/examples/stores"
 	"github.com/agscheduler/agscheduler/stores"
 )
 
@@ -21,7 +20,7 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to create client: %s", err))
 		os.Exit(1)
 	}
-	_, err = tClient.Ping().Do(es.Ctx)
+	_, err = tClient.Ping().Do(ctx)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to connect to database: %s", err))
 		os.Exit(1)
@@ -32,5 +31,5 @@ func main() {
 		Index:   "agscheduler_example_jobs",
 	}
 
-	es.RunExample(store)
+	runExample(store)
 }

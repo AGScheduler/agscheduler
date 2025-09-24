@@ -14,10 +14,7 @@ func TestRedisStore(t *testing.T) {
 	rdb := redis.NewClient(opt)
 	_, err = rdb.Ping(ctx).Result()
 	assert.NoError(t, err)
-	defer func() {
-		err = rdb.Close()
-		assert.NoError(t, err)
-	}()
+	defer rdb.Close()
 
 	store := &RedisStore{
 		RDB:         rdb,

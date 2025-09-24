@@ -1,4 +1,4 @@
-// go run examples/http/main.go
+// go run examples/http/http.go
 
 package main
 
@@ -40,7 +40,7 @@ func runExampleHTTP(baseUrl string) {
 	resp, _ := http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJob1))
 	body, _ := io.ReadAll(resp.Body)
 	rJob1 := &result{}
-	_ = json.Unmarshal(body, &rJob1)
+	json.Unmarshal(body, &rJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", rJob1.Data))
 
 	mJob2 := map[string]any{
@@ -55,11 +55,11 @@ func runExampleHTTP(baseUrl string) {
 	resp, _ = http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJob2))
 	body, _ = io.ReadAll(resp.Body)
 	rJob2 := &result{}
-	_ = json.Unmarshal(body, &rJob2)
+	json.Unmarshal(body, &rJob2)
 	mJob2 = rJob2.Data.(map[string]any)
 	slog.Info(fmt.Sprintf("%s.\n\n", mJob2))
 
-	_, _ = http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
+	http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
 
 	mJob3 := map[string]any{
 		"name":      "Job3",
@@ -73,13 +73,13 @@ func runExampleHTTP(baseUrl string) {
 	resp, _ = http.Post(baseUrl+"/scheduler/job", CONTENT_TYPE, bytes.NewReader(bJob3))
 	body, _ = io.ReadAll(resp.Body)
 	rJob3 := &result{}
-	_ = json.Unmarshal(body, &rJob3)
+	json.Unmarshal(body, &rJob3)
 	slog.Info(fmt.Sprintf("%s.\n\n", rJob3.Data))
 
 	resp, _ = http.Get(baseUrl + "/scheduler/jobs")
 	body, _ = io.ReadAll(resp.Body)
 	res := &result{}
-	_ = json.Unmarshal(body, &res)
+	json.Unmarshal(body, &res)
 	slog.Info(fmt.Sprintf("Scheduler get all jobs %s.\n\n", res.Data))
 
 	slog.Info("Sleep 5s......\n\n")
@@ -88,7 +88,7 @@ func runExampleHTTP(baseUrl string) {
 	resp, _ = http.Get(baseUrl + "/scheduler/job" + "/" + rJob1.Data.(map[string]any)["id"].(string))
 	body, _ = io.ReadAll(resp.Body)
 	rJob1 = &result{}
-	_ = json.Unmarshal(body, &rJob1)
+	json.Unmarshal(body, &rJob1)
 	slog.Info(fmt.Sprintf("Scheduler get job `%s:%s` %s.\n\n", rJob1.Data.(map[string]any)["id"].(string), rJob1.Data.(map[string]any)["name"].(string), rJob1.Data))
 
 	mJob2["id"] = rJob2.Data.(map[string]any)["id"].(string)
@@ -101,45 +101,45 @@ func runExampleHTTP(baseUrl string) {
 	resp, _ = client.Do(req)
 	body, _ = io.ReadAll(resp.Body)
 	rJob2 = &result{}
-	_ = json.Unmarshal(body, &rJob2)
+	json.Unmarshal(body, &rJob2)
 	mJob2 = rJob2.Data.(map[string]any)
 	slog.Info(fmt.Sprintf("Scheduler update job `%s:%s` %s.\n\n", mJob2["id"].(string), mJob2["name"].(string), mJob2))
 
 	slog.Info("Sleep 4s......")
 	time.Sleep(4 * time.Second)
 
-	_, _ = http.Post(baseUrl+"/scheduler/job/"+rJob1.Data.(map[string]any)["id"].(string)+"/pause", CONTENT_TYPE, nil)
+	http.Post(baseUrl+"/scheduler/job/"+rJob1.Data.(map[string]any)["id"].(string)+"/pause", CONTENT_TYPE, nil)
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
-	_, _ = http.Post(baseUrl+"/scheduler/job/"+rJob1.Data.(map[string]any)["id"].(string)+"/resume", CONTENT_TYPE, nil)
+	http.Post(baseUrl+"/scheduler/job/"+rJob1.Data.(map[string]any)["id"].(string)+"/resume", CONTENT_TYPE, nil)
 
 	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+rJob2.Data.(map[string]any)["id"].(string), nil)
-	_, _ = client.Do(req)
+	client.Do(req)
 
 	slog.Info("Sleep 4s......\n\n")
 	time.Sleep(4 * time.Second)
 
-	_, _ = http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
+	http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
 
 	bJob1, _ = json.Marshal(rJob1.Data.(map[string]any))
-	_, _ = http.Post(baseUrl+"/scheduler/job/run", CONTENT_TYPE, bytes.NewReader(bJob1))
+	http.Post(baseUrl+"/scheduler/job/run", CONTENT_TYPE, bytes.NewReader(bJob1))
 
-	_, _ = http.Post(baseUrl+"/scheduler/job/schedule", CONTENT_TYPE, bytes.NewReader(bJob1))
+	http.Post(baseUrl+"/scheduler/job/schedule", CONTENT_TYPE, bytes.NewReader(bJob1))
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
-	_, _ = http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
+	http.Post(baseUrl+"/scheduler/start", CONTENT_TYPE, nil)
 
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
 	req, _ = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/jobs", nil)
-	_, _ = client.Do(req)
+	client.Do(req)
 
-	_, _ = http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
+	http.Post(baseUrl+"/scheduler/stop", CONTENT_TYPE, nil)
 }
 
 func main() {

@@ -1,4 +1,4 @@
-package backends
+package main
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-var Ctx = context.Background()
+var ctx = context.Background()
 
-func RunExample(rec *agscheduler.Recorder) {
+func runExample(rec *agscheduler.Recorder) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: examples.PrintMsg},
 	)
@@ -61,13 +61,13 @@ func RunExample(rec *agscheduler.Recorder) {
 	records, _, _ = rec.GetAllRecords(1, 10)
 	slog.Info(fmt.Sprintf("Scheduler recorder get all records %v.\n\n", records))
 
-	_ = rec.DeleteRecords(job.Id)
-	_ = rec.DeleteAllRecords()
+	rec.DeleteRecords(job.Id)
+	rec.DeleteAllRecords()
 
-	_ = s.DeleteAllJobs()
+	s.DeleteAllJobs()
 
 	s.Stop()
 
-	_ = sto.Clear()
-	_ = rec.Clear()
+	sto.Clear()
+	rec.Clear()
 }

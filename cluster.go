@@ -131,7 +131,7 @@ func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
 	nodeMapCopy := make(TypeNodeMap)
 	err := cn.deepCopyNodeMapByGob(nodeMapCopy, cn.nodeMap)
 	if err != nil {
-		slog.Error(fmt.Sprintf("Deep copy `NodeMap` error: %s", err))
+		slog.Error("Deep copy `NodeMap` error:", err)
 	}
 
 	return nodeMapCopy
@@ -389,9 +389,7 @@ func (cn *ClusterNode) RegisterNodeRemote(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.GetEndpointMain(), err)
 	}
-	defer func() {
-		_ = rClient.Close()
-	}()
+	defer rClient.Close()
 
 	var main Node
 	ch := make(chan error, 1)
@@ -422,9 +420,7 @@ func (cn *ClusterNode) heartbeatRemote(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to cluster main node: `%s`, error: %s", cn.GetEndpointMain(), err)
 	}
-	defer func() {
-		_ = rClient.Close()
-	}()
+	defer rClient.Close()
 
 	var main Node
 	ch := make(chan error, 1)

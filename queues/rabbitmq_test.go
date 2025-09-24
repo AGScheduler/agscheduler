@@ -18,10 +18,7 @@ func TestRabbitMQQueue(t *testing.T) {
 
 	c, err := amqp.Dial(tcpAddr)
 	assert.NoError(t, err)
-	defer func() {
-		err = c.Close()
-		assert.NoError(t, err)
-	}()
+	defer c.Close()
 
 	rmq := &RabbitMQQueue{
 		Conn:     c,

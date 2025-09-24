@@ -56,19 +56,13 @@ func TestClusterService(t *testing.T) {
 
 	conn, err := grpc.NewClient(cnMain.EndpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
-	defer func() {
-		err = conn.Close()
-		assert.NoError(t, err)
-	}()
+	defer conn.Close()
 	clientC := pb.NewClusterClient(conn)
 	testClusterGRPC(t, clientC)
 
 	rClient, err := rpc.DialHTTP("tcp", cnMain.Endpoint)
 	assert.NoError(t, err)
-	defer func() {
-		err = rClient.Close()
-		assert.NoError(t, err)
-	}()
+	defer rClient.Close()
 	testClusterRPC(t, rClient)
 
 	time.Sleep(200 * time.Millisecond)

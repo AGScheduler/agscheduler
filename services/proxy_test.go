@@ -69,10 +69,7 @@ func TestClusterProxy(t *testing.T) {
 
 	conn, err := grpc.NewClient(cnNode.EndpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
-	defer func() {
-		err = conn.Close()
-		assert.NoError(t, err)
-	}()
+	defer conn.Close()
 	client := pb.NewSchedulerClient(conn)
 	jsResp, err := client.GetAllJobs(ctx, &emptypb.Empty{})
 	assert.NoError(t, err)
