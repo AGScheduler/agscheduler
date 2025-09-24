@@ -1,4 +1,4 @@
-// go run examples/queues/base.go examples/queues/rabbitmq.go
+// go run examples/queues/rabbitmq/main.go
 
 package main
 
@@ -10,6 +10,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 
 	"github.com/agscheduler/agscheduler"
+	eq "github.com/agscheduler/agscheduler/examples/queues"
 	"github.com/agscheduler/agscheduler/queues"
 )
 
@@ -24,24 +25,26 @@ func main() {
 		slog.Error(fmt.Sprintf("Failed to connect to MQ: %s", err))
 		os.Exit(1)
 	}
-	defer c.Close()
+	defer func() {
+		_ = c.Close()
+	}()
 
 	rmq := &queues.RabbitMQQueue{
 		Conn:     c,
 		Exchange: "agscheduler_example_exchange",
-		Queue:    exampleQueue,
+		Queue:    eq.ExampleQueue,
 		HttpAddr: httpAddr,
 		Username: username,
 		Password: password,
 	}
 	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
-			exampleQueue: {
+			eq.ExampleQueue: {
 				Queue:   rmq,
 				Workers: 2,
 			},
 		},
 	}
 
-	runExample(broker)
+	eq.RunExample(broker)
 }

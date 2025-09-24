@@ -14,7 +14,10 @@ func TestEtcdStore(t *testing.T) {
 		DialTimeout: 5 * time.Second,
 	})
 	assert.NoError(t, err)
-	defer cli.Close()
+	defer func() {
+		err = cli.Close()
+		assert.NoError(t, err)
+	}()
 
 	store := &EtcdStore{
 		Cli:          cli,

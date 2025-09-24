@@ -12,7 +12,10 @@ func TestMongoDBStore(t *testing.T) {
 	uri := "mongodb://127.0.0.1:27017/"
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	assert.NoError(t, err)
-	defer client.Disconnect(ctx)
+	defer func() {
+		err = client.Disconnect(ctx)
+		assert.NoError(t, err)
+	}()
 
 	store := &MongoDBStore{
 		Client:     client,

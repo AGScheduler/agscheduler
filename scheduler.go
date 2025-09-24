@@ -506,7 +506,9 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		slog.Error(fmt.Sprintf("Failed to connect to cluster node: `%s`, error: %s", node.Endpoint, err))
 		return
 	}
-	defer rClient.Close()
+	defer func() {
+		_ = rClient.Close()
+	}()
 
 	var r any
 	ch := make(chan error, 1)
@@ -724,7 +726,7 @@ func (s *Scheduler) dispatchEvent(eP EventPkg) {
 	if !s.HasListener() {
 		return
 	}
-	s.listener.handleEvent(eP)
+	_ = s.listener.handleEvent(eP)
 }
 
 func (s *Scheduler) Info() map[string]any {

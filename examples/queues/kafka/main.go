@@ -1,4 +1,4 @@
-// go run examples/queues/base.go examples/queues/kafka.go
+// go run examples/queues/kafka/main.go
 
 package main
 
@@ -12,6 +12,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 
 	"github.com/agscheduler/agscheduler"
+	eq "github.com/agscheduler/agscheduler/examples/queues"
 	"github.com/agscheduler/agscheduler/queues"
 )
 
@@ -45,7 +46,7 @@ func main() {
 	// Used to ensure that partitions are allocated to consumer.
 	// For examples and testing only.
 	aC := kadm.NewClient(p)
-	_, err = aC.CreatePartitions(ctx, 1, exampleTopic)
+	_, err = aC.CreatePartitions(eq.Ctx, 1, exampleTopic)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to create partition: %s", err))
 		os.Exit(1)
@@ -58,7 +59,7 @@ func main() {
 	}
 	broker := &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
-			exampleQueue: {
+			eq.ExampleQueue: {
 				Queue:   kq,
 				Workers: 2,
 			},
@@ -70,5 +71,5 @@ func main() {
 	slog.Info("Sleep 5s......\n\n")
 	time.Sleep(5 * time.Second)
 
-	runExample(broker)
+	eq.RunExample(broker)
 }

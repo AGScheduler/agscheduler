@@ -1,4 +1,4 @@
-package main
+package queues
 
 import (
 	"context"
@@ -13,11 +13,11 @@ import (
 	"github.com/agscheduler/agscheduler/stores"
 )
 
-var ctx = context.Background()
+var Ctx = context.Background()
 
-var exampleQueue = "agscheduler_example_queue"
+var ExampleQueue = "agscheduler_example_queue"
 
-func runExample(brk *agscheduler.Broker) {
+func RunExample(brk *agscheduler.Broker) {
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: examples.PrintMsgSleep},
 	)
@@ -31,7 +31,7 @@ func runExample(brk *agscheduler.Broker) {
 		os.Exit(1)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(Ctx)
 	err = s.SetBroker(ctx, brk)
 	if err != nil {
 		slog.Error(fmt.Sprintf("Failed to set broker: %s", err))
@@ -53,20 +53,20 @@ func runExample(brk *agscheduler.Broker) {
 
 	slog.Info("Sleep 1s......\n\n")
 	time.Sleep(1 * time.Second)
-	count, _ := brk.CountJobs(exampleQueue)
+	count, _ := brk.CountJobs(ExampleQueue)
 	slog.Info(fmt.Sprintf("Number of jobs in this queue: %d\n\n", count))
 	slog.Info("Sleep 2s......\n\n")
 	time.Sleep(2 * time.Second)
-	count, _ = brk.CountJobs(exampleQueue)
+	count, _ = brk.CountJobs(ExampleQueue)
 	slog.Info(fmt.Sprintf("Number of jobs in this queue: %d\n\n", count))
 	slog.Info("Sleep 3s......\n\n")
 	time.Sleep(3 * time.Second)
 
-	s.DeleteAllJobs()
+	_ = s.DeleteAllJobs()
 
 	s.Stop()
 
 	cancel()
-	brk.Clear(exampleQueue)
-	sto.Clear()
+	_ = brk.Clear(ExampleQueue)
+	_ = sto.Clear()
 }
