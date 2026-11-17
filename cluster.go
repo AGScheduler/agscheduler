@@ -20,6 +20,31 @@ import (
 
 type TypeNodeMap map[string]map[string]any
 
+type nodeMapGobCodec struct {
+	buffer  bytes.Buffer
+	encoder *gob.Encoder
+	decoder *gob.Decoder
+}
+
+var nodeMapGobCodecPool = sync.Pool{
+	New: func() any {
+		codec := &nodeMapGobCodec{}
+		codec.encoder = gob.NewEncoder(&codec.buffer)
+		codec.decoder = gob.NewDecoder(&codec.buffer)
+		return codec
+	},
+}
+
+func init() {
+	gob.Register(time.Time{})
+}
+
+func (c *nodeMapGobCodec) reset() {
+	// gob encoders and decoders have no Reset method. Keep their type state
+	// and reset the underlying buffer after the decoder consumes the stream.
+	c.buffer.Reset()
+}
+
 type Node struct {
 	EndpointMain string
 	Endpoint     string
@@ -113,15 +138,21 @@ func (cn *ClusterNode) setNodeMap(nmap TypeNodeMap) {
 	cn.nodeMap = nmap
 }
 
-func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src TypeNodeMap) error {
-	gob.Register(time.Time{})
+func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src TypeNodeMap) (err error) {
+	codec := nodeMapGobCodecPool.Get().(*nodeMapGobCodec)
+	defer func() {
+		if err == nil {
+			codec.reset()
+			nodeMapGobCodecPool.Put(codec)
+		}
+	}()
 
-	var buffer bytes.Buffer
-	if err := gob.NewEncoder(&buffer).Encode(src); err != nil {
+	if err = codec.encoder.Encode(src); err != nil {
 		return err
 	}
 
-	return gob.NewDecoder(bytes.NewBuffer(buffer.Bytes())).Decode(&dst)
+	err = codec.decoder.Decode(&dst)
+	return err
 }
 
 func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {

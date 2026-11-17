@@ -2,12 +2,10 @@ package services
 
 import (
 	"context"
-	"encoding/gob"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"net/rpc"
-	"time"
 
 	"github.com/agscheduler/agscheduler"
 )
@@ -58,8 +56,6 @@ type clusterRPCService struct {
 }
 
 func (s *clusterRPCService) Start() error {
-	gob.Register(time.Time{})
-
 	crs := &CRPCService{cn: s.Cn}
 	rpcServer := rpc.NewServer()
 	err := rpcServer.Register(crs)
