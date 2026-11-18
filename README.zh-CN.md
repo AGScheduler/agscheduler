@@ -143,11 +143,18 @@ import (
 	"time"
 )
 
-ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-defer stop()
+signals := make(chan os.Signal, 2)
+signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+defer signal.Stop(signals)
 
 scheduler.Start()
-<-ctx.Done()
+<-signals
+
+// 第二次信号跳过宽限期，立即退出。
+go func() {
+	<-signals
+	os.Exit(1)
+}()
 
 shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 defer cancel()
@@ -156,7 +163,7 @@ if err := scheduler.Shutdown(shutdownCtx); err != nil {
 }
 ```
 
-宽限期到期后，正在执行的任务会收到已取消的 Context，并记录为 `RECORD_STATUS_CANCELLED`。任务函数应监听 `ctx.Done()`，以便及时退出。
+第一次信号触发优雅退出，第二次信号立即退出。宽限期到期后，正在执行的任务会收到已取消的 Context，并记录为 `RECORD_STATUS_CANCELLED`。任务函数应监听 `ctx.Done()`，以便及时退出。
 
 ## 注册函数
 

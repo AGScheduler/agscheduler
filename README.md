@@ -143,11 +143,18 @@ import (
 	"time"
 )
 
-ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-defer stop()
+signals := make(chan os.Signal, 2)
+signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+defer signal.Stop(signals)
 
 scheduler.Start()
-<-ctx.Done()
+<-signals
+
+// A second signal bypasses the grace period and exits immediately.
+go func() {
+	<-signals
+	os.Exit(1)
+}()
 
 shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 defer cancel()
@@ -156,7 +163,7 @@ if err := scheduler.Shutdown(shutdownCtx); err != nil {
 }
 ```
 
-If the deadline expires, running jobs receive a cancelled context and are recorded with `RECORD_STATUS_CANCELLED`. Job functions should monitor `ctx.Done()` so they can stop promptly.
+The first signal triggers graceful shutdown. A second signal exits immediately. If the deadline expires, running jobs receive a cancelled context and are recorded with `RECORD_STATUS_CANCELLED`. Job functions should monitor `ctx.Done()` so they can stop promptly.
 
 ## Register Funcs
 
