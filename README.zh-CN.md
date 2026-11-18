@@ -128,6 +128,36 @@ func main() {
 }
 ```
 
+## 优雅退出
+
+`Scheduler.Stop()` 会停止调度新任务，并默认最多等待 `DefaultShutdownTimeout`，让正在执行的任务完成。需要自定义等待时间时使用 `Shutdown(ctx)`：
+
+```go
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+defer stop()
+
+scheduler.Start()
+<-ctx.Done()
+
+shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+if err := scheduler.Shutdown(shutdownCtx); err != nil {
+	slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
+}
+```
+
+宽限期到期后，正在执行的任务会收到已取消的 Context，并记录为 `RECORD_STATUS_CANCELLED`。任务函数应监听 `ctx.Done()`，以便及时退出。
+
 ## 注册函数
 
 > **_由于 golang 无法序列化函数，所以 `scheduler.Start()` 之前需要使用 `RegisterFuncs` 注册函数_**

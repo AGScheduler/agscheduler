@@ -18,6 +18,7 @@ const (
 	RECORD_STATUS_COMPLETED = "completed"
 	RECORD_STATUS_ERROR     = "error"
 	RECORD_STATUS_TIMEOUT   = "timeout"
+	RECORD_STATUS_CANCELLED = "cancelled"
 )
 
 // Carry the information of the job run.
@@ -28,7 +29,8 @@ type Record struct {
 	JobId string `json:"job_id"`
 	// Job name
 	JobName string `json:"job_name"`
-	// Optional: `RECORD_STATUS_RUNNING` | `RECORD_STATUS_COMPLETED` | `RECORD_STATUS_ERROR` | `RECORD_STATUS_TIMEOUT`
+	// Optional: `RECORD_STATUS_RUNNING` | `RECORD_STATUS_COMPLETED` | `RECORD_STATUS_ERROR` |
+	// `RECORD_STATUS_TIMEOUT` | `RECORD_STATUS_CANCELLED`
 	Status string `json:"status"`
 	// The result of the job run
 	Result string `json:"result"`

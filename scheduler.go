@@ -2,6 +2,7 @@ package agscheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/rpc"
@@ -15,6 +16,13 @@ import (
 	"github.com/gorhill/cronexpr"
 )
 
+// DefaultShutdownTimeout is the grace period used by Scheduler.Stop.
+const DefaultShutdownTimeout = 30 * time.Second
+
+// ErrSchedulerShuttingDown is returned when a new job is submitted while
+// Scheduler.Shutdown is waiting for in-flight jobs.
+var ErrSchedulerShuttingDown = errors.New("scheduler is shutting down")
+
 var GetStore = (*Scheduler).getStore
 var GetClusterNode = (*Scheduler).getClusterNode
 var GetBroker = (*Scheduler).getBroker
@@ -27,11 +35,10 @@ type Scheduler struct {
 	// Job store
 	store Store
 	// When the time is up, the scheduler will wake up.
-	timer *time.Timer
-	// Input is received when `stop` is called or no job in store.
-	quitChan chan struct{}
+	state *schedulerState
 	// It should not be set manually.
-	isRunning bool
+	isRunning      bool
+	isShuttingDown bool
 
 	// Used in cluster mode, bind to each other and the cluster node.
 	clusterNode *ClusterNode
@@ -48,6 +55,17 @@ type Scheduler struct {
 
 	statusM sync.RWMutex
 	storeM  sync.RWMutex
+}
+
+type schedulerState struct {
+	ctx      context.Context
+	cancel   context.CancelFunc
+	timer    *time.Timer
+	quitChan chan struct{}
+	runDone  chan struct{}
+
+	// jobs includes in-flight local and remote jobs started by this scheduler run.
+	jobs sync.WaitGroup
 }
 
 func (s *Scheduler) IsRunning() bool {
@@ -414,8 +432,16 @@ func (s *Scheduler) pushJob(queue string, j Job) {
 	}
 }
 
-// Used in standalone mode.
 func (s *Scheduler) _runJob(j Job) {
+	s._runJobWithContext(context.Background(), j)
+}
+
+// Used in standalone mode.
+func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
+	if parentCtx.Err() != nil {
+		return
+	}
+
 	if !s.canRunJob(j.Name, j.MaxInstances) {
 		slog.Warn(fmt.Sprintf("Job `%s` skipped due to max_instances limit (%d/%d)", j.FullName(), s.getJobInstanceCount(j.Name), j.MaxInstances))
 		s.dispatchEvent(EventPkg{EVENT_JOB_MAX_INSTANCES, j.Id, nil})
@@ -438,7 +464,7 @@ func (s *Scheduler) _runJob(j Job) {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(parentCtx, timeout)
 		defer cancel()
 
 		var rId uint64
@@ -452,33 +478,44 @@ func (s *Scheduler) _runJob(j Job) {
 			}
 		}
 
-		ch := make(chan error, 1)
+		type jobResult struct {
+			status string
+			result string
+		}
+		ch := make(chan jobResult, 1)
 		go func() {
-			defer close(ch)
+			res := jobResult{status: RECORD_STATUS_COMPLETED}
 			defer func() {
 				if err := recover(); err != nil {
 					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
 					s.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, err})
 					slog.Debug(string(debug.Stack()))
-					status = RECORD_STATUS_ERROR
-					result = fmt.Sprintf("%s", err)
+					res.status = RECORD_STATUS_ERROR
+					res.result = fmt.Sprintf("%s", err)
 				}
+				ch <- res
 			}()
 
 			rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
-			result = rValues[0].Interface().(string)
+			res.result = rValues[0].Interface().(string)
 		}()
 
 		select {
-		case <-ch:
+		case res := <-ch:
 			s.dispatchEvent(EventPkg{EVENT_JOB_EXECUTED, j.Id, nil})
-			if status == "" {
-				status = RECORD_STATUS_COMPLETED
-			}
+			status = res.status
+			result = res.result
 		case <-ctx.Done():
-			slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
-			s.dispatchEvent(EventPkg{EVENT_JOB_TIMEOUT, j.Id, nil})
-			status = RECORD_STATUS_TIMEOUT
+			if parentCtx.Err() != nil {
+				slog.Warn(fmt.Sprintf("Job `%s` cancelled during shutdown", j.FullName()))
+				status = RECORD_STATUS_CANCELLED
+				result = ctx.Err().Error()
+			} else {
+				slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
+				s.dispatchEvent(EventPkg{EVENT_JOB_TIMEOUT, j.Id, nil})
+				status = RECORD_STATUS_TIMEOUT
+				result = ctx.Err().Error()
+			}
 		}
 
 		if s.HasRecorder() {
@@ -493,7 +530,7 @@ func (s *Scheduler) _runJob(j Job) {
 
 // Used in cluster mode.
 // Call the RPC API of the other node to run the `RunJob`.
-func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
+func (s *Scheduler) _runJobRemote(ctx context.Context, node *ClusterNode, j Job) {
 	defer func() {
 		if err := recover(); err != nil {
 			slog.Error(fmt.Sprintf("Job `%s` _runJobRemote error: %s", j.FullName(), err))
@@ -527,6 +564,8 @@ func (s *Scheduler) _runJobRemote(node *ClusterNode, j Job) {
 		if err != nil {
 			slog.Error(fmt.Sprintf("Scheduler run job `%s` remote error %s", j.FullName(), err))
 		}
+	case <-ctx.Done():
+		slog.Warn(fmt.Sprintf("Scheduler run job `%s` remote cancelled during shutdown", j.FullName()))
 	case <-time.After(3 * time.Second):
 		slog.Error(fmt.Sprintf("Scheduler run job `%s` remote timeout %s", j.FullName(), err))
 	}
@@ -555,13 +594,24 @@ func (s *Scheduler) _flushJob(j Job, now time.Time) error {
 
 // All nodes are equal and may pick myself.
 func (s *Scheduler) _scheduleJob(j Job) error {
+	st, err := s.getJobState()
+	if err != nil {
+		return err
+	}
+
+	return s._scheduleJobForState(j, st)
+}
+
+func (s *Scheduler) _scheduleJobForState(j Job, st *schedulerState) error {
 	if s.HasBroker() {
 		// When broker exist.
 		queue, err := s.broker.choiceQueue(j.Queues)
 		if err != nil {
 			return fmt.Errorf("broker's queues with queue `%s` does not exist", j.Queues)
 		}
-		go s.pushJob(queue, j)
+		return s.spawnJob(st, func(context.Context) {
+			s.pushJob(queue, j)
+		})
 	} else {
 		if s.IsClusterMode() {
 			// In cluster mode.
@@ -569,22 +619,29 @@ func (s *Scheduler) _scheduleJob(j Job) error {
 			if err != nil {
 				return fmt.Errorf("cluster node with queue `%s` does not exist", j.Queues)
 			}
-			go s._runJobRemote(node, j)
+			return s.spawnJob(st, func(ctx context.Context) {
+				s._runJobRemote(ctx, node, j)
+			})
 		} else {
 			// In standalone mode.
-			go s._runJob(j)
+			return s.spawnJob(st, func(ctx context.Context) {
+				s._runJobWithContext(ctx, j)
+			})
 		}
 	}
-
-	return nil
 }
 
 func (s *Scheduler) RunJob(j Job) error {
 	slog.Info(fmt.Sprintf("Scheduler run job `%s`.", j.FullName()))
 
-	go s._runJob(j)
+	st, err := s.getJobState()
+	if err != nil {
+		return err
+	}
 
-	return nil
+	return s.spawnJob(st, func(ctx context.Context) {
+		s._runJobWithContext(ctx, j)
+	})
 }
 
 // Select a worker node or queue.
@@ -599,17 +656,75 @@ func (s *Scheduler) ScheduleJob(j Job) error {
 	return nil
 }
 
-func (s *Scheduler) run() {
+// getJobState returns the current lifecycle for a manually launched job.
+// A nil state is valid when the scheduler is stopped and RunJob is called directly.
+func (s *Scheduler) getJobState() (*schedulerState, error) {
+	s.statusM.RLock()
+	defer s.statusM.RUnlock()
+
+	if s.isShuttingDown {
+		return nil, ErrSchedulerShuttingDown
+	}
+	if !s.isRunning {
+		return nil, nil
+	}
+
+	return s.state, nil
+}
+
+func (s *Scheduler) jobParentContext() context.Context {
+	s.statusM.RLock()
+	defer s.statusM.RUnlock()
+
+	if s.state != nil {
+		return s.state.ctx
+	}
+
+	return context.Background()
+}
+
+// spawnJob reserves a job before starting its goroutine. Reserving under the
+// status lock prevents Shutdown from starting Wait while Add is still pending.
+func (s *Scheduler) spawnJob(st *schedulerState, fn func(context.Context)) error {
+	if st == nil {
+		go fn(context.Background())
+		return nil
+	}
+
+	s.statusM.RLock()
+	if s.state != st || !s.isRunning || s.isShuttingDown {
+		s.statusM.RUnlock()
+		return ErrSchedulerShuttingDown
+	}
+	st.jobs.Add(1)
+	s.statusM.RUnlock()
+
+	go func() {
+		defer st.jobs.Done()
+		fn(st.ctx)
+	}()
+
+	return nil
+}
+
+func (s *Scheduler) run(st *schedulerState) {
 	for {
 		select {
-		case <-s.quitChan:
+		case <-st.quitChan:
 			slog.Info("Scheduler quit.")
 			return
-		case <-s.timer.C:
-			s.timer.Stop()
+		case <-st.timer.C:
+			st.timer.Stop()
+
+			select {
+			case <-st.quitChan:
+				slog.Info("Scheduler quit.")
+				return
+			default:
+			}
 
 			if s.IsClusterMode() && !s.clusterNode.IsMainNode() {
-				s.timer.Reset(time.Second)
+				st.timer.Reset(time.Second)
 				continue
 			}
 
@@ -619,7 +734,7 @@ func (s *Scheduler) run() {
 			js, err := s.store.GetAllJobs()
 			if err != nil {
 				slog.Error(fmt.Sprintf("Scheduler get all jobs error: %s", err))
-				s.timer.Reset(time.Second)
+				st.timer.Reset(time.Second)
 				s.storeM.Unlock()
 				continue
 			}
@@ -635,8 +750,12 @@ func (s *Scheduler) run() {
 					}
 					j.NextRunTime = nextRunTime
 
-					err = s._scheduleJob(j)
+					err = s._scheduleJobForState(j, st)
 					if err != nil {
+						if errors.Is(err, ErrSchedulerShuttingDown) {
+							s.storeM.Unlock()
+							return
+						}
 						slog.Error(fmt.Sprintf("Scheduler schedule job `%s` error: %s", j.FullName(), err))
 					}
 
@@ -653,7 +772,7 @@ func (s *Scheduler) run() {
 			nextWakeupInterval := s.getNextWakeupInterval()
 			slog.Debug(fmt.Sprintf("Scheduler next wakeup interval %s", nextWakeupInterval))
 
-			s.timer.Reset(nextWakeupInterval)
+			st.timer.Reset(nextWakeupInterval)
 			s.storeM.Unlock()
 		}
 	}
@@ -663,39 +782,124 @@ func (s *Scheduler) run() {
 // it is also called after `AddJob`.
 func (s *Scheduler) Start() {
 	s.statusM.Lock()
-	defer s.statusM.Unlock()
 
 	if s.isRunning {
+		s.statusM.Unlock()
 		slog.Info("Scheduler is running.")
 		return
 	}
+	if s.isShuttingDown {
+		s.statusM.Unlock()
+		slog.Warn("Scheduler is shutting down.")
+		return
+	}
 
-	s.timer = time.NewTimer(0)
-	s.quitChan = make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	st := &schedulerState{
+		ctx:      ctx,
+		cancel:   cancel,
+		timer:    time.NewTimer(0),
+		quitChan: make(chan struct{}),
+		runDone:  make(chan struct{}),
+	}
+	s.state = st
 	s.isRunning = true
 
-	go s.run()
+	go func() {
+		defer close(st.runDone)
+		s.run(st)
+	}()
+
+	if s.HasBroker() {
+		s.broker.startWorkers()
+	}
+	s.statusM.Unlock()
 
 	slog.Info("Scheduler start.")
 	s.dispatchEvent(EventPkg{EVENT_SCHEDULER_STARTED, "", nil})
 }
 
-// In addition to being called manually,
-// there is no job in store that will also be called.
+// Stop gracefully stops the scheduler using DefaultShutdownTimeout.
 func (s *Scheduler) Stop() {
-	s.statusM.Lock()
-	defer s.statusM.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultShutdownTimeout)
+	defer cancel()
 
-	if !s.isRunning {
-		slog.Info("Scheduler has stopped.")
-		return
+	if err := s.Shutdown(ctx); err != nil {
+		slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
+	}
+}
+
+// Shutdown stops scheduling new jobs and waits for in-flight jobs to finish.
+// If ctx expires first, running jobs receive context cancellation.
+func (s *Scheduler) Shutdown(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
 	}
 
-	s.quitChan <- struct{}{}
-	s.isRunning = false
+	s.statusM.Lock()
+	st := s.state
 
-	slog.Info("Scheduler stop.")
-	s.dispatchEvent(EventPkg{EVENT_SCHEDULER_STOPPED, "", nil})
+	if !s.isRunning && !s.isShuttingDown {
+		s.statusM.Unlock()
+		slog.Info("Scheduler has stopped.")
+		return nil
+	}
+	if st == nil {
+		s.isShuttingDown = false
+		s.statusM.Unlock()
+		return nil
+	}
+
+	first := s.isRunning && !s.isShuttingDown
+	if first {
+		s.isRunning = false
+		s.isShuttingDown = true
+	}
+	s.statusM.Unlock()
+
+	if first {
+		close(st.quitChan)
+		st.timer.Stop()
+		if s.HasBroker() {
+			s.broker.stopWorkers()
+		}
+		slog.Info("Scheduler stopping...")
+		s.dispatchEvent(EventPkg{EVENT_SCHEDULER_STOPPED, "", nil})
+	}
+
+	done := make(chan struct{})
+	go func() {
+		<-st.runDone
+		st.jobs.Wait()
+		if s.HasBroker() {
+			s.broker.waitWorkers()
+		}
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		st.cancel()
+		s.statusM.Lock()
+		if s.state == st {
+			s.state = nil
+			s.isShuttingDown = false
+		}
+		s.statusM.Unlock()
+
+		slog.Info("Scheduler stop.")
+		return nil
+	case <-ctx.Done():
+		st.cancel()
+		s.statusM.Lock()
+		if s.state == st {
+			s.state = nil
+			s.isShuttingDown = false
+		}
+		s.statusM.Unlock()
+
+		return fmt.Errorf("scheduler graceful shutdown: %w", ctx.Err())
+	}
 }
 
 // Dynamically calculate the next wakeup interval, avoid frequent wakeup of the scheduler.
@@ -716,8 +920,13 @@ func (s *Scheduler) getNextWakeupInterval() time.Duration {
 }
 
 func (s *Scheduler) wakeup() {
-	if s.timer != nil {
-		s.timer.Reset(0)
+	s.statusM.RLock()
+	st := s.state
+	running := s.isRunning && !s.isShuttingDown
+	s.statusM.RUnlock()
+
+	if running && st != nil {
+		st.timer.Reset(0)
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"slices"
+	"sync"
 	"time"
 
 	pb "github.com/agscheduler/agscheduler/services/proto"
@@ -19,6 +20,14 @@ type Broker struct {
 
 	// Bind to each other and the Scheduler.
 	scheduler *Scheduler
+
+	workerCtx context.Context
+	workersM  sync.Mutex
+
+	workersRunning  bool
+	workersStopping bool
+	workerStop      chan struct{}
+	workerDone      chan struct{}
 }
 
 type QueuePkg struct {
@@ -33,7 +42,7 @@ type QueuePkg struct {
 func (b *Broker) init(ctx context.Context) error {
 	slog.Info("Broker init...")
 
-	slog.Info("Broker worker start.")
+	b.workerCtx = ctx
 	for _, qPkg := range b.Queues {
 		if err := qPkg.Queue.Init(ctx); err != nil {
 			return err
@@ -41,28 +50,101 @@ func (b *Broker) init(ctx context.Context) error {
 		if qPkg.Workers <= 0 {
 			qPkg.Workers = 2
 		}
-		for range qPkg.Workers {
-			go b.worker(ctx, qPkg.Queue)
-		}
 	}
+
+	b.startWorkers()
 
 	return nil
 }
 
+func (b *Broker) startWorkers() {
+	b.workersM.Lock()
+	defer b.workersM.Unlock()
+
+	if b.workersRunning {
+		return
+	}
+
+	slog.Info("Broker worker start.")
+	ctx := b.workerCtx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	b.workersRunning = true
+	b.workersStopping = false
+	b.workerStop = stop
+	b.workerDone = done
+
+	wg := &sync.WaitGroup{}
+	for _, qPkg := range b.Queues {
+		for range qPkg.Workers {
+			wg.Add(1)
+			go func(q Queue) {
+				defer wg.Done()
+				b.worker(ctx, stop, q)
+			}(qPkg.Queue)
+		}
+	}
+
+	go func() {
+		wg.Wait()
+		b.workersM.Lock()
+		b.workersRunning = false
+		close(done)
+		b.workersM.Unlock()
+	}()
+}
+
+func (b *Broker) stopWorkers() {
+	b.workersM.Lock()
+	defer b.workersM.Unlock()
+
+	if !b.workersRunning || b.workersStopping {
+		return
+	}
+	b.workersStopping = true
+	close(b.workerStop)
+}
+
+func (b *Broker) waitWorkers() {
+	b.workersM.Lock()
+	done := b.workerDone
+	b.workersM.Unlock()
+
+	if done != nil {
+		<-done
+	}
+}
+
 // Job worker, receiving jobs from the queue.
-func (b *Broker) worker(ctx context.Context, q Queue) {
+func (b *Broker) worker(ctx context.Context, stop <-chan struct{}, q Queue) {
 	for {
 		select {
+		case <-stop:
+			return
 		case <-ctx.Done():
 			return
-		case bJ := <-q.PullJob():
+		default:
+		}
+
+		select {
+		case <-stop:
+			return
+		case <-ctx.Done():
+			return
+		case bJ, ok := <-q.PullJob():
+			if !ok {
+				return
+			}
 			j, err := JobUnmarshal(bJ)
 			if err != nil {
 				slog.Error(fmt.Sprintf("Job `%s` JobUnmarshal error: `%s`", bJ, err))
 				continue
 			}
 
-			b.scheduler._runJob(j)
+			b.scheduler._runJobWithContext(b.scheduler.jobParentContext(), j)
 		}
 	}
 }

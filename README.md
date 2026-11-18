@@ -128,6 +128,36 @@ func main() {
 }
 ```
 
+## Graceful Shutdown
+
+`Scheduler.Stop()` stops scheduling new jobs and waits up to `DefaultShutdownTimeout` for in-flight jobs. For a custom deadline, use `Shutdown(ctx)`:
+
+```go
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+defer stop()
+
+scheduler.Start()
+<-ctx.Done()
+
+shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+if err := scheduler.Shutdown(shutdownCtx); err != nil {
+	slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
+}
+```
+
+If the deadline expires, running jobs receive a cancelled context and are recorded with `RECORD_STATUS_CANCELLED`. Job functions should monitor `ctx.Done()` so they can stop promptly.
+
 ## Register Funcs
 
 > **_Since golang can't serialize functions, you need to register them with `RegisterFuncs` before `scheduler.Start()`_**
