@@ -130,40 +130,22 @@ func main() {
 
 ## 优雅退出
 
-`Scheduler.Stop()` 会停止调度新任务，并默认最多等待 `DefaultShutdownTimeout`，让正在执行的任务完成。需要自定义等待时间时使用 `Shutdown(ctx)`：
+`Scheduler.Stop()` 会停止调度新任务，并默认最多等待 `DefaultShutdownTimeout`，让正在执行的任务完成。需要处理系统信号时使用 `WaitForShutdown`：
 
 ```go
 import (
-	"context"
 	"fmt"
 	"log/slog"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
-signals := make(chan os.Signal, 2)
-signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-defer signal.Stop(signals)
-
 scheduler.Start()
-<-signals
-
-// 第二次信号跳过宽限期，立即退出。
-go func() {
-	<-signals
-	os.Exit(1)
-}()
-
-shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-defer cancel()
-if err := scheduler.Shutdown(shutdownCtx); err != nil {
+if err := scheduler.WaitForShutdown(30*time.Second, service.Stop); err != nil {
 	slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
 }
 ```
 
-第一次信号触发优雅退出，第二次信号立即退出。宽限期到期后，正在执行的任务会收到已取消的 Context，并记录为 `RECORD_STATUS_CANCELLED`。任务函数应监听 `ctx.Done()`，以便及时退出。
+`WaitForShutdown` 处理 SIGINT 和 SIGTERM。第一次信号调用 `service.Stop` 并优雅关闭调度器，第二次信号立即退出。宽限期到期后，正在执行的任务会收到已取消的 Context，并记录为 `RECORD_STATUS_CANCELLED`。任务函数应监听 `ctx.Done()`，以便及时退出；没有需要预先关闭的服务时，回调传 `nil`。
 
 ## 注册函数
 

@@ -3,12 +3,9 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/examples"
@@ -41,25 +38,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	signals := make(chan os.Signal, 2)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(signals)
-
-	<-signals
-	slog.Info("Shutdown signal received, waiting for running jobs.")
-	go func() {
-		<-signals
-		slog.Warn("Second shutdown signal received, forcing exit.")
-		os.Exit(1)
-	}()
-
-	if err := hservice.Stop(); err != nil {
-		slog.Error(fmt.Sprintf("Failed to stop service: %s", err))
-	}
-
-	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), agscheduler.DefaultShutdownTimeout)
-	defer cancelShutdown()
-	if err := scheduler.Shutdown(shutdownCtx); err != nil {
+	if err := scheduler.WaitForShutdown(agscheduler.DefaultShutdownTimeout, hservice.Stop); err != nil {
 		slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
 	}
 }

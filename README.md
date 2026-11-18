@@ -130,40 +130,22 @@ func main() {
 
 ## Graceful Shutdown
 
-`Scheduler.Stop()` stops scheduling new jobs and waits up to `DefaultShutdownTimeout` for in-flight jobs. For a custom deadline, use `Shutdown(ctx)`:
+`Scheduler.Stop()` stops scheduling new jobs and waits up to `DefaultShutdownTimeout` for in-flight jobs. For signal-driven shutdown, use `WaitForShutdown`:
 
 ```go
 import (
-	"context"
 	"fmt"
 	"log/slog"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
-signals := make(chan os.Signal, 2)
-signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-defer signal.Stop(signals)
-
 scheduler.Start()
-<-signals
-
-// A second signal bypasses the grace period and exits immediately.
-go func() {
-	<-signals
-	os.Exit(1)
-}()
-
-shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-defer cancel()
-if err := scheduler.Shutdown(shutdownCtx); err != nil {
+if err := scheduler.WaitForShutdown(30*time.Second, service.Stop); err != nil {
 	slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
 }
 ```
 
-The first signal triggers graceful shutdown. A second signal exits immediately. If the deadline expires, running jobs receive a cancelled context and are recorded with `RECORD_STATUS_CANCELLED`. Job functions should monitor `ctx.Done()` so they can stop promptly.
+`WaitForShutdown` handles SIGINT and SIGTERM. The first signal calls `service.Stop` and gracefully shuts down the scheduler. A second signal exits immediately. If the deadline expires, running jobs receive a cancelled context and are recorded with `RECORD_STATUS_CANCELLED`. Job functions should monitor `ctx.Done()` so they can stop promptly. Pass `nil` as the callback when there are no services to stop.
 
 ## Register Funcs
 
