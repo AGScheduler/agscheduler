@@ -24,8 +24,8 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/examples"
-	"github.com/agscheduler/agscheduler/services"
-	"github.com/agscheduler/agscheduler/stores"
+	services "github.com/agscheduler/agscheduler/services/cluster"
+	stores "github.com/agscheduler/agscheduler/stores/memory"
 )
 
 var endpointMain = flag.String("em", "", "Cluster Main Node endpoint")

@@ -8,8 +8,6 @@ import (
 	"slices"
 	"sync"
 	"time"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 // When using a Broker, job scheduling is done in queue and no longer directly via API calls.
@@ -202,32 +200,4 @@ func (b *Broker) GetQueues() []map[string]any {
 	}
 
 	return queues
-}
-
-// Used to gRPC Protobuf
-func QueueToPbQueuePtr(q map[string]any) (*pb.Queue, error) {
-	pbQ := &pb.Queue{
-		Name:    q["name"].(string),
-		Type:    q["type"].(string),
-		Count:   int64(q["count"].(int)),
-		Workers: int32(q["workers"].(int)),
-	}
-
-	return pbQ, nil
-}
-
-// Used to gRPC Protobuf
-func QueuesToPbQueuesPtr(qs []map[string]any) ([]*pb.Queue, error) {
-	pbQs := []*pb.Queue{}
-
-	for _, q := range qs {
-		pbQ, err := QueueToPbQueuePtr(q)
-		if err != nil {
-			return []*pb.Queue{}, err
-		}
-
-		pbQs = append(pbQs, pbQ)
-	}
-
-	return pbQs, nil
 }

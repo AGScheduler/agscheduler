@@ -10,7 +10,7 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/examples"
-	"github.com/agscheduler/agscheduler/stores"
+	stores "github.com/agscheduler/agscheduler/stores/memory"
 )
 
 func jobCallback(ep agscheduler.EventPkg) {

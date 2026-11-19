@@ -6,12 +6,11 @@ import (
 	"time"
 
 	"github.com/gorhill/cronexpr"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/backends"
-	"github.com/agscheduler/agscheduler/queues"
-	"github.com/agscheduler/agscheduler/stores"
+	"github.com/agscheduler/agscheduler/internal/adaptertest"
 )
 
 func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result string) { return }
@@ -40,7 +39,7 @@ func waitForSchedulerCancellation(ctx context.Context, j agscheduler.Job) (resul
 
 func getSchedulerWithStore(t *testing.T) *agscheduler.Scheduler {
 	scheduler := &agscheduler.Scheduler{}
-	store := &stores.MemoryStore{}
+	store := adaptertest.NewStore()
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
 
@@ -90,7 +89,7 @@ func getClusterNode() *agscheduler.ClusterNode {
 }
 
 func getBroker() *agscheduler.Broker {
-	mq := &queues.MemoryQueue{}
+	mq := adaptertest.NewQueue()
 
 	return &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
@@ -103,7 +102,7 @@ func getBroker() *agscheduler.Broker {
 }
 
 func getRecorder() *agscheduler.Recorder {
-	mb := &backends.MemoryBackend{}
+	mb := adaptertest.NewBackend()
 	return &agscheduler.Recorder{Backend: mb}
 }
 
@@ -122,7 +121,7 @@ func TestSchedulerSetStore(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	assert.Nil(t, agscheduler.GetStore(s))
 
-	store := &stores.MemoryStore{}
+	store := adaptertest.NewStore()
 	err := s.SetStore(store)
 	assert.NoError(t, err)
 

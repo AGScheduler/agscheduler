@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/stores"
+	"github.com/agscheduler/agscheduler/internal/adaptertest"
 )
 
 func dryRunListener(ctx context.Context, j agscheduler.Job) (result string) { return }
@@ -22,7 +22,7 @@ func TestListener(t *testing.T) {
 
 	s := &agscheduler.Scheduler{}
 
-	sto := &stores.MemoryStore{}
+	sto := adaptertest.NewStore()
 	err := s.SetStore(sto)
 	assert.NoError(t, err)
 

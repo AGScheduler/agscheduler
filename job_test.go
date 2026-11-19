@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func getJob() Job {
@@ -74,48 +72,6 @@ func TestJobUnmarshalError(t *testing.T) {
 	assert.Error(t, err)
 
 	assert.Empty(t, j)
-}
-
-func TestJobToPbJobPtr(t *testing.T) {
-	j := getJob()
-	pbJ, err := JobToPbJobPtr(j)
-	assert.NoError(t, err)
-
-	assert.IsType(t, &pb.Job{}, pbJ)
-	assert.NotEmpty(t, pbJ)
-}
-
-func TestPbJobPtrToJob(t *testing.T) {
-	j := getJob()
-	pbJ, err := JobToPbJobPtr(j)
-	assert.NoError(t, err)
-	j = PbJobPtrToJob(pbJ)
-
-	assert.IsType(t, Job{}, j)
-	assert.NotEmpty(t, j)
-}
-
-func TestJobsToPbJobsPtr(t *testing.T) {
-	js := make([]Job, 0)
-	js = append(js, getJob())
-	js = append(js, getJob())
-	pbJs, err := JobsToPbJobsPtr(js)
-	assert.NoError(t, err)
-
-	assert.IsType(t, []*pb.Job{}, pbJs)
-	assert.Len(t, pbJs, 2)
-}
-
-func TestPbJobsPtrToJobs(t *testing.T) {
-	js := make([]Job, 0)
-	js = append(js, getJob())
-	js = append(js, getJob())
-	pbJs, err := JobsToPbJobsPtr(js)
-	assert.NoError(t, err)
-	js = PbJobsPtrToJobs(pbJs)
-
-	assert.IsType(t, []Job{}, js)
-	assert.Len(t, js, 2)
 }
 
 func TestRegisterFuncs(t *testing.T) {

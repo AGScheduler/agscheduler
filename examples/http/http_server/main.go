@@ -9,8 +9,8 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/examples"
-	"github.com/agscheduler/agscheduler/services"
-	"github.com/agscheduler/agscheduler/stores"
+	services "github.com/agscheduler/agscheduler/services/http"
+	stores "github.com/agscheduler/agscheduler/stores/memory"
 )
 
 func main() {

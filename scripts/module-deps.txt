@@ -1,0 +1,33 @@
+# <module-directory> <allowed-direct-external-dependencies...>
+#
+# AGScheduler module dependencies are implied and do not need to be listed.
+# The core runtime allowlist is enforced separately by check-module-deps.go.
+
+. github.com/google/uuid github.com/gorhill/cronexpr github.com/sony/sonyflake github.com/stretchr/testify
+
+backends/gorm gorm.io/gorm
+backends/memory
+backends/mongodb github.com/stretchr/testify go.mongodb.org/mongo-driver
+
+examples github.com/eclipse/paho.mqtt.golang github.com/elastic/go-elasticsearch/v8 github.com/nsqio/go-nsq github.com/rabbitmq/amqp091-go github.com/redis/go-redis/v9 github.com/twmb/franz-go github.com/twmb/franz-go/pkg/kadm go.etcd.io/etcd/client/v3 go.mongodb.org/mongo-driver google.golang.org/grpc google.golang.org/protobuf gorm.io/driver/mysql gorm.io/gorm
+
+queues/kafka github.com/stretchr/testify github.com/twmb/franz-go github.com/twmb/franz-go/pkg/kadm
+queues/memory
+queues/mqtt github.com/eclipse/paho.mqtt.golang github.com/stretchr/testify
+queues/nsq github.com/nsqio/go-nsq github.com/stretchr/testify
+queues/rabbitmq github.com/rabbitmq/amqp091-go github.com/stretchr/testify
+queues/redis github.com/redis/go-redis/v9 github.com/stretchr/testify
+
+services/cluster github.com/gin-gonic/gin github.com/stretchr/testify google.golang.org/grpc google.golang.org/protobuf
+services/grpc github.com/stretchr/testify google.golang.org/grpc google.golang.org/protobuf
+services/http github.com/gin-contrib/cors github.com/gin-gonic/gin github.com/stretchr/testify
+services/proto google.golang.org/grpc google.golang.org/protobuf
+
+stores/elasticsearch github.com/elastic/go-elasticsearch/v8 github.com/stretchr/testify
+stores/etcd github.com/stretchr/testify go.etcd.io/etcd/client/v3
+stores/gorm gorm.io/gorm
+stores/memory
+stores/mongodb github.com/stretchr/testify go.mongodb.org/mongo-driver
+stores/redis github.com/redis/go-redis/v9 github.com/stretchr/testify
+
+tests/integration github.com/stretchr/testify gorm.io/driver/mysql gorm.io/gorm

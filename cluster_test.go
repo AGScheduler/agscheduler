@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func getClusterNode() *ClusterNode {
@@ -144,15 +142,6 @@ func TestClusterNodeMapCopyConcurrent(t *testing.T) {
 	for err := range errCh {
 		assert.NoError(t, err)
 	}
-}
-
-func TestNodeMapToPbNodesPtr(t *testing.T) {
-	cn := getClusterNode()
-	cn.registerNode(cn)
-	pbNs := cn.NodeMapToPbNodesPtr()
-
-	assert.IsType(t, map[string]*pb.Node{}, pbNs)
-	assert.NotEmpty(t, pbNs)
 }
 
 func TestClusterMainNode(t *testing.T) {

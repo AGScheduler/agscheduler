@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/backends"
+	backends "github.com/agscheduler/agscheduler/backends/mongodb"
 	eb "github.com/agscheduler/agscheduler/examples/backends"
 )
 

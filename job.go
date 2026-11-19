@@ -10,10 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 // constant indicating a job's type
@@ -223,86 +219,6 @@ func JobUnmarshal(bJ []byte) (Job, error) {
 		return Job{}, err
 	}
 	return j, nil
-}
-
-// Used to gRPC Protobuf
-func JobToPbJobPtr(j Job) (*pb.Job, error) {
-	args, err := structpb.NewStruct(j.Args)
-	if err != nil {
-		return &pb.Job{}, err
-	}
-
-	pbJ := &pb.Job{
-		Id:           j.Id,
-		Name:         j.Name,
-		Type:         j.Type,
-		StartAt:      j.StartAt,
-		EndAt:        j.EndAt,
-		Interval:     j.Interval,
-		CronExpr:     j.CronExpr,
-		Timezone:     j.Timezone,
-		FuncName:     j.FuncName,
-		Args:         args,
-		Timeout:      j.Timeout,
-		Queues:       j.Queues,
-		MaxInstances: int32(j.MaxInstances),
-
-		LastRunTime: timestamppb.New(j.LastRunTime),
-		NextRunTime: timestamppb.New(j.NextRunTime),
-		Status:      j.Status,
-	}
-
-	return pbJ, nil
-}
-
-// Used to gRPC Protobuf
-func PbJobPtrToJob(pbJob *pb.Job) Job {
-	return Job{
-		Id:           pbJob.GetId(),
-		Name:         pbJob.GetName(),
-		Type:         pbJob.GetType(),
-		StartAt:      pbJob.GetStartAt(),
-		EndAt:        pbJob.GetEndAt(),
-		Interval:     pbJob.GetInterval(),
-		CronExpr:     pbJob.GetCronExpr(),
-		Timezone:     pbJob.GetTimezone(),
-		FuncName:     pbJob.GetFuncName(),
-		Args:         pbJob.GetArgs().AsMap(),
-		Timeout:      pbJob.GetTimeout(),
-		Queues:       pbJob.GetQueues(),
-		MaxInstances: max(1, int(pbJob.GetMaxInstances())),
-
-		LastRunTime: pbJob.GetLastRunTime().AsTime(),
-		NextRunTime: pbJob.GetNextRunTime().AsTime(),
-		Status:      pbJob.GetStatus(),
-	}
-}
-
-// Used to gRPC Protobuf
-func JobsToPbJobsPtr(js []Job) ([]*pb.Job, error) {
-	pbJs := []*pb.Job{}
-
-	for _, j := range js {
-		pbJ, err := JobToPbJobPtr(j)
-		if err != nil {
-			return []*pb.Job{}, err
-		}
-
-		pbJs = append(pbJs, pbJ)
-	}
-
-	return pbJs, nil
-}
-
-// Used to gRPC Protobuf
-func PbJobsPtrToJobs(pbJs []*pb.Job) []Job {
-	js := []Job{}
-
-	for _, pbJ := range pbJs {
-		js = append(js, PbJobPtrToJob(pbJ))
-	}
-
-	return js
 }
 
 type FuncPkg struct {

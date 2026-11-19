@@ -22,6 +22,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version: ${{ matrix.go-version }}
+        cache-dependency-path: '**/go.sum'
 
     - name: Start external services
       run: |
@@ -45,12 +46,12 @@ jobs:
 
     - name: Test with go test
       run: |
-        ./ci/wait-for-it.sh 127.0.0.1:3306 -s -t 60
-        sleep 10
         make test
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5
+      with:
+        files: coverage/*.out
       env:
         fail_ci_if_error: true
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

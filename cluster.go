@@ -12,10 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 type TypeNodeMap map[string]map[string]any
@@ -166,28 +162,6 @@ func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
 	}
 
 	return nodeMapCopy
-}
-
-// Used to gRPC Protobuf
-func (cn *ClusterNode) NodeMapToPbNodesPtr() map[string]*pb.Node {
-	pbNs := make(map[string]*pb.Node)
-
-	for k, v := range cn.NodeMapCopy() {
-		pbNs[k] = &pb.Node{
-			EndpointMain:      v["endpoint_main"].(string),
-			Endpoint:          v["endpoint"].(string),
-			EndpointGrpc:      v["endpoint_grpc"].(string),
-			EndpointHttp:      v["endpoint_http"].(string),
-			Queue:             v["queue"].(string),
-			Mode:              v["mode"].(string),
-			Version:           Version,
-			Health:            v["health"].(bool),
-			RegisterTime:      timestamppb.New(v["register_time"].(time.Time)),
-			LastHeartbeatTime: timestamppb.New(v["last_heartbeat_time"].(time.Time)),
-		}
-	}
-
-	return pbNs
 }
 
 func (cn *ClusterNode) MainNode() map[string]any {

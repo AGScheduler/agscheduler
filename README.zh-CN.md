@@ -56,6 +56,48 @@
 go get -u github.com/agscheduler/agscheduler
 ```
 
+可选集成现在使用独立 module，只会引入对应实现所需的依赖：
+
+```bash
+go get github.com/agscheduler/agscheduler/stores/memory
+go get github.com/agscheduler/agscheduler/queues/kafka
+go get github.com/agscheduler/agscheduler/backends/mongodb
+go get github.com/agscheduler/agscheduler/services/grpc
+```
+
+## 从 v0.12 及更早版本迁移
+
+`v0.20.0` 将聚合包拆分为按具体实现组织的独立 module。核心包名保持不变，只需要将 import 更新为实际使用的实现：
+
+各实现的 package 名仍为 `stores`、`queues`、`backends` 和 `services`，因此 `stores.MemoryStore` 等类型引用不需要改名。
+
+| v0.12 及更早版本 | v0.20.0 |
+| --- | --- |
+| `github.com/agscheduler/agscheduler/stores` | `github.com/agscheduler/agscheduler/stores/memory`、`.../stores/gorm`、`.../stores/redis`、`.../stores/mongodb`、`.../stores/etcd` 或 `.../stores/elasticsearch` |
+| `github.com/agscheduler/agscheduler/queues` | `github.com/agscheduler/agscheduler/queues/memory`、`.../queues/nsq`、`.../queues/rabbitmq`、`.../queues/redis`、`.../queues/mqtt` 或 `.../queues/kafka` |
+| `github.com/agscheduler/agscheduler/backends` | `github.com/agscheduler/agscheduler/backends/memory`、`.../backends/gorm` 或 `.../backends/mongodb` |
+| `github.com/agscheduler/agscheduler/services` | `github.com/agscheduler/agscheduler/services/http`、`.../services/grpc` 或 `.../services/cluster` |
+
+`JobToPbJobPtr` 等 Protobuf 转换函数已从核心包迁移到 `github.com/agscheduler/agscheduler/services/grpc/convert`。
+
+## Module 开发
+
+Module 目录和依赖边界分别声明在 `scripts/modules.txt` 与 `scripts/module-deps.txt`。
+
+```bash
+# 创建并登记新的可选 module。
+make add-module MODULE=stores/cassandra DEPS='github.com/gocql/gocql@v1.6.0'
+
+# 统一更新所有 module、workspace replacement、版本常量和迁移文档。
+make bump-version VERSION=0.21.0
+
+# 添加源码或修改依赖后，刷新 go.mod/go.sum。
+make tidy
+make check-deps
+```
+
+添加源码后运行受影响 module 的测试。如果测试需要某个第三方 driver，而该依赖不应出现在适配器 module 的 `go.mod` 中，应把测试放到 `tests/integration`。
+
 ## 使用
 
 ```go
@@ -68,7 +110,7 @@ import (
 	"time"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/stores"
+	"github.com/agscheduler/agscheduler/stores/memory"
 )
 
 func printMsg(ctx context.Context, j agscheduler.Job) (result string) {

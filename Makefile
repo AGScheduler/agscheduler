@@ -1,14 +1,31 @@
 SHELL=/bin/bash
 
+MODULES := $(shell awk '!/^[[:space:]]*(#|$$)/ { print ($$0 == "." ? "." : "./" $$0) }' scripts/modules.txt)
+COVERAGE_DIR := $(CURDIR)/coverage
+
 .PHONY: install
 install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.9
 	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
 	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
 	go install golang.org/x/tools/cmd/goimports@v0.37.0
-	go mod tidy
+	./scripts/tidy-modules.sh
 
 	pip3 install grpcio-tools
+
+.PHONY: tidy
+tidy:
+	./scripts/tidy-modules.sh
+
+.PHONY: add-module
+add-module:
+	@test -n "$(MODULE)" || (echo "usage: make add-module MODULE=stores/cassandra [DEPS='vendor/pkg@v1.2.3 ...']" >&2; exit 1)
+	./scripts/add-module.sh "$(MODULE)" $(DEPS)
+
+.PHONY: bump-version
+bump-version:
+	@test -n "$(VERSION)" || (echo "usage: make bump-version VERSION=0.21.0" >&2; exit 1)
+	./scripts/bump-version.sh "$(VERSION)"
 
 .PHONY: format
 format:
@@ -46,28 +63,34 @@ down-cluster-ci-service_second:
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service-second"
 
 .PHONY: test
-test: down-cluster-ci-service up-cluster-ci-service
-	go test \
-		-timeout 120s \
-		-covermode=set \
-		-coverprofile=coverage.out \
-		. \
-		./stores \
-		./services \
-		./queues \
-		./backends \
-		-v
-	go tool cover -func=coverage.out
-	go tool cover -html=coverage.out -o coverage.html
+test: down-cluster-ci-service up-cluster-ci-service wait-ci-services
+	mkdir -p $(COVERAGE_DIR)
+	for module in $(MODULES); do \
+		echo "Testing $$module"; \
+		profile="$(COVERAGE_DIR)/$$(printf '%s' "$$module" | tr '/.' '__').out"; \
+		(cd $$module && go test -count=1 -timeout 120s -covermode=set -coverprofile=$$profile ./... -v) || exit $$?; \
+		if [ -f $$profile ]; then \
+			go tool cover -func=$$profile; \
+			go tool cover -html=$$profile -o $${profile%.out}.html; \
+		fi; \
+	done
 	$(MAKE) down-cluster-ci-service_second
 
+.PHONY: check-deps
+check-deps:
+	go run ./scripts/check-module-deps.go
+
 .PHONY: check-all
-check-all: format-check isort-check lint test
+check-all: format-check isort-check lint check-deps test
 
 .PHONY: up-ci-services
 up-ci-services:
 	docker compose -f ci/docker-compose.store.ci.yml up -d
 	docker compose -f ci/docker-compose.queue.ci.yml up -d
+
+.PHONY: wait-ci-services
+wait-ci-services:
+	./ci/wait-for-ci-services.sh
 
 .PHONY: down-ci-services
 down-ci-services:

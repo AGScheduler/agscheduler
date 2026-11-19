@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func getRecord() agscheduler.Record {
@@ -41,54 +40,14 @@ func TestRecordSort(t *testing.T) {
 	assert.Equal(t, r2.StartAt, rs[0].StartAt)
 }
 
-func TestRecordToPbRecordPtr(t *testing.T) {
-	r := getRecord()
-	pbR, err := agscheduler.RecordToPbRecordPtr(r)
-	assert.NoError(t, err)
-
-	assert.IsType(t, &pb.Record{}, pbR)
-	assert.NotEmpty(t, pbR)
-}
-
-func TestPbRecordPtrToRecord(t *testing.T) {
-	r := getRecord()
-	pbR, err := agscheduler.RecordToPbRecordPtr(r)
-	assert.NoError(t, err)
-	r = agscheduler.PbRecordPtrToRecord(pbR)
-
-	assert.IsType(t, agscheduler.Record{}, r)
-	assert.NotEmpty(t, r)
-}
-
-func TestRecordsToPbRecordsPtr(t *testing.T) {
-	rs := []agscheduler.Record{}
-	rs = append(rs, getRecord())
-	rs = append(rs, getRecord())
-	pbRs, err := agscheduler.RecordsToPbRecordsPtr(rs)
-	assert.NoError(t, err)
-
-	assert.IsType(t, []*pb.Record{}, pbRs)
-	assert.Len(t, pbRs, 2)
-}
-
-func TestPbRecordsPtrToRecords(t *testing.T) {
-	rs := []agscheduler.Record{}
-	rs = append(rs, getRecord())
-	rs = append(rs, getRecord())
-	pbRs, err := agscheduler.RecordsToPbRecordsPtr(rs)
-	assert.NoError(t, err)
-	rs = agscheduler.PbRecordsPtrToRecords(pbRs)
-
-	assert.IsType(t, []agscheduler.Record{}, rs)
-	assert.Len(t, rs, 2)
-}
-
 func TestRecorderRecordMetadata(t *testing.T) {
 	j := agscheduler.Job{Id: "1"}
 	s := &agscheduler.Scheduler{}
 	rec := getRecorder()
 	err := s.SetRecorder(rec)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = rec.RecordMetadata(j)
 	assert.NoError(t, err)
@@ -104,7 +63,9 @@ func TestRecorderRecordResult(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	rec := getRecorder()
 	err := s.SetRecorder(rec)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	id, err := rec.RecordMetadata(j)
 	assert.NoError(t, err)
@@ -122,7 +83,9 @@ func TestRecorderGetRecords(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	rec := getRecorder()
 	err := s.SetRecorder(rec)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	rs, total, err := rec.GetRecords(j.Id, 1, 10)
 	assert.NoError(t, err)
@@ -144,7 +107,9 @@ func TestRecorderGetAllRecords(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	rec := getRecorder()
 	err := s.SetRecorder(rec)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	rs, total, err := rec.GetRecords(j.Id, 1, 10)
 	assert.NoError(t, err)
@@ -179,7 +144,9 @@ func TestRecorderDeleteRecords(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	rec := getRecorder()
 	err := s.SetRecorder(rec)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = rec.RecordMetadata(j)
 	assert.NoError(t, err)
@@ -199,7 +166,9 @@ func TestRecorderDeleteAllRecords(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	rec := getRecorder()
 	err := s.SetRecorder(rec)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = rec.RecordMetadata(j)
 	assert.NoError(t, err)
@@ -219,7 +188,9 @@ func TestRecorderClear(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	rec := getRecorder()
 	err := s.SetRecorder(rec)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	_, err = rec.RecordMetadata(j)
 	assert.NoError(t, err)
