@@ -1,24 +1,23 @@
-version: "3"
 services:
   nsqd:
-    image: nsqio/nsq
+    image: nsqio/nsq:v1.3.0
     command: /nsqd
     ports:
       - 127.0.0.1:4150:4150
       - 127.0.0.1:4151:4151
 
   rabbitmq:
-    image: rabbitmq:management
+    image: rabbitmq:3.13.3-management
     ports:
       - 127.0.0.1:5672:5672
       - 127.0.0.1:15672:15672
 
   nanomq:
-    image: emqx/nanomq
+    image: emqx/nanomq:0.21.10-slim
     ports:
       - 127.0.0.1:1883:1883
 
   kafka:
-    image: apache/kafka
+    image: apache/kafka:3.7.0
     ports:
       - 127.0.0.1:9092:9092
