@@ -2,6 +2,8 @@ SHELL=/bin/bash
 
 MODULES := $(shell awk '!/^[[:space:]]*(#|$$)/ { print ($$0 == "." ? "." : "./" $$0) }' scripts/modules.txt)
 COVERAGE_DIR := $(CURDIR)/coverage
+# These modules have no local tests; tests/integration instruments them below.
+INTEGRATION_COVERAGE_PKGS := github.com/agscheduler/agscheduler/backends/gorm,github.com/agscheduler/agscheduler/stores/gorm
 
 .PHONY: install
 install:
@@ -71,8 +73,24 @@ test: down-cluster-ci-service up-cluster-ci-service wait-ci-services
 	for module in $(MODULES); do \
 		echo "Testing $$module"; \
 		profile="$(COVERAGE_DIR)/$$(printf '%s' "$$module" | tr '/.' '__').out"; \
-		(cd $$module && go test -count=1 -timeout 120s -covermode=set -coverprofile=$$profile ./... -v) || exit $$?; \
-		if [ -f $$profile ]; then \
+		rm -f "$$profile" "$${profile%.out}.html"; \
+		case "$$module" in \
+			./backends/gorm|./stores/gorm) \
+				echo "Compiling $$module; coverage is collected by tests/integration"; \
+				(cd "$$module" && go test -count=1 -timeout 120s ./... -v) || exit $$?; \
+				continue ;; \
+			./examples|./services/proto) \
+				echo "Compiling $$module; excluded from coverage"; \
+				(cd "$$module" && go test -count=1 -timeout 120s ./... -v) || exit $$?; \
+				continue ;; \
+		esac; \
+		if [ "$$module" = "./tests/integration" ]; then \
+			(cd "$$module" && go test -count=1 -timeout 120s -covermode=set -coverprofile="$$profile" -coverpkg="$(INTEGRATION_COVERAGE_PKGS)" ./... -v) || exit $$?; \
+		else \
+			(cd "$$module" && go test -count=1 -timeout 120s -covermode=set -coverprofile="$$profile" ./... -v) || exit $$?; \
+		fi; \
+		./scripts/filter-coverage.sh "$$profile"; \
+		if [ -s "$$profile" ]; then \
 			go tool cover -func=$$profile; \
 			go tool cover -html=$$profile -o $${profile%.out}.html; \
 		fi; \
