@@ -11,7 +11,7 @@ install:
 	go install golang.org/x/tools/cmd/goimports@v0.53.0
 	./scripts/tidy-modules.sh
 
-	pip3 install grpcio-tools
+	pip3 install grpcio-tools==1.85.3
 
 .PHONY: tidy
 tidy:
