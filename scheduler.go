@@ -432,10 +432,6 @@ func (s *Scheduler) pushJob(queue string, j Job) {
 	}
 }
 
-func (s *Scheduler) _runJob(j Job) {
-	s._runJobWithContext(context.Background(), j)
-}
-
 // Used in standalone mode.
 func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
 	if parentCtx.Err() != nil {

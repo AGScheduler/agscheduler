@@ -113,14 +113,18 @@ func checkDirectRequirements(root, module string, allowedDirect []string) {
 	}
 }
 
-func readModuleDeps(path string) (map[string][]string, error) {
+func readModuleDeps(path string) (result map[string][]string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	result := make(map[string][]string)
+	result = make(map[string][]string)
 	scanner := bufio.NewScanner(file)
 	lineNumber := 0
 	for scanner.Scan() {
@@ -143,14 +147,17 @@ func readModuleDeps(path string) (map[string][]string, error) {
 	return result, nil
 }
 
-func readLines(path string) ([]string, error) {
+func readLines(path string) (lines []string, err error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
-	var lines []string
 	seen := make(map[string]struct{})
 	scanner := bufio.NewScanner(file)
 	lineNumber := 0

@@ -42,7 +42,11 @@ func (c *ClusterProxy) gRPCProxyInterceptor(
 	if err != nil {
 		return nil, fmt.Errorf("dialing %s failure", endpointGRPC)
 	}
-	defer conn.Close()
+	defer func() {
+		if closeErr := conn.Close(); closeErr != nil && err == nil {
+			err = fmt.Errorf("closing gRPC connection: %w", closeErr)
+		}
+	}()
 
 	client := pb.NewSchedulerClient(conn)
 

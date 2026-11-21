@@ -5,10 +5,10 @@ COVERAGE_DIR := $(CURDIR)/coverage
 
 .PHONY: install
 install:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.9
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
-	go install golang.org/x/tools/cmd/goimports@v0.37.0
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
+	go install golang.org/x/tools/cmd/goimports@v0.53.0
 	./scripts/tidy-modules.sh
 
 	pip3 install grpcio-tools
@@ -45,7 +45,10 @@ isort-check:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=5m -v
+	for module in $(MODULES); do \
+		echo "Linting $$module"; \
+		(cd $$module && golangci-lint run --timeout=15m -v) || exit $$?; \
+	done
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:

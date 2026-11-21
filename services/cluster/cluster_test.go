@@ -57,9 +57,10 @@ func TestClusterService(t *testing.T) {
 
 	baseUrl := "http://" + cnMain.EndpointHTTP
 	resp, err := http.Get(baseUrl + "/cluster/nodes")
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	resp.Body.Close()
+	if assert.NoError(t, err) {
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.NoError(t, resp.Body.Close())
+	}
 
 	conn, err := grpc.NewClient(cnMain.EndpointGRPC, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)

@@ -10,18 +10,6 @@ import (
 	"github.com/agscheduler/agscheduler"
 )
 
-func getRecord() agscheduler.Record {
-	return agscheduler.Record{
-		Id:      uint64(1),
-		JobId:   "1",
-		JobName: "Job",
-		Status:  agscheduler.RECORD_STATUS_RUNNING,
-		Result:  "",
-		StartAt: time.Time{},
-		EndAt:   time.Time{},
-	}
-}
-
 func TestRecordSort(t *testing.T) {
 	rs := []agscheduler.Record{}
 

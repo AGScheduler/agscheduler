@@ -1,4 +1,4 @@
-go 1.25.1
+go 1.27.4
 
 use (
 	.
@@ -28,23 +28,43 @@ use (
 replace github.com/agscheduler/agscheduler v0.20.0 => .
 
 replace github.com/agscheduler/agscheduler/backends/gorm v0.20.0 => ./backends/gorm
+
 replace github.com/agscheduler/agscheduler/backends/memory v0.20.0 => ./backends/memory
+
 replace github.com/agscheduler/agscheduler/backends/mongodb v0.20.0 => ./backends/mongodb
+
 replace github.com/agscheduler/agscheduler/examples v0.20.0 => ./examples
+
 replace github.com/agscheduler/agscheduler/queues/kafka v0.20.0 => ./queues/kafka
+
 replace github.com/agscheduler/agscheduler/queues/memory v0.20.0 => ./queues/memory
+
 replace github.com/agscheduler/agscheduler/queues/mqtt v0.20.0 => ./queues/mqtt
+
 replace github.com/agscheduler/agscheduler/queues/nsq v0.20.0 => ./queues/nsq
+
 replace github.com/agscheduler/agscheduler/queues/rabbitmq v0.20.0 => ./queues/rabbitmq
+
 replace github.com/agscheduler/agscheduler/queues/redis v0.20.0 => ./queues/redis
+
 replace github.com/agscheduler/agscheduler/services/cluster v0.20.0 => ./services/cluster
+
 replace github.com/agscheduler/agscheduler/services/grpc v0.20.0 => ./services/grpc
+
 replace github.com/agscheduler/agscheduler/services/http v0.20.0 => ./services/http
+
 replace github.com/agscheduler/agscheduler/services/proto v0.20.0 => ./services/proto
+
 replace github.com/agscheduler/agscheduler/stores/elasticsearch v0.20.0 => ./stores/elasticsearch
+
 replace github.com/agscheduler/agscheduler/stores/etcd v0.20.0 => ./stores/etcd
+
 replace github.com/agscheduler/agscheduler/stores/gorm v0.20.0 => ./stores/gorm
+
 replace github.com/agscheduler/agscheduler/stores/memory v0.20.0 => ./stores/memory
+
 replace github.com/agscheduler/agscheduler/stores/mongodb v0.20.0 => ./stores/mongodb
+
 replace github.com/agscheduler/agscheduler/stores/redis v0.20.0 => ./stores/redis
+
 replace github.com/agscheduler/agscheduler/tests/integration v0.20.0 => ./tests/integration
