@@ -1,0 +1,5 @@
+ignore:
+  - "examples/**"
+  - "internal/adaptertest/**"
+  - "scripts/**"
+  - "services/proto/**/*.pb.go"

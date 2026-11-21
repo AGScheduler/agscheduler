@@ -1,7 +1,6 @@
-version: "3"
 services:
   mysql:
-    image: mysql
+    image: mysql:26.10.0
     environment:
       - MYSQL_DATABASE=agscheduler
       - MYSQL_ROOT_PASSWORD=123456
@@ -9,7 +8,7 @@ services:
       - 127.0.0.1:3306:3306
 
   redis:
-    image: redis
+    image: redis:8.10.3
     ports:
       - 127.0.0.1:6379:6379
 
@@ -20,9 +19,13 @@ services:
       - 127.0.0.1:27017:27017
 
   etcd:
-    image: docker.io/bitnami/etcd
-    environment:
-      - ALLOW_NONE_AUTHENTICATION=yes
+    image: gcr.io/etcd-development/etcd:v3.7.4
+    command:
+      - /usr/local/bin/etcd
+      - --name=etcd
+      - --data-dir=/etcd-data
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://127.0.0.1:2379
     ports:
       - 127.0.0.1:2379:2379
 

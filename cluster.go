@@ -12,13 +12,34 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 type TypeNodeMap map[string]map[string]any
+
+type nodeMapGobCodec struct {
+	buffer  bytes.Buffer
+	encoder *gob.Encoder
+	decoder *gob.Decoder
+}
+
+var nodeMapGobCodecPool = sync.Pool{
+	New: func() any {
+		codec := &nodeMapGobCodec{}
+		codec.encoder = gob.NewEncoder(&codec.buffer)
+		codec.decoder = gob.NewDecoder(&codec.buffer)
+		return codec
+	},
+}
+
+func init() {
+	gob.Register(time.Time{})
+}
+
+func (c *nodeMapGobCodec) reset() {
+	// gob encoders and decoders have no Reset method. Keep their type state
+	// and reset the underlying buffer after the decoder consumes the stream.
+	c.buffer.Reset()
+}
 
 type Node struct {
 	EndpointMain string
@@ -113,15 +134,21 @@ func (cn *ClusterNode) setNodeMap(nmap TypeNodeMap) {
 	cn.nodeMap = nmap
 }
 
-func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src TypeNodeMap) error {
-	gob.Register(time.Time{})
+func (cn *ClusterNode) deepCopyNodeMapByGob(dst, src TypeNodeMap) (err error) {
+	codec := nodeMapGobCodecPool.Get().(*nodeMapGobCodec)
+	defer func() {
+		if err == nil {
+			codec.reset()
+			nodeMapGobCodecPool.Put(codec)
+		}
+	}()
 
-	var buffer bytes.Buffer
-	if err := gob.NewEncoder(&buffer).Encode(src); err != nil {
+	if err = codec.encoder.Encode(src); err != nil {
 		return err
 	}
 
-	return gob.NewDecoder(bytes.NewBuffer(buffer.Bytes())).Decode(&dst)
+	err = codec.decoder.Decode(&dst)
+	return err
 }
 
 func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
@@ -135,28 +162,6 @@ func (cn *ClusterNode) NodeMapCopy() TypeNodeMap {
 	}
 
 	return nodeMapCopy
-}
-
-// Used to gRPC Protobuf
-func (cn *ClusterNode) NodeMapToPbNodesPtr() map[string]*pb.Node {
-	pbNs := make(map[string]*pb.Node)
-
-	for k, v := range cn.NodeMapCopy() {
-		pbNs[k] = &pb.Node{
-			EndpointMain:      v["endpoint_main"].(string),
-			Endpoint:          v["endpoint"].(string),
-			EndpointGrpc:      v["endpoint_grpc"].(string),
-			EndpointHttp:      v["endpoint_http"].(string),
-			Queue:             v["queue"].(string),
-			Mode:              v["mode"].(string),
-			Version:           Version,
-			Health:            v["health"].(bool),
-			RegisterTime:      timestamppb.New(v["register_time"].(time.Time)),
-			LastHeartbeatTime: timestamppb.New(v["last_heartbeat_time"].(time.Time)),
-		}
-	}
-
-	return pbNs
 }
 
 func (cn *ClusterNode) MainNode() map[string]any {

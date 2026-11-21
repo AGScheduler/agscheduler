@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	es "github.com/agscheduler/agscheduler/examples/stores"
-	"github.com/agscheduler/agscheduler/stores"
+	stores "github.com/agscheduler/agscheduler/stores/gorm"
 )
 
 func main() {

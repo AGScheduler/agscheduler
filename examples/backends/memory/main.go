@@ -4,7 +4,7 @@ package main
 
 import (
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/backends"
+	backends "github.com/agscheduler/agscheduler/backends/memory"
 	eb "github.com/agscheduler/agscheduler/examples/backends"
 )
 

@@ -13,7 +13,7 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	eq "github.com/agscheduler/agscheduler/examples/queues"
-	"github.com/agscheduler/agscheduler/queues"
+	queues "github.com/agscheduler/agscheduler/queues/kafka"
 )
 
 func main() {

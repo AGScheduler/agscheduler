@@ -10,7 +10,7 @@ import (
 	es8 "github.com/elastic/go-elasticsearch/v8"
 
 	es "github.com/agscheduler/agscheduler/examples/stores"
-	"github.com/agscheduler/agscheduler/stores"
+	stores "github.com/agscheduler/agscheduler/stores/elasticsearch"
 )
 
 func main() {
