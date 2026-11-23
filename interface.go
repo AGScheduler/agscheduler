@@ -54,8 +54,8 @@ type Queue interface {
 	// Push job to this queue.
 	PushJob(bJ []byte) error
 
-	// Pull job from this queue.
-	PullJob() <-chan []byte
+	// Pull job deliveries from this queue.
+	PullJob() <-chan QueueMessage
 
 	// Count the number of jobs in this queue.
 	//  @return -1, nil, if the queue does not support this feature or error.
@@ -63,6 +63,15 @@ type Queue interface {
 
 	// Clear all resources bound to this queue.
 	Clear() error
+}
+
+// QueueMessage represents one delivery from a queue.
+// Ack should be called after the job has been handled and may be nil.
+// Nack should make the delivery available for another attempt and may be nil.
+type QueueMessage struct {
+	Body []byte
+	Ack  func() error
+	Nack func() error
 }
 
 // Defines the interface that each backend must implement.

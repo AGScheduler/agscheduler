@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"sort"
 	"strconv"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -83,6 +84,7 @@ func RunStore(t *testing.T, sto agscheduler.Store) {
 func RunQueue(t *testing.T, brk *agscheduler.Broker) {
 	t.Helper()
 
+	queueJobsCompleted.Store(0)
 	agscheduler.RegisterFuncs(
 		agscheduler.FuncPkg{Func: runQueuesSleep},
 	)
@@ -108,6 +110,10 @@ func RunQueue(t *testing.T, brk *agscheduler.Broker) {
 
 	s.Start()
 
+	assert.Eventually(t, func() bool {
+		return queueJobsCompleted.Load() == 6
+	}, 30*time.Second, 250*time.Millisecond)
+
 	for _, queueName := range sortedQueueNames(brk.Queues) {
 		queueName := queueName
 		assert.Eventually(t, func() bool {
@@ -132,6 +138,8 @@ func RunQueue(t *testing.T, brk *agscheduler.Broker) {
 	}
 	assert.NoError(t, sto.Clear())
 }
+
+var queueJobsCompleted atomic.Int32
 
 func RunBackend(t *testing.T, rec *agscheduler.Recorder) {
 	t.Helper()
@@ -221,6 +229,7 @@ func dryRunStore(context.Context, agscheduler.Job) string { return "" }
 
 func runQueuesSleep(context.Context, agscheduler.Job) string {
 	time.Sleep(2 * time.Second)
+	queueJobsCompleted.Add(1)
 	return ""
 }
 
@@ -310,23 +319,23 @@ func sortedQueueNames(queues map[string]agscheduler.QueuePkg) []string {
 }
 
 type testQueue struct {
-	jobs chan []byte
+	jobs chan agscheduler.QueueMessage
 }
 
 func (q *testQueue) Name() string { return "test" }
 
 func (q *testQueue) Init(context.Context) error {
-	q.jobs = make(chan []byte, 32)
+	q.jobs = make(chan agscheduler.QueueMessage, 32)
 	return nil
 }
 
 func (q *testQueue) PushJob(job []byte) error {
-	q.jobs <- job
+	q.jobs <- agscheduler.QueueMessage{Body: job}
 	return nil
 }
 
-func (q *testQueue) PullJob() <-chan []byte  { return q.jobs }
-func (q *testQueue) CountJobs() (int, error) { return len(q.jobs), nil }
+func (q *testQueue) PullJob() <-chan agscheduler.QueueMessage { return q.jobs }
+func (q *testQueue) CountJobs() (int, error)                  { return len(q.jobs), nil }
 
 func (q *testQueue) Clear() error {
 	if q.jobs != nil {

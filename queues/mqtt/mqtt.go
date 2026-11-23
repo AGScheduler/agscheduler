@@ -9,6 +9,8 @@ import (
 	"runtime/debug"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+
+	"github.com/agscheduler/agscheduler"
 )
 
 const (
@@ -24,7 +26,8 @@ type MqttQueue struct {
 	Topic       string
 
 	size int
-	jobC chan []byte
+	jobC chan agscheduler.QueueMessage
+	ctx  context.Context
 }
 
 func (q *MqttQueue) Name() string {
@@ -40,9 +43,10 @@ func (q *MqttQueue) Init(ctx context.Context) error {
 	}
 
 	q.size = int(math.Abs(float64(q.size)))
-	q.jobC = make(chan []byte, q.size)
+	q.ctx = ctx
+	q.jobC = make(chan agscheduler.QueueMessage, q.size)
 
-	topic, err := url.JoinPath(MQTT_TOPIC_PREFIX, q.Topic)
+	topic, err := url.JoinPath(q.TopicPrefix, q.Topic)
 	if err != nil {
 		return err
 	}
@@ -61,7 +65,7 @@ func (q *MqttQueue) PushJob(bJ []byte) error {
 	return nil
 }
 
-func (q *MqttQueue) PullJob() <-chan []byte {
+func (q *MqttQueue) PullJob() <-chan agscheduler.QueueMessage {
 	return q.jobC
 }
 
@@ -83,5 +87,18 @@ func (q *MqttQueue) handleMessage(c mqtt.Client, msg mqtt.Message) {
 		}
 	}()
 
-	q.jobC <- msg.Payload()
+	body := msg.Payload()
+	delivery := agscheduler.QueueMessage{
+		Body: body,
+		Ack: func() error {
+			return nil
+		},
+		Nack: func() error {
+			return q.PushJob(body)
+		},
+	}
+	select {
+	case q.jobC <- delivery:
+	case <-q.ctx.Done():
+	}
 }

@@ -12,6 +12,8 @@ import (
 	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+
+	"github.com/agscheduler/agscheduler"
 )
 
 const (
@@ -31,7 +33,7 @@ type RabbitMQQueue struct {
 	ch *amqp.Channel
 
 	size int
-	jobC chan []byte
+	jobC chan agscheduler.QueueMessage
 }
 
 func (q *RabbitMQQueue) Name() string {
@@ -47,7 +49,7 @@ func (q *RabbitMQQueue) Init(ctx context.Context) error {
 	}
 
 	q.size = int(math.Abs(float64(q.size)))
-	q.jobC = make(chan []byte, q.size)
+	q.jobC = make(chan agscheduler.QueueMessage, q.size)
 
 	var err error
 	q.ch, err = q.Conn.Channel()
@@ -122,7 +124,7 @@ func (q *RabbitMQQueue) PushJob(bJ []byte) error {
 	return nil
 }
 
-func (q *RabbitMQQueue) PullJob() <-chan []byte {
+func (q *RabbitMQQueue) PullJob() <-chan agscheduler.QueueMessage {
 	return q.jobC
 }
 
@@ -238,13 +240,23 @@ func (q *RabbitMQQueue) handleMessage(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case d := <-msgs:
-			q.jobC <- d.Body
-			err := d.Ack(false)
-			if err != nil {
-				slog.Error(fmt.Sprintf("RabbitMQQueue ack error: `%s`", err))
-				time.Sleep(1 * time.Second)
-				continue
+		case d, ok := <-msgs:
+			if !ok {
+				return
+			}
+			delivery := agscheduler.QueueMessage{
+				Body: d.Body,
+				Ack: func() error {
+					return d.Ack(false)
+				},
+				Nack: func() error {
+					return d.Nack(false, true)
+				},
+			}
+			select {
+			case q.jobC <- delivery:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}

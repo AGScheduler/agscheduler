@@ -1,6 +1,7 @@
 package queues
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -15,8 +16,9 @@ import (
 )
 
 func TestKafkaQueue(t *testing.T) {
-	testTopic := "agscheduler-test-topic"
-	testGroup := "agscheduler-test-group"
+	suffix := time.Now().UnixNano()
+	testTopic := fmt.Sprintf("agscheduler-test-topic-%d", suffix)
+	testGroup := fmt.Sprintf("agscheduler-test-group-%d", suffix)
 
 	seeds := []string{"127.0.0.1:9092"}
 	p, err := kgo.NewClient(
@@ -31,6 +33,7 @@ func TestKafkaQueue(t *testing.T) {
 		kgo.ConsumeTopics(testTopic),
 		kgo.ConsumerGroup(testGroup),
 		kgo.DisableAutoCommit(),
+		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
 	)
 	assert.NoError(t, err)
 	defer c.Close()

@@ -132,23 +132,49 @@ func (b *Broker) worker(ctx context.Context, stop <-chan struct{}, q Queue) {
 			return
 		case <-ctx.Done():
 			return
-		case bJ, ok := <-q.PullJob():
+		case msg, ok := <-q.PullJob():
 			if !ok {
 				return
 			}
-			j, err := JobUnmarshal(bJ)
+			j, err := JobUnmarshal(msg.Body)
 			if err != nil {
-				slog.Error(fmt.Sprintf("Job `%s` JobUnmarshal error: `%s`", bJ, err))
+				slog.Error(fmt.Sprintf("Job `%s` JobUnmarshal error: `%s`", msg.Body, err))
+				b.ackMessage(msg)
 				continue
 			}
 			if err := j.prepareForRun(); err != nil {
 				slog.Error(fmt.Sprintf("Job `%s` validation error: `%s`", j.FullName(), err))
 				b.scheduler.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, err})
+				b.ackMessage(msg)
 				continue
 			}
 
-			b.scheduler._runJobWithContext(b.scheduler.jobParentContext(), j)
+			jobCtx := b.scheduler.jobParentContext()
+			b.scheduler._runJobWithContext(jobCtx, j)
+			if jobCtx.Err() != nil {
+				b.nackMessage(msg)
+			} else {
+				b.ackMessage(msg)
+			}
 		}
+	}
+}
+
+func (b *Broker) ackMessage(msg QueueMessage) {
+	if msg.Ack == nil {
+		return
+	}
+	if err := msg.Ack(); err != nil {
+		slog.Error(fmt.Sprintf("Broker acknowledge queue message error: %s", err))
+	}
+}
+
+func (b *Broker) nackMessage(msg QueueMessage) {
+	if msg.Nack == nil {
+		return
+	}
+	if err := msg.Nack(); err != nil {
+		slog.Error(fmt.Sprintf("Broker reject queue message error: %s", err))
 	}
 }
 
@@ -177,7 +203,7 @@ func (b *Broker) pushJob(queue string, bJ []byte) error {
 	return b.Queues[queue].Queue.PushJob(bJ)
 }
 
-// func (b *Broker) pullJob(queue string) <-chan []byte {
+// func (b *Broker) pullJob(queue string) <-chan QueueMessage {
 // 	return b.Queues[queue].Queue.PullJob()
 // }
 

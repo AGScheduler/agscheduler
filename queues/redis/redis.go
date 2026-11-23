@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+
+	"github.com/agscheduler/agscheduler"
 )
 
 const (
@@ -25,7 +27,7 @@ type RedisQueue struct {
 	Consumer string
 
 	size int
-	jobC chan []byte
+	jobC chan agscheduler.QueueMessage
 }
 
 func (q *RedisQueue) Name() string {
@@ -44,7 +46,7 @@ func (q *RedisQueue) Init(ctx context.Context) error {
 	}
 
 	q.size = int(math.Abs(float64(q.size)))
-	q.jobC = make(chan []byte, q.size)
+	q.jobC = make(chan agscheduler.QueueMessage, q.size)
 
 	groupIsExist := false
 	gs, _ := q.RDB.XInfoGroups(ctx, q.Stream).Result()
@@ -79,7 +81,7 @@ func (q *RedisQueue) PushJob(bJ []byte) error {
 	return nil
 }
 
-func (q *RedisQueue) PullJob() <-chan []byte {
+func (q *RedisQueue) PullJob() <-chan agscheduler.QueueMessage {
 	return q.jobC
 }
 
@@ -117,6 +119,10 @@ func (q *RedisQueue) handleMessage(ctx context.Context) {
 		}
 	}()
 
+	if !q.claimPending(ctx) {
+		return
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -136,15 +142,80 @@ func (q *RedisQueue) handleMessage(ctx context.Context) {
 				continue
 			}
 			for _, msg := range messages[0].Messages {
-				bJ := []byte(fmt.Sprintf("%v", msg.Values["job"]))
-				q.jobC <- bJ
-				err := q.RDB.XAck(ctx, q.Stream, q.Group, msg.ID).Err()
-				if err != nil {
-					slog.Error(fmt.Sprintf("RedisQueue ack error: `%s`", err))
-					time.Sleep(1 * time.Second)
-					continue
+				if !q.deliver(ctx, msg) {
+					return
 				}
 			}
 		}
 	}
+}
+
+func (q *RedisQueue) claimPending(ctx context.Context) bool {
+	start := "0-0"
+	for {
+		messages, next, err := q.RDB.XAutoClaim(ctx, &redis.XAutoClaimArgs{
+			Stream:   q.Stream,
+			Group:    q.Group,
+			Consumer: q.Consumer,
+			MinIdle:  30 * time.Second,
+			Start:    start,
+			Count:    100,
+		}).Result()
+		if err != nil {
+			slog.Error(fmt.Sprintf("RedisQueue auto-claim error: `%s`", err))
+			return ctx.Err() == nil
+		}
+		for _, msg := range messages {
+			if !q.deliver(ctx, msg) {
+				return false
+			}
+		}
+		if next == "0-0" {
+			return true
+		}
+		start = next
+	}
+}
+
+func (q *RedisQueue) deliver(ctx context.Context, msg redis.XMessage) bool {
+	messageID := msg.ID
+	bJ := []byte(fmt.Sprintf("%v", msg.Values["job"]))
+	delivery := agscheduler.QueueMessage{
+		Body: bJ,
+		Ack: func() error {
+			return q.ack(messageID)
+		},
+		Nack: func() error {
+			return q.requeue(messageID, bJ)
+		},
+	}
+	select {
+	case q.jobC <- delivery:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+func (q *RedisQueue) ack(messageID string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return q.RDB.XAck(ctx, q.Stream, q.Group, messageID).Err()
+}
+
+func (q *RedisQueue) requeue(messageID string, bJ []byte) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := q.RDB.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		pipe.XAdd(ctx, &redis.XAddArgs{
+			Stream: q.Stream,
+			ID:     "*",
+			Values: map[string]any{"job": bJ},
+		})
+		pipe.XAck(ctx, q.Stream, q.Group, messageID)
+		return nil
+	})
+	return err
 }

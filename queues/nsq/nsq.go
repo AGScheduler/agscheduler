@@ -10,9 +10,12 @@ import (
 	"net/http"
 	"net/url"
 	"runtime/debug"
+	"sync"
 	"time"
 
 	"github.com/nsqio/go-nsq"
+
+	"github.com/agscheduler/agscheduler"
 )
 
 const (
@@ -28,7 +31,8 @@ type NsqQueue struct {
 	HttpAddr string
 
 	size int
-	jobC chan []byte
+	jobC chan agscheduler.QueueMessage
+	ctx  context.Context
 }
 
 func (q *NsqQueue) Name() string {
@@ -44,8 +48,10 @@ func (q *NsqQueue) Init(ctx context.Context) error {
 	}
 
 	q.size = int(math.Abs(float64(q.size)))
-	q.jobC = make(chan []byte, q.size)
+	q.ctx = ctx
+	q.jobC = make(chan agscheduler.QueueMessage, q.size)
 	q.Mh.jobC = q.jobC
+	q.Mh.ctx = ctx
 
 	return nil
 }
@@ -59,7 +65,7 @@ func (q *NsqQueue) PushJob(bJ []byte) error {
 	return nil
 }
 
-func (q *NsqQueue) PullJob() <-chan []byte {
+func (q *NsqQueue) PullJob() <-chan agscheduler.QueueMessage {
 	return q.jobC
 }
 
@@ -148,21 +154,46 @@ func (q *NsqQueue) Clear() error {
 }
 
 type NsqMessageHandler struct {
-	jobC chan []byte
+	jobC chan agscheduler.QueueMessage
+	ctx  context.Context
 }
 
-func (h *NsqMessageHandler) HandleMessage(m *nsq.Message) error {
+func (h *NsqMessageHandler) HandleMessage(m *nsq.Message) (err error) {
 	defer func() {
-		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("NsqQueue handle message error: `%s`", err))
+		if recovered := recover(); recovered != nil {
+			slog.Error(fmt.Sprintf("NsqQueue handle message error: `%s`", recovered))
 			slog.Debug(string(debug.Stack()))
+			err = fmt.Errorf("NsqQueue handle message: %v", recovered)
 		}
 	}()
 
 	if len(m.Body) == 0 {
 		return nil
 	}
-	h.jobC <- m.Body
 
-	return nil
+	done := make(chan error, 1)
+	var finishOnce sync.Once
+	finish := func(err error) error {
+		finishOnce.Do(func() {
+			done <- err
+		})
+		return nil
+	}
+
+	delivery := agscheduler.QueueMessage{
+		Body: m.Body,
+		Ack: func() error {
+			return finish(nil)
+		},
+		Nack: func() error {
+			return finish(fmt.Errorf("NsqQueue message requeued"))
+		},
+	}
+	select {
+	case h.jobC <- delivery:
+	case <-h.ctx.Done():
+		return h.ctx.Err()
+	}
+
+	return <-done
 }

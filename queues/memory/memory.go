@@ -1,6 +1,10 @@
 package queues
 
-import "context"
+import (
+	"context"
+
+	"github.com/agscheduler/agscheduler"
+)
 
 // Queue jobs in an channel in RAM.
 // Provides no persistence support.
@@ -9,7 +13,7 @@ type MemoryQueue struct {
 	// Size of the channel.
 	// Default: `32`
 	Size int
-	jobC chan []byte
+	jobC chan agscheduler.QueueMessage
 }
 
 func (q *MemoryQueue) Name() string {
@@ -21,18 +25,18 @@ func (q *MemoryQueue) Init(ctx context.Context) error {
 		q.Size = 32
 	}
 
-	q.jobC = make(chan []byte, q.Size)
+	q.jobC = make(chan agscheduler.QueueMessage, q.Size)
 
 	return nil
 }
 
 func (q *MemoryQueue) PushJob(bJ []byte) error {
-	q.jobC <- bJ
+	q.jobC <- agscheduler.QueueMessage{Body: bJ}
 
 	return nil
 }
 
-func (q *MemoryQueue) PullJob() <-chan []byte {
+func (q *MemoryQueue) PullJob() <-chan agscheduler.QueueMessage {
 	return q.jobC
 }
 

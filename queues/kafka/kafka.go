@@ -8,10 +8,13 @@ import (
 	"math/rand"
 	"runtime/debug"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
+
+	"github.com/agscheduler/agscheduler"
 )
 
 const (
@@ -31,7 +34,7 @@ type KafkaQueue struct {
 	aCli *kadm.Client
 
 	size int
-	jobC chan []byte
+	jobC chan agscheduler.QueueMessage
 }
 
 func (q *KafkaQueue) Name() string {
@@ -44,7 +47,7 @@ func (q *KafkaQueue) Init(ctx context.Context) error {
 	}
 
 	q.size = int(math.Abs(float64(q.size)))
-	q.jobC = make(chan []byte, q.size)
+	q.jobC = make(chan agscheduler.QueueMessage, q.size)
 
 	q.aCli = kadm.NewClient(q.Producer)
 
@@ -75,7 +78,7 @@ func (q *KafkaQueue) PushJob(bJ []byte) error {
 	return nil
 }
 
-func (q *KafkaQueue) PullJob() <-chan []byte {
+func (q *KafkaQueue) PullJob() <-chan agscheduler.QueueMessage {
 	return q.jobC
 }
 
@@ -144,15 +147,40 @@ func (q *KafkaQueue) handleMessage(ctx context.Context) {
 			iter := fetches.RecordIter()
 			for !iter.Done() {
 				record := iter.Next()
-				q.jobC <- record.Value
-				q.Consumer.CommitOffsets(ctx, map[string]map[int32]kgo.EpochOffset{
-					record.Topic: {
-						record.Partition: {
-							Offset: record.Offset + 1,
-						},
+				done := make(chan error, 1)
+				var finishOnce sync.Once
+				finish := func(err error) error {
+					finishOnce.Do(func() {
+						done <- err
+					})
+					return nil
+				}
+				delivery := agscheduler.QueueMessage{
+					Body: record.Value,
+					Ack: func() error {
+						return finish(q.commitRecord(record))
 					},
-				}, nil)
+					Nack: func() error {
+						return finish(fmt.Errorf("KafkaQueue message requeued"))
+					},
+				}
+				select {
+				case q.jobC <- delivery:
+				case <-ctx.Done():
+					return
+				}
+				if err := <-done; err != nil {
+					slog.Error(fmt.Sprintf("KafkaQueue message processing error: `%s`", err))
+					return
+				}
 			}
 		}
 	}
+}
+
+func (q *KafkaQueue) commitRecord(record *kgo.Record) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	return q.Consumer.CommitRecords(ctx, record)
 }
