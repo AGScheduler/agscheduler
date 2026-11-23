@@ -97,6 +97,9 @@ func (b *MongoDBBackend) _getRecords(page, pageSize int, filter any) ([]agschedu
 	if err != nil {
 		return nil, total, err
 	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
 
 	optsCount := options.Count().SetHint("_id_")
 	total, err = b.coll.CountDocuments(ctx, filter, optsCount)
@@ -120,6 +123,9 @@ func (b *MongoDBBackend) _getRecords(page, pageSize int, filter any) ([]agschedu
 			StartAt: time.Unix(result["start_at"].(int64), 0),
 			EndAt:   time.Unix(result["end_at"].(int64), 0),
 		})
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, total, err
 	}
 
 	return recordList, total, nil

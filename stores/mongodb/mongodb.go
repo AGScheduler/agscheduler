@@ -1,6 +1,7 @@
 package stores
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -88,6 +89,9 @@ func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		_ = cursor.Close(ctx)
+	}()
 
 	var jobList []agscheduler.Job
 	for cursor.Next(ctx) {
@@ -102,6 +106,9 @@ func (s *MongoDBStore) GetAllJobs() ([]agscheduler.Job, error) {
 			return nil, err
 		}
 		jobList = append(jobList, aj)
+	}
+	if err := cursor.Err(); err != nil {
+		return nil, err
 	}
 
 	return jobList, nil
@@ -139,11 +146,11 @@ func (s *MongoDBStore) GetNextRunTime() (time.Time, error) {
 	var result bson.M
 	opts := options.FindOne().SetSort(bson.M{"next_run_time": 1})
 	err := s.coll.FindOne(ctx, bson.M{}, opts).Decode(&result)
+	if errors.Is(err, mongo.ErrNoDocuments) {
+		return time.Time{}, nil
+	}
 	if err != nil {
 		return time.Time{}, err
-	}
-	if err == mongo.ErrNoDocuments {
-		return time.Time{}, nil
 	}
 
 	nextRunTimeMin := time.Unix(result["next_run_time"].(int64), 0).UTC()
