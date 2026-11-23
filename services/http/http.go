@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -76,15 +77,19 @@ func (s *HTTPService) Start() error {
 		chs.registerRoutes(r)
 	}
 
-	slog.Info(fmt.Sprintf("HTTP Service listening at: %s", s.Address))
+	lis, err := net.Listen("tcp", s.Address)
+	if err != nil {
+		return fmt.Errorf("HTTP Service listen failure: %s", err)
+	}
 
 	s.srv = &http.Server{
-		Addr:    s.Address,
 		Handler: r,
 	}
 
+	slog.Info(fmt.Sprintf("HTTP Service listening at: %s", lis.Addr()))
+
 	go func() {
-		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := s.srv.Serve(lis); err != nil && err != http.ErrServerClosed {
 			slog.Error(fmt.Sprintf("HTTP Service Unavailable: %s", err))
 		}
 	}()
@@ -95,6 +100,9 @@ func (s *HTTPService) Start() error {
 func (s *HTTPService) Stop() error {
 	slog.Info("HTTP Service stop")
 
+	if s.srv == nil {
+		return nil
+	}
 	if err := s.srv.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("failed to stop service: %s", err)
 	}

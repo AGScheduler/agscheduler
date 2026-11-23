@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net"
 	"net/http"
 	"testing"
 	"time"
@@ -102,4 +103,28 @@ func TestHTTPService(t *testing.T) {
 	assert.NoError(t, err)
 	err = store.Clear()
 	assert.NoError(t, err)
+}
+
+func TestHTTPServiceStartAddressInUse(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, lis.Close())
+	}()
+
+	scheduler := &agscheduler.Scheduler{}
+	store := &stores.MemoryStore{}
+	assert.NoError(t, scheduler.SetStore(store))
+
+	hservice := HTTPService{
+		Scheduler: scheduler,
+		Address:   lis.Addr().String(),
+	}
+	err = hservice.Start()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "HTTP Service listen failure")
+	assert.NoError(t, hservice.Stop())
+	assert.NoError(t, store.Clear())
 }
