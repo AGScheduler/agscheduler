@@ -141,6 +141,11 @@ func (b *Broker) worker(ctx context.Context, stop <-chan struct{}, q Queue) {
 				slog.Error(fmt.Sprintf("Job `%s` JobUnmarshal error: `%s`", bJ, err))
 				continue
 			}
+			if err := j.prepareForRun(); err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` validation error: `%s`", j.FullName(), err))
+				b.scheduler.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, err})
+				continue
+			}
 
 			b.scheduler._runJobWithContext(b.scheduler.jobParentContext(), j)
 		}

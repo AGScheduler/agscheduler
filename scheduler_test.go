@@ -23,6 +23,7 @@ var gracefulSchedulerStarted chan struct{}
 var gracefulSchedulerRelease chan struct{}
 var cancellationSchedulerStarted chan struct{}
 var cancellationSchedulerObserved chan struct{}
+var preparedSchedulerJob chan agscheduler.Job
 
 func waitForSchedulerRelease(ctx context.Context, j agscheduler.Job) (result string) {
 	gracefulSchedulerStarted <- struct{}{}
@@ -34,6 +35,11 @@ func waitForSchedulerCancellation(ctx context.Context, j agscheduler.Job) (resul
 	cancellationSchedulerStarted <- struct{}{}
 	<-ctx.Done()
 	close(cancellationSchedulerObserved)
+	return ""
+}
+
+func capturePreparedSchedulerJob(ctx context.Context, j agscheduler.Job) (result string) {
+	preparedSchedulerJob <- j
 	return ""
 }
 
@@ -376,6 +382,99 @@ func TestSchedulerRunJob(t *testing.T) {
 
 	err = s.RunJob(j)
 	assert.NoError(t, err)
+}
+
+func TestSchedulerRunJobAppliesExecutionDefaults(t *testing.T) {
+	preparedSchedulerJob = make(chan agscheduler.Job, 1)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: capturePreparedSchedulerJob},
+	)
+
+	s := getSchedulerWithStore(t)
+	err := s.RunJob(agscheduler.Job{
+		Id:   "manual-job-id",
+		Name: "Manual Job",
+		Func: capturePreparedSchedulerJob,
+	})
+	assert.NoError(t, err)
+
+	select {
+	case j := <-preparedSchedulerJob:
+		assert.Equal(t, "manual-job-id", j.Id)
+		assert.Equal(t, "UTC", j.Timezone)
+		assert.Equal(t, "1h", j.Timeout)
+		assert.Equal(t, 1, j.MaxInstances)
+		assert.NotNil(t, j.Args)
+		assert.NotNil(t, j.Queues)
+		assert.NotEmpty(t, j.FuncName)
+	case <-time.After(time.Second):
+		t.Fatal("job did not run")
+	}
+}
+
+func TestSchedulerRunJobUnregisteredError(t *testing.T) {
+	s := getSchedulerWithStore(t)
+	err := s.RunJob(agscheduler.Job{
+		Name:     "Invalid Job",
+		FuncName: "test.missing",
+		Timeout:  "1s",
+	})
+	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError("test.missing"))
+}
+
+func TestSchedulerScheduleJobUnregisteredError(t *testing.T) {
+	s := getSchedulerWithStore(t)
+	err := s.ScheduleJob(agscheduler.Job{
+		Name:     "Invalid Job",
+		FuncName: "test.missing",
+		Timeout:  "1s",
+	})
+	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError("test.missing"))
+}
+
+func TestSchedulerBrokerSkipsUnregisteredQueuedJob(t *testing.T) {
+	preparedSchedulerJob = make(chan agscheduler.Job, 1)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: capturePreparedSchedulerJob},
+	)
+
+	s := getSchedulerWithStore(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	brk := getBroker()
+	err := s.SetBroker(ctx, brk)
+	assert.NoError(t, err)
+
+	validJob, err := s.AddJob(getFutureJob(capturePreparedSchedulerJob))
+	assert.NoError(t, err)
+	validBytes, err := agscheduler.JobMarshal(validJob)
+	assert.NoError(t, err)
+	invalidBytes, err := agscheduler.JobMarshal(agscheduler.Job{
+		Id:           "invalid-job-id",
+		Name:         "Invalid Job",
+		FuncName:     "test.missing",
+		Timeout:      "1s",
+		MaxInstances: 1,
+	})
+	assert.NoError(t, err)
+
+	s.Start()
+	defer func() {
+		assert.NoError(t, brk.Clear("default"))
+	}()
+	defer s.Stop()
+
+	queue := brk.Queues["default"].Queue
+	assert.NoError(t, queue.PushJob(invalidBytes))
+	assert.NoError(t, queue.PushJob(validBytes))
+
+	select {
+	case j := <-preparedSchedulerJob:
+		assert.Equal(t, validJob.Id, j.Id)
+	case <-time.After(time.Second):
+		t.Fatal("worker did not continue after rejecting an unregistered job")
+	}
 }
 
 func TestSchedulerScheduleJobLocal(t *testing.T) {

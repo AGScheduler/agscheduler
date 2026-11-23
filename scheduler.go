@@ -447,79 +447,82 @@ func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
 	s.incrementJobInstance(j.Name)
 	defer s.decrementJobInstance(j.Name)
 
-	f := reflect.ValueOf(FuncMap[j.FuncName].Func)
-	if f.IsNil() {
+	fPkg, ok := FuncMap[j.FuncName]
+	if !ok || fPkg.Func == nil {
 		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered", j.FullName(), j.FuncName))
-	} else {
-		slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`", j.FullName(), j.NextRunTimeWithTimezone().String()))
+		s.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, FuncUnregisteredError(j.FuncName)})
+		return
+	}
 
-		timeout, err := time.ParseDuration(j.Timeout)
+	f := reflect.ValueOf(fPkg.Func)
+	slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`", j.FullName(), j.NextRunTimeWithTimezone().String()))
+
+	timeout, err := time.ParseDuration(j.Timeout)
+	if err != nil {
+		e := &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+		slog.Error(e.Error())
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(parentCtx, timeout)
+	defer cancel()
+
+	var rId uint64
+	var status string
+	var result string
+	if s.HasRecorder() {
+		rId, err = s.recorder.RecordMetadata(j)
 		if err != nil {
-			e := &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
-			slog.Error(e.Error())
+			slog.Error(fmt.Sprintf("Job `%s` record metadata error: `%s`", j.FullName(), err))
 			return
 		}
+	}
 
-		ctx, cancel := context.WithTimeout(parentCtx, timeout)
-		defer cancel()
-
-		var rId uint64
-		var status string
-		var result string
-		if s.HasRecorder() {
-			rId, err = s.recorder.RecordMetadata(j)
-			if err != nil {
-				slog.Error(fmt.Sprintf("Job `%s` record metadata error: `%s`", j.FullName(), err))
-				return
+	type jobResult struct {
+		status string
+		result string
+	}
+	ch := make(chan jobResult, 1)
+	go func() {
+		res := jobResult{status: RECORD_STATUS_COMPLETED}
+		defer func() {
+			if err := recover(); err != nil {
+				slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
+				s.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, err})
+				slog.Debug(string(debug.Stack()))
+				res.status = RECORD_STATUS_ERROR
+				res.result = fmt.Sprintf("%s", err)
 			}
-		}
-
-		type jobResult struct {
-			status string
-			result string
-		}
-		ch := make(chan jobResult, 1)
-		go func() {
-			res := jobResult{status: RECORD_STATUS_COMPLETED}
-			defer func() {
-				if err := recover(); err != nil {
-					slog.Error(fmt.Sprintf("Job `%s` run error: %s", j.FullName(), err))
-					s.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, err})
-					slog.Debug(string(debug.Stack()))
-					res.status = RECORD_STATUS_ERROR
-					res.result = fmt.Sprintf("%s", err)
-				}
-				ch <- res
-			}()
-
-			rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
-			res.result = rValues[0].Interface().(string)
+			ch <- res
 		}()
 
-		select {
-		case res := <-ch:
-			s.dispatchEvent(EventPkg{EVENT_JOB_EXECUTED, j.Id, nil})
-			status = res.status
-			result = res.result
-		case <-ctx.Done():
-			if parentCtx.Err() != nil {
-				slog.Warn(fmt.Sprintf("Job `%s` cancelled during shutdown", j.FullName()))
-				status = RECORD_STATUS_CANCELLED
-				result = ctx.Err().Error()
-			} else {
-				slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
-				s.dispatchEvent(EventPkg{EVENT_JOB_TIMEOUT, j.Id, nil})
-				status = RECORD_STATUS_TIMEOUT
-				result = ctx.Err().Error()
-			}
-		}
+		rValues := f.Call([]reflect.Value{reflect.ValueOf(ctx), reflect.ValueOf(j)})
+		res.result = rValues[0].Interface().(string)
+	}()
 
-		if s.HasRecorder() {
-			err := s.recorder.RecordResult(rId, status, result)
-			if err != nil {
-				slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
-				return
-			}
+	select {
+	case res := <-ch:
+		s.dispatchEvent(EventPkg{EVENT_JOB_EXECUTED, j.Id, nil})
+		status = res.status
+		result = res.result
+	case <-ctx.Done():
+		if parentCtx.Err() != nil {
+			slog.Warn(fmt.Sprintf("Job `%s` cancelled during shutdown", j.FullName()))
+			status = RECORD_STATUS_CANCELLED
+			result = ctx.Err().Error()
+		} else {
+			slog.Warn(fmt.Sprintf("Job `%s` run timeout", j.FullName()))
+			s.dispatchEvent(EventPkg{EVENT_JOB_TIMEOUT, j.Id, nil})
+			status = RECORD_STATUS_TIMEOUT
+			result = ctx.Err().Error()
+		}
+	}
+
+	if s.HasRecorder() {
+		err := s.recorder.RecordResult(rId, status, result)
+		if err != nil {
+			slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))
+			return
 		}
 	}
 }
@@ -630,6 +633,10 @@ func (s *Scheduler) _scheduleJobForState(j Job, st *schedulerState) error {
 func (s *Scheduler) RunJob(j Job) error {
 	slog.Info(fmt.Sprintf("Scheduler run job `%s`.", j.FullName()))
 
+	if err := j.prepareForRun(); err != nil {
+		return err
+	}
+
 	st, err := s.getJobState()
 	if err != nil {
 		return err
@@ -644,9 +651,13 @@ func (s *Scheduler) RunJob(j Job) error {
 func (s *Scheduler) ScheduleJob(j Job) error {
 	slog.Info(fmt.Sprintf("Scheduler schedule job `%s`.", j.FullName()))
 
+	if err := j.prepareForRun(); err != nil {
+		return err
+	}
+
 	err := s._scheduleJob(j)
 	if err != nil {
-		return fmt.Errorf("scheduler schedule job `%s` error: %s", j.FullName(), err)
+		return fmt.Errorf("scheduler schedule job `%s` error: %w", j.FullName(), err)
 	}
 
 	return nil

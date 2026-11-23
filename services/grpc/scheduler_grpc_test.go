@@ -65,6 +65,16 @@ func testSchedulerGRPC(t *testing.T, c pb.SchedulerClient) {
 	_, err = c.ScheduleJob(ctx, pbJ)
 	assert.NoError(t, err)
 
+	invalidPbJob := &pb.Job{
+		Name:     "Invalid Job",
+		FuncName: "test.missing",
+		Timeout:  "1s",
+	}
+	_, err = c.RunJob(ctx, invalidPbJob)
+	assert.ErrorContains(t, err, "function `test.missing` unregistered")
+	_, err = c.ScheduleJob(ctx, invalidPbJob)
+	assert.ErrorContains(t, err, "function `test.missing` unregistered")
+
 	_, err = c.DeleteJob(ctx, &pb.JobReq{Id: j.Id})
 	assert.NoError(t, err)
 	_, err = c.GetJob(ctx, &pb.JobReq{Id: j.Id})

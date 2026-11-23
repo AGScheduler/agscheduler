@@ -101,12 +101,29 @@ func (j *Job) init() error {
 	j.setId()
 
 	j.Status = JOB_STATUS_RUNNING
+	j.setDefaults()
 
+	nextRunTime, err := CalcNextRunTime(*j)
+	if err != nil {
+		return err
+	}
+	j.NextRunTime = nextRunTime
+
+	if err := j.check(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// setDefaults fills execution defaults without changing the job identity.
+// It is shared by jobs being persisted and jobs submitted directly for execution.
+func (j *Job) setDefaults() {
 	if j.Timezone == "" {
 		j.Timezone = "UTC"
 	}
 
-	if j.FuncName == "" {
+	if j.FuncName == "" && j.Func != nil {
 		j.FuncName = getFuncName(j.Func)
 	}
 
@@ -125,18 +142,14 @@ func (j *Job) init() error {
 	if j.MaxInstances <= 0 {
 		j.MaxInstances = 1
 	}
+}
 
-	nextRunTime, err := CalcNextRunTime(*j)
-	if err != nil {
-		return err
-	}
-	j.NextRunTime = nextRunTime
-
-	if err := j.check(); err != nil {
-		return err
-	}
-
-	return nil
+// prepareForRun applies defaults and validates a job without generating a new ID
+// or recalculating its schedule. Direct execution and queued execution both use
+// the same validation so malformed remote requests cannot reach function lookup.
+func (j *Job) prepareForRun() error {
+	j.setDefaults()
+	return j.check()
 }
 
 // Called when the job run `init` or scheduler run `UpdateJob`.

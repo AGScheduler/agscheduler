@@ -114,6 +114,23 @@ func testSchedulerHTTP(t *testing.T, baseUrl string) {
 	assert.NoError(t, err)
 	assert.Empty(t, rJ.Error)
 
+	invalidBody := []byte(`{
+		"name": "Invalid Job",
+		"func_name": "test.missing",
+		"timeout": "1s"
+	}`)
+	for _, path := range []string{"/scheduler/job/run", "/scheduler/job/schedule"} {
+		resp, err = http.Post(baseUrl+path, CONTENT_TYPE, bytes.NewReader(invalidBody))
+		assert.NoError(t, err)
+		body, err = io.ReadAll(resp.Body)
+		assert.NoError(t, err)
+		assert.NoError(t, resp.Body.Close())
+		rJ = &result{}
+		err = json.Unmarshal(body, &rJ)
+		assert.NoError(t, err)
+		assert.Contains(t, rJ.Error, "function `test.missing` unregistered")
+	}
+
 	req, err = http.NewRequest(http.MethodDelete, baseUrl+"/scheduler/job"+"/"+id, nil)
 	assert.NoError(t, err)
 	resp, err = client.Do(req)
