@@ -129,7 +129,10 @@ func (s *RedisStore) DeleteAllJobs() error {
 
 func (s *RedisStore) GetNextRunTime() (time.Time, error) {
 	sliceRunTimes, err := s.RDB.ZRangeWithScores(ctx, s.RunTimesKey, 0, 0).Result()
-	if err != nil || len(sliceRunTimes) == 0 {
+	if err != nil {
+		return time.Time{}, err
+	}
+	if len(sliceRunTimes) == 0 {
 		return time.Time{}, nil
 	}
 

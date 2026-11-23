@@ -30,3 +30,15 @@ func TestRedisStore(t *testing.T) {
 
 	adaptertest.RunStore(t, store)
 }
+
+func TestRedisStoreGetNextRunTimeError(t *testing.T) {
+	rdb := redis.NewClient(&redis.Options{Addr: "127.0.0.1:6379"})
+	assert.NoError(t, rdb.Close())
+
+	store := &RedisStore{RDB: rdb}
+	assert.NoError(t, store.Init())
+
+	nextRunTime, err := store.GetNextRunTime()
+	assert.Error(t, err)
+	assert.True(t, nextRunTime.IsZero())
+}
