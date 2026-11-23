@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -154,7 +155,7 @@ func (j *Job) prepareForRun() error {
 
 // Called when the job run `init` or scheduler run `UpdateJob`.
 func (j *Job) check() error {
-	if _, ok := FuncMap[j.FuncName]; !ok {
+	if _, ok := getRegisteredFunc(j.FuncName); !ok {
 		return FuncUnregisteredError(j.FuncName)
 	}
 
@@ -243,10 +244,24 @@ type FuncPkg struct {
 // Record the actual path of function and the corresponding function.
 // Since golang can't serialize functions,
 // need to register them with `RegisterFuncs` before using it.
-var FuncMap = make(map[string]FuncPkg)
+var (
+	FuncMap  = make(map[string]FuncPkg)
+	funcMapM sync.RWMutex
+)
+
+func getRegisteredFunc(name string) (FuncPkg, bool) {
+	funcMapM.RLock()
+	defer funcMapM.RUnlock()
+
+	fp, ok := FuncMap[name]
+	return fp, ok
+}
 
 func FuncMapReadable() []map[string]string {
 	funcs := []map[string]string{}
+
+	funcMapM.RLock()
+	defer funcMapM.RUnlock()
 
 	for fName, fPkg := range FuncMap {
 		funcs = append(funcs, map[string]string{
@@ -262,6 +277,9 @@ func getFuncName(f func(context.Context, Job) (result string)) string {
 }
 
 func RegisterFuncs(fps ...FuncPkg) {
+	funcMapM.Lock()
+	defer funcMapM.Unlock()
+
 	for _, fp := range fps {
 		fName := getFuncName(fp.Func)
 		FuncMap[fName] = fp

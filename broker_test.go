@@ -90,11 +90,17 @@ func (s *brokerTestStore) GetNextRunTime() (time.Time, error) {
 func preserveFuncMap(t *testing.T) {
 	t.Helper()
 
+	funcMapM.RLock()
 	original := make(map[string]FuncPkg, len(FuncMap))
 	for name, pkg := range FuncMap {
 		original[name] = pkg
 	}
+	funcMapM.RUnlock()
+
 	t.Cleanup(func() {
+		funcMapM.Lock()
+		defer funcMapM.Unlock()
+
 		FuncMap = original
 	})
 }

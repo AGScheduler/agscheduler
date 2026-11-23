@@ -3,6 +3,7 @@ package agscheduler
 import (
 	"context"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -75,20 +76,57 @@ func TestJobUnmarshalError(t *testing.T) {
 }
 
 func TestRegisterFuncs(t *testing.T) {
-	assert.Empty(t, FuncMap)
+	fp := FuncPkg{
+		Func: func(ctx context.Context, j Job) (result string) { return },
+		Info: "test function",
+	}
+	RegisterFuncs(fp)
 
-	RegisterFuncs(
-		FuncPkg{Func: func(ctx context.Context, j Job) (result string) { return }},
-	)
-
-	assert.Len(t, FuncMap, 1)
+	registered, ok := getRegisteredFunc(getFuncName(fp.Func))
+	assert.True(t, ok)
+	assert.Equal(t, fp.Info, registered.Info)
 }
 
 func TestFuncMapReadable(t *testing.T) {
-	RegisterFuncs(
-		FuncPkg{Func: func(ctx context.Context, j Job) (result string) { return }},
-	)
-	funcLen := len(FuncMap)
+	fp := FuncPkg{
+		Func: func(ctx context.Context, j Job) (result string) { return },
+		Info: "readable function",
+	}
+	RegisterFuncs(fp)
 
-	assert.Len(t, FuncMapReadable(), funcLen)
+	assert.Contains(t, FuncMapReadable(), map[string]string{
+		"name": getFuncName(fp.Func),
+		"info": fp.Info,
+	})
+}
+
+func TestFuncMapConcurrentAccess(t *testing.T) {
+	fp := FuncPkg{
+		Func: func(ctx context.Context, j Job) (result string) { return },
+		Info: "concurrent function",
+	}
+	RegisterFuncs(fp)
+	name := getFuncName(fp.Func)
+
+	var wg sync.WaitGroup
+	wg.Add(4)
+	for range 3 {
+		go func() {
+			defer wg.Done()
+			for range 1000 {
+				if _, ok := getRegisteredFunc(name); !ok {
+					t.Error("registered function not found")
+					return
+				}
+				_ = FuncMapReadable()
+			}
+		}()
+	}
+	go func() {
+		defer wg.Done()
+		for range 1000 {
+			RegisterFuncs(fp)
+		}
+	}()
+	wg.Wait()
 }

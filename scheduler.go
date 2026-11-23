@@ -467,7 +467,7 @@ func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
 	}
 	defer s.releaseJobInstance(instanceKey)
 
-	fPkg, ok := FuncMap[j.FuncName]
+	fPkg, ok := getRegisteredFunc(j.FuncName)
 	if !ok || fPkg.Func == nil {
 		slog.Warn(fmt.Sprintf("Job `%s` Func `%s` unregistered", j.FullName(), j.FuncName))
 		s.dispatchEvent(EventPkg{EVENT_JOB_ERROR, j.Id, FuncUnregisteredError(j.FuncName)})
