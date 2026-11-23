@@ -108,6 +108,9 @@ func (s *GRPCService) Start() error {
 func (s *GRPCService) Stop() error {
 	slog.Info("gRPC Service stop")
 
+	if s.srv == nil {
+		return nil
+	}
 	s.srv.Stop()
 
 	return nil

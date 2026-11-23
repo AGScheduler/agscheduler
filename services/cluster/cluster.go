@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -19,13 +20,22 @@ type ClusterService struct {
 	crs *clusterRPCService
 }
 
-func (s *ClusterService) Start() error {
+func (s *ClusterService) Start() (err error) {
+	defer func() {
+		if err == nil {
+			return
+		}
+		if stopErr := s.Stop(); stopErr != nil {
+			slog.Error(fmt.Sprintf("Failed to clean up cluster services: %s", stopErr))
+		}
+	}()
+
 	s.grs = &grpcservice.GRPCService{
 		Scheduler:    s.Cn.Scheduler,
 		PasswordSha2: s.PasswordSha2,
 	}
 	s.grs.Address = s.Cn.EndpointGRPC
-	err := s.grs.Start()
+	err = s.grs.Start()
 	if err != nil {
 		return err
 	}
@@ -59,26 +69,28 @@ func (s *ClusterService) Start() error {
 }
 
 func (s *ClusterService) Stop() error {
-	if s.grs != nil {
-		if err := s.grs.Stop(); err != nil {
-			return err
-		}
-		s.grs = nil
-	}
-
-	if s.hs != nil {
-		if err := s.hs.Stop(); err != nil {
-			return err
-		}
-		s.hs = nil
-	}
+	var errs []error
 
 	if s.crs != nil {
 		if err := s.crs.Stop(); err != nil {
-			return err
+			errs = append(errs, err)
 		}
 		s.crs = nil
 	}
 
-	return nil
+	if s.hs != nil {
+		if err := s.hs.Stop(); err != nil {
+			errs = append(errs, err)
+		}
+		s.hs = nil
+	}
+
+	if s.grs != nil {
+		if err := s.grs.Stop(); err != nil {
+			errs = append(errs, err)
+		}
+		s.grs = nil
+	}
+
+	return errors.Join(errs...)
 }

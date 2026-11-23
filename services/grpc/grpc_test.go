@@ -95,3 +95,8 @@ func TestGRPCService(t *testing.T) {
 	err = store.Clear()
 	assert.NoError(t, err)
 }
+
+func TestGRPCServiceStopBeforeStart(t *testing.T) {
+	service := GRPCService{}
+	assert.NoError(t, service.Stop())
+}
