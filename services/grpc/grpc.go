@@ -7,6 +7,8 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -118,8 +120,10 @@ func (s *GRPCService) Stop() error {
 
 func (s *GRPCService) panicInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	defer func() {
-		if err := recover(); err != nil {
-			slog.Error(fmt.Sprintf("gRPC Service method: `%s`, err: `%s`", info.FullMethod, err))
+		if recovered := recover(); recovered != nil {
+			slog.Error(fmt.Sprintf("gRPC Service method: `%s`, panic: `%v`", info.FullMethod, recovered))
+			resp = nil
+			err = status.Error(codes.Internal, "internal server error")
 		}
 	}()
 

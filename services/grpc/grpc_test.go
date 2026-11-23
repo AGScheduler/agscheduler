@@ -5,7 +5,9 @@ import (
 	"testing"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/stretchr/testify/assert"
@@ -99,4 +101,16 @@ func TestGRPCService(t *testing.T) {
 func TestGRPCServiceStopBeforeStart(t *testing.T) {
 	service := GRPCService{}
 	assert.NoError(t, service.Stop())
+}
+
+func TestGRPCServicePanicInterceptor(t *testing.T) {
+	service := GRPCService{}
+	info := &grpc.UnaryServerInfo{FullMethod: "/test.Service/Panic"}
+	handler := func(context.Context, any) (any, error) {
+		panic("boom")
+	}
+
+	resp, err := service.panicInterceptor(context.Background(), nil, info, handler)
+	assert.Nil(t, resp)
+	assert.Equal(t, codes.Internal, status.Code(err))
 }
