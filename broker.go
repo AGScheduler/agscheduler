@@ -41,16 +41,15 @@ func (b *Broker) init(ctx context.Context) error {
 	slog.Info("Broker init...")
 
 	b.workerCtx = ctx
-	for _, qPkg := range b.Queues {
+	for name, qPkg := range b.Queues {
 		if err := qPkg.Queue.Init(ctx); err != nil {
 			return err
 		}
 		if qPkg.Workers <= 0 {
 			qPkg.Workers = 2
 		}
+		b.Queues[name] = qPkg
 	}
-
-	b.startWorkers()
 
 	return nil
 }

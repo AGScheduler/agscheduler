@@ -166,11 +166,17 @@ func (s *Scheduler) getClusterNode() *ClusterNode {
 func (s *Scheduler) SetBroker(ctx context.Context, brk *Broker) error {
 	slog.Info("Scheduler set Broker.")
 
-	s.broker = brk
 	brk.scheduler = s
-	if err := s.broker.init(ctx); err != nil {
+	if err := brk.init(ctx); err != nil {
 		return err
 	}
+
+	s.statusM.Lock()
+	s.broker = brk
+	if s.isRunning && !s.isShuttingDown {
+		brk.startWorkers()
+	}
+	s.statusM.Unlock()
 
 	return nil
 }
@@ -862,6 +868,10 @@ func (s *Scheduler) Shutdown(ctx context.Context) error {
 
 	if !s.isRunning && !s.isShuttingDown {
 		s.statusM.Unlock()
+		if s.HasBroker() {
+			s.broker.stopWorkers()
+			s.broker.waitWorkers()
+		}
 		slog.Info("Scheduler has stopped.")
 		return nil
 	}

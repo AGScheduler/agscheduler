@@ -100,10 +100,12 @@ func preserveFuncMap(t *testing.T) {
 }
 
 var (
-	brokerAckStarted   chan struct{}
-	brokerAckRelease   chan struct{}
-	brokerNackStarted  chan struct{}
-	brokerNackCanceled chan struct{}
+	brokerAckStarted       chan struct{}
+	brokerAckRelease       chan struct{}
+	brokerNackStarted      chan struct{}
+	brokerNackCanceled     chan struct{}
+	brokerLifecycleStarted chan struct{}
+	brokerLifecycleRelease chan struct{}
 )
 
 func waitForBrokerAck(ctx context.Context, j Job) string {
@@ -116,6 +118,12 @@ func waitForBrokerNack(ctx context.Context, j Job) string {
 	brokerNackStarted <- struct{}{}
 	<-ctx.Done()
 	close(brokerNackCanceled)
+	return ""
+}
+
+func waitForBrokerLifecycle(ctx context.Context, j Job) string {
+	brokerLifecycleStarted <- struct{}{}
+	<-brokerLifecycleRelease
 	return ""
 }
 
@@ -144,6 +152,102 @@ func TestChoiceQueueFilter(t *testing.T) {
 	queue, err := brk.choiceQueue([]string{"mail"})
 	assert.Error(t, err)
 	assert.Equal(t, "", queue)
+}
+
+func TestBrokerWaitsForSchedulerStart(t *testing.T) {
+	preserveFuncMap(t)
+	brokerLifecycleStarted = make(chan struct{}, 1)
+	brokerLifecycleRelease = make(chan struct{})
+	RegisterFuncs(FuncPkg{Func: waitForBrokerLifecycle})
+
+	scheduler := &Scheduler{}
+	assert.NoError(t, scheduler.SetStore(&brokerTestStore{}))
+
+	queue := &ackTrackingQueue{deliveries: make(chan QueueMessage, 1)}
+	broker := &Broker{Queues: map[string]QueuePkg{
+		"default": {Queue: queue, Workers: 1},
+	}}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	assert.NoError(t, scheduler.SetBroker(ctx, broker))
+
+	scheduler.Stop()
+
+	job, err := scheduler.AddJob(Job{
+		Name:    "Lifecycle Job",
+		Type:    JOB_TYPE_DATETIME,
+		StartAt: "2099-01-01 00:00:00",
+		Func:    waitForBrokerLifecycle,
+		Timeout: "5s",
+	})
+	assert.NoError(t, err)
+	body, err := JobMarshal(job)
+	assert.NoError(t, err)
+
+	acked := make(chan struct{}, 1)
+	queue.deliveries <- QueueMessage{
+		Body: body,
+		Ack: func() error {
+			acked <- struct{}{}
+			return nil
+		},
+	}
+
+	select {
+	case <-brokerLifecycleStarted:
+		t.Fatal("broker processed a message before the scheduler started")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	scheduler.Start()
+	defer scheduler.Stop()
+
+	select {
+	case <-brokerLifecycleStarted:
+	case <-time.After(time.Second):
+		t.Fatal("broker did not process a message after the scheduler started")
+	}
+
+	close(brokerLifecycleRelease)
+	select {
+	case <-acked:
+	case <-time.After(time.Second):
+		t.Fatal("message was not acknowledged")
+	}
+}
+
+func TestBrokerDefaultWorkerCount(t *testing.T) {
+	scheduler := &Scheduler{}
+	assert.NoError(t, scheduler.SetStore(&brokerTestStore{}))
+
+	queue := &ackTrackingQueue{deliveries: make(chan QueueMessage, 1)}
+	broker := &Broker{Queues: map[string]QueuePkg{
+		"default": {Queue: queue},
+	}}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	assert.NoError(t, scheduler.SetBroker(ctx, broker))
+
+	assert.Equal(t, 2, scheduler.broker.Queues["default"].Workers)
+}
+
+func TestBrokerStartsWhenBoundToRunningScheduler(t *testing.T) {
+	scheduler := &Scheduler{}
+	assert.NoError(t, scheduler.SetStore(&brokerTestStore{}))
+	scheduler.Start()
+	defer scheduler.Stop()
+
+	queue := &ackTrackingQueue{deliveries: make(chan QueueMessage, 1)}
+	broker := &Broker{Queues: map[string]QueuePkg{
+		"default": {Queue: queue, Workers: 1},
+	}}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	assert.NoError(t, scheduler.SetBroker(ctx, broker))
+
+	broker.workersM.Lock()
+	assert.True(t, broker.workersRunning)
+	broker.workersM.Unlock()
 }
 
 func TestBrokerAcknowledgesAfterJobCompletion(t *testing.T) {
