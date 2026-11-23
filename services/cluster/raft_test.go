@@ -71,13 +71,16 @@ func TestRaft(t *testing.T) {
 	err = cserviceNode2.Start()
 	assert.NoError(t, err)
 
-	time.Sleep(4 * time.Second)
-
-	// TODO: Since http.Handle can only be registered once,
-	// starting multiple ClusterServices here won't work,
-	// so it's only used to improve coverage for now.
-	// assert.Equal(t, cnMain.GetEndpointMain(), cnNode.GetEndpointMain())
-	// assert.Equal(t, cnMain.GetEndpointMain(), cnNode2.GetEndpointMain())
+	assert.Eventually(t, func() bool {
+		mainEndpoint := cnMain.GetEndpointMain()
+		return cnNode.GetEndpointMain() == mainEndpoint &&
+			cnNode2.GetEndpointMain() == mainEndpoint
+	}, 8*time.Second, 100*time.Millisecond)
+	assert.Never(t, func() bool {
+		mainEndpoint := cnMain.GetEndpointMain()
+		return cnNode.GetEndpointMain() != mainEndpoint ||
+			cnNode2.GetEndpointMain() != mainEndpoint
+	}, time.Second, 100*time.Millisecond)
 
 	err = cserviceMain.Stop()
 	assert.NoError(t, err)

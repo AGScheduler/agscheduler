@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/rpc"
 
@@ -63,27 +64,18 @@ func (s *clusterRPCService) Start() error {
 		return fmt.Errorf("failed to register service: %s", err)
 	}
 
-	go func() {
-		defer func() {
-			if err := recover(); err != nil {
-				slog.Warn(fmt.Sprintf("Handle registered error: %s", err))
-			}
-		}()
-
-		rpcServer.HandleHTTP(rpc.DefaultRPCPath, rpc.DefaultDebugPath)
-	}()
-
-	s.srv = &http.Server{
-		Addr:    s.Cn.Endpoint,
-		Handler: rpcServer,
+	lis, err := net.Listen("tcp", s.Cn.Endpoint)
+	if err != nil {
+		return fmt.Errorf("cluster RPC Service listen failure: %s", err)
 	}
 
-	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", s.Cn.Endpoint))
+	mux := http.NewServeMux()
+	mux.Handle(rpc.DefaultRPCPath, rpcServer)
+	s.srv = &http.Server{Handler: mux}
 
-	s.srv = &http.Server{Addr: s.Cn.Endpoint}
-
+	slog.Info(fmt.Sprintf("Cluster RPC Service listening at: %s", lis.Addr()))
 	go func() {
-		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := s.srv.Serve(lis); err != nil && err != http.ErrServerClosed {
 			slog.Error(fmt.Sprintf("Cluster RPC Service Unavailable: %s", err))
 		}
 	}()
@@ -94,6 +86,9 @@ func (s *clusterRPCService) Start() error {
 func (s *clusterRPCService) Stop() error {
 	slog.Info("Cluster RPC Service stop")
 
+	if s.srv == nil {
+		return nil
+	}
 	if err := s.srv.Shutdown(context.Background()); err != nil {
 		return fmt.Errorf("failed to stop service: %s", err)
 	}
