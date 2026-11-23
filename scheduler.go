@@ -93,37 +93,52 @@ func (s *Scheduler) getStore() Store {
 }
 
 func (s *Scheduler) init() {
+	s.jobInstancesM.Lock()
+	defer s.jobInstancesM.Unlock()
+
 	s.runningJobs = make(map[string]int)
 }
 
-func (s *Scheduler) canRunJob(jobName string, maxInstances int) bool {
-	s.jobInstancesM.RLock()
-	defer s.jobInstancesM.RUnlock()
-
-	return s.runningJobs[jobName] < maxInstances
-}
-
-func (s *Scheduler) incrementJobInstance(jobName string) {
-	s.jobInstancesM.Lock()
-	defer s.jobInstancesM.Unlock()
-
-	s.runningJobs[jobName]++
-}
-
-func (s *Scheduler) decrementJobInstance(jobName string) {
-	s.jobInstancesM.Lock()
-	defer s.jobInstancesM.Unlock()
-
-	if s.runningJobs[jobName] > 0 {
-		s.runningJobs[jobName]--
+func jobInstanceKey(j Job) string {
+	if j.Id != "" {
+		return "id:" + j.Id
 	}
+	return "name:" + j.Name
 }
 
-func (s *Scheduler) getJobInstanceCount(jobName string) int {
+// acquireJobInstance atomically checks and reserves a running-job slot.
+func (s *Scheduler) acquireJobInstance(key string, maxInstances int) (bool, int) {
+	s.jobInstancesM.Lock()
+	defer s.jobInstancesM.Unlock()
+
+	if s.runningJobs == nil {
+		s.runningJobs = make(map[string]int)
+	}
+	count := s.runningJobs[key]
+	if count >= maxInstances {
+		return false, count
+	}
+	count++
+	s.runningJobs[key] = count
+	return true, count
+}
+
+func (s *Scheduler) releaseJobInstance(key string) {
+	s.jobInstancesM.Lock()
+	defer s.jobInstancesM.Unlock()
+
+	if s.runningJobs[key] <= 1 {
+		delete(s.runningJobs, key)
+		return
+	}
+	s.runningJobs[key]--
+}
+
+func (s *Scheduler) getJobInstanceCount(key string) int {
 	s.jobInstancesM.RLock()
 	defer s.jobInstancesM.RUnlock()
 
-	return s.runningJobs[jobName]
+	return s.runningJobs[key]
 }
 
 // Bind the cluster node
@@ -438,14 +453,13 @@ func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
 		return
 	}
 
-	if !s.canRunJob(j.Name, j.MaxInstances) {
-		slog.Warn(fmt.Sprintf("Job `%s` skipped due to max_instances limit (%d/%d)", j.FullName(), s.getJobInstanceCount(j.Name), j.MaxInstances))
+	instanceKey := jobInstanceKey(j)
+	if ok, count := s.acquireJobInstance(instanceKey, j.MaxInstances); !ok {
+		slog.Warn(fmt.Sprintf("Job `%s` skipped due to max_instances limit (%d/%d)", j.FullName(), count, j.MaxInstances))
 		s.dispatchEvent(EventPkg{EVENT_JOB_MAX_INSTANCES, j.Id, nil})
 		return
 	}
-
-	s.incrementJobInstance(j.Name)
-	defer s.decrementJobInstance(j.Name)
+	defer s.releaseJobInstance(instanceKey)
 
 	fPkg, ok := FuncMap[j.FuncName]
 	if !ok || fPkg.Func == nil {
