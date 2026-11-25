@@ -3,6 +3,7 @@ package services
 import (
 	"net"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -55,8 +56,12 @@ func listenTCP(t *testing.T) net.Listener {
 func assertAddressAvailable(t *testing.T, address string) {
 	t.Helper()
 
-	listener, err := net.Listen("tcp", address)
-	if assert.NoError(t, err) {
+	assert.Eventually(t, func() bool {
+		listener, err := net.Listen("tcp", address)
+		if err != nil {
+			return false
+		}
 		assert.NoError(t, listener.Close())
-	}
+		return true
+	}, time.Second, 10*time.Millisecond)
 }
