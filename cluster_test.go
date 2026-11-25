@@ -219,7 +219,11 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.Endpoint = endpoint
 	cn.registerNode(cn)
 	cn.Endpoint = endpointBak
+
+	cn.nodeMapM.Lock()
 	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-900 * time.Millisecond)
+	cn.nodeMapM.Unlock()
+
 	assert.Equal(t, true, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -229,7 +233,10 @@ func TestClusterCheckNode(t *testing.T) {
 
 	assert.Equal(t, false, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
+	cn.nodeMapM.Lock()
 	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
+	cn.nodeMapM.Unlock()
+
 	time.Sleep(700 * time.Millisecond)
 
 	_, ok := cn.NodeMapCopy()[endpoint]
