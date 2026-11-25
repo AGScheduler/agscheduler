@@ -7,13 +7,10 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/structpb"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 // constant indicating a job's type
@@ -44,6 +41,7 @@ type Job struct {
 	// This field is useless.
 	EndAt string `json:"end_at"`
 	// It can be used when Type is `JOB_TYPE_INTERVAL`.
+	// Must be a positive whole number of seconds.
 	// e.g. `2s`
 	Interval string `json:"interval"`
 	// It can be used when Type is `JOB_TYPE_CRON`.
@@ -67,6 +65,7 @@ type Job struct {
 	// Arguments for `Func`.
 	Args map[string]any `json:"args"`
 	// The running timeout of `Func`.
+	// Must be greater than zero.
 	// Default: `1h`
 	Timeout string `json:"timeout"`
 	// Used in cluster mode, if empty, randomly pick a node to run `Func`,
@@ -105,12 +104,29 @@ func (j *Job) init() error {
 	j.setId()
 
 	j.Status = JOB_STATUS_RUNNING
+	j.setDefaults()
 
+	nextRunTime, err := CalcNextRunTime(*j)
+	if err != nil {
+		return err
+	}
+	j.NextRunTime = nextRunTime
+
+	if err := j.check(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// setDefaults fills execution defaults without changing the job identity.
+// It is shared by jobs being persisted and jobs submitted directly for execution.
+func (j *Job) setDefaults() {
 	if j.Timezone == "" {
 		j.Timezone = "UTC"
 	}
 
-	if j.FuncName == "" {
+	if j.FuncName == "" && j.Func != nil {
 		j.FuncName = getFuncName(j.Func)
 	}
 
@@ -129,29 +145,24 @@ func (j *Job) init() error {
 	if j.MaxInstances <= 0 {
 		j.MaxInstances = 1
 	}
+}
 
-	nextRunTime, err := CalcNextRunTime(*j)
-	if err != nil {
-		return err
-	}
-	j.NextRunTime = nextRunTime
-
-	if err := j.check(); err != nil {
-		return err
-	}
-
-	return nil
+// prepareForRun applies defaults and validates a job without generating a new ID
+// or recalculating its schedule. Direct execution and queued execution both use
+// the same validation so malformed remote requests cannot reach function lookup.
+func (j *Job) prepareForRun() error {
+	j.setDefaults()
+	return j.check()
 }
 
 // Called when the job run `init` or scheduler run `UpdateJob`.
 func (j *Job) check() error {
-	if _, ok := FuncMap[j.FuncName]; !ok {
+	if _, ok := getRegisteredFunc(j.FuncName); !ok {
 		return FuncUnregisteredError(j.FuncName)
 	}
 
-	_, err := time.ParseDuration(j.Timeout)
-	if err != nil {
-		return &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	if _, err := j.timeoutDuration(); err != nil {
+		return err
 	}
 
 	if j.MaxInstances <= 0 {
@@ -159,6 +170,37 @@ func (j *Job) check() error {
 	}
 
 	return nil
+}
+
+func (j Job) timeoutDuration() (time.Duration, error) {
+	timeout, err := time.ParseDuration(j.Timeout)
+	if err != nil {
+		return 0, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	}
+	if timeout <= 0 {
+		return 0, &JobTimeoutError{
+			FullName: j.FullName(),
+			Timeout:  j.Timeout,
+			Err:      fmt.Errorf("must be greater than zero"),
+		}
+	}
+
+	return timeout, nil
+}
+
+func (j Job) intervalDuration() (time.Duration, error) {
+	interval, err := time.ParseDuration(j.Interval)
+	if err != nil {
+		return 0, fmt.Errorf("job `%s` Interval `%s` error: %s", j.FullName(), j.Interval, err)
+	}
+	if interval < time.Second || interval%time.Second != 0 {
+		return 0, fmt.Errorf(
+			"job `%s` Interval `%s` error: must be a positive whole number of seconds",
+			j.FullName(), j.Interval,
+		)
+	}
+
+	return interval, nil
 }
 
 func (j *Job) FullName() string {
@@ -225,86 +267,6 @@ func JobUnmarshal(bJ []byte) (Job, error) {
 	return j, nil
 }
 
-// Used to gRPC Protobuf
-func JobToPbJobPtr(j Job) (*pb.Job, error) {
-	args, err := structpb.NewStruct(j.Args)
-	if err != nil {
-		return &pb.Job{}, err
-	}
-
-	pbJ := &pb.Job{
-		Id:           j.Id,
-		Name:         j.Name,
-		Type:         j.Type,
-		StartAt:      j.StartAt,
-		EndAt:        j.EndAt,
-		Interval:     j.Interval,
-		CronExpr:     j.CronExpr,
-		Timezone:     j.Timezone,
-		FuncName:     j.FuncName,
-		Args:         args,
-		Timeout:      j.Timeout,
-		Queues:       j.Queues,
-		MaxInstances: int32(j.MaxInstances),
-
-		LastRunTime: timestamppb.New(j.LastRunTime),
-		NextRunTime: timestamppb.New(j.NextRunTime),
-		Status:      j.Status,
-	}
-
-	return pbJ, nil
-}
-
-// Used to gRPC Protobuf
-func PbJobPtrToJob(pbJob *pb.Job) Job {
-	return Job{
-		Id:           pbJob.GetId(),
-		Name:         pbJob.GetName(),
-		Type:         pbJob.GetType(),
-		StartAt:      pbJob.GetStartAt(),
-		EndAt:        pbJob.GetEndAt(),
-		Interval:     pbJob.GetInterval(),
-		CronExpr:     pbJob.GetCronExpr(),
-		Timezone:     pbJob.GetTimezone(),
-		FuncName:     pbJob.GetFuncName(),
-		Args:         pbJob.GetArgs().AsMap(),
-		Timeout:      pbJob.GetTimeout(),
-		Queues:       pbJob.GetQueues(),
-		MaxInstances: max(1, int(pbJob.GetMaxInstances())),
-
-		LastRunTime: pbJob.GetLastRunTime().AsTime(),
-		NextRunTime: pbJob.GetNextRunTime().AsTime(),
-		Status:      pbJob.GetStatus(),
-	}
-}
-
-// Used to gRPC Protobuf
-func JobsToPbJobsPtr(js []Job) ([]*pb.Job, error) {
-	pbJs := []*pb.Job{}
-
-	for _, j := range js {
-		pbJ, err := JobToPbJobPtr(j)
-		if err != nil {
-			return []*pb.Job{}, err
-		}
-
-		pbJs = append(pbJs, pbJ)
-	}
-
-	return pbJs, nil
-}
-
-// Used to gRPC Protobuf
-func PbJobsPtrToJobs(pbJs []*pb.Job) []Job {
-	js := []Job{}
-
-	for _, pbJ := range pbJs {
-		js = append(js, PbJobPtrToJob(pbJ))
-	}
-
-	return js
-}
-
 type FuncPkg struct {
 	Func func(context.Context, Job) (result string)
 	// About this function.
@@ -314,10 +276,24 @@ type FuncPkg struct {
 // Record the actual path of function and the corresponding function.
 // Since golang can't serialize functions,
 // need to register them with `RegisterFuncs` before using it.
-var FuncMap = make(map[string]FuncPkg)
+var (
+	FuncMap  = make(map[string]FuncPkg)
+	funcMapM sync.RWMutex
+)
+
+func getRegisteredFunc(name string) (FuncPkg, bool) {
+	funcMapM.RLock()
+	defer funcMapM.RUnlock()
+
+	fp, ok := FuncMap[name]
+	return fp, ok
+}
 
 func FuncMapReadable() []map[string]string {
 	funcs := []map[string]string{}
+
+	funcMapM.RLock()
+	defer funcMapM.RUnlock()
 
 	for fName, fPkg := range FuncMap {
 		funcs = append(funcs, map[string]string{
@@ -333,6 +309,9 @@ func getFuncName(f func(context.Context, Job) (result string)) string {
 }
 
 func RegisterFuncs(fps ...FuncPkg) {
+	funcMapM.Lock()
+	defer funcMapM.Unlock()
+
 	for _, fp := range fps {
 		fName := getFuncName(fp.Func)
 		FuncMap[fName] = fp

@@ -1,14 +1,33 @@
 SHELL=/bin/bash
 
+MODULES := $(shell awk '!/^[[:space:]]*(#|$$)/ { print ($$0 == "." ? "." : "./" $$0) }' scripts/modules.txt)
+COVERAGE_DIR := $(CURDIR)/coverage
+# These modules have no local tests; tests/integration instruments them below.
+INTEGRATION_COVERAGE_PKGS := github.com/agscheduler/agscheduler/backends/gorm,github.com/agscheduler/agscheduler/stores/gorm
+
 .PHONY: install
 install:
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.9
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1
-	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.5.0
-	go install golang.org/x/tools/cmd/goimports@v0.37.0
-	go mod tidy
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.12
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.6.2
+	go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
+	go install golang.org/x/tools/cmd/goimports@v0.53.0
+	./scripts/tidy-modules.sh
 
-	pip3 install grpcio-tools
+	pip3 install grpcio-tools==1.85.3
+
+.PHONY: tidy
+tidy:
+	./scripts/tidy-modules.sh
+
+.PHONY: add-module
+add-module:
+	@test -n "$(MODULE)" || (echo "usage: make add-module MODULE=stores/cassandra [DEPS='vendor/pkg@v1.2.3 ...']" >&2; exit 1)
+	./scripts/add-module.sh "$(MODULE)" $(DEPS)
+
+.PHONY: bump-version
+bump-version:
+	@test -n "$(VERSION)" || (echo "usage: make bump-version VERSION=0.21.0" >&2; exit 1)
+	./scripts/bump-version.sh "$(VERSION)"
 
 .PHONY: format
 format:
@@ -28,7 +47,10 @@ isort-check:
 
 .PHONY: lint
 lint:
-	golangci-lint run --timeout=5m -v
+	for module in $(MODULES); do \
+		echo "Linting $$module"; \
+		(cd $$module && golangci-lint run --timeout=15m -v) || exit $$?; \
+	done
 
 .PHONY: up-cluster-ci-service
 up-cluster-ci-service:
@@ -46,28 +68,50 @@ down-cluster-ci-service_second:
 	| grep -v grep | awk '{print $$2}' | xargs kill 2>/dev/null | echo "down-cluster-ci-service-second"
 
 .PHONY: test
-test: down-cluster-ci-service up-cluster-ci-service
-	go test \
-		-timeout 120s \
-		-covermode=set \
-		-coverprofile=coverage.out \
-		. \
-		./stores \
-		./services \
-		./queues \
-		./backends \
-		-v
-	go tool cover -func=coverage.out
-	go tool cover -html=coverage.out -o coverage.html
+test: down-cluster-ci-service up-cluster-ci-service wait-ci-services
+	mkdir -p $(COVERAGE_DIR)
+	for module in $(MODULES); do \
+		echo "Testing $$module"; \
+		profile="$(COVERAGE_DIR)/$$(printf '%s' "$$module" | tr '/.' '__').out"; \
+		rm -f "$$profile" "$${profile%.out}.html"; \
+		case "$$module" in \
+			./backends/gorm|./stores/gorm) \
+				echo "Compiling $$module; coverage is collected by tests/integration"; \
+				(cd "$$module" && go test -count=1 -timeout 120s ./... -v) || exit $$?; \
+				continue ;; \
+			./examples|./services/proto) \
+				echo "Compiling $$module; excluded from coverage"; \
+				(cd "$$module" && go test -count=1 -timeout 120s ./... -v) || exit $$?; \
+				continue ;; \
+		esac; \
+		if [ "$$module" = "./tests/integration" ]; then \
+			(cd "$$module" && go test -count=1 -timeout 120s -covermode=set -coverprofile="$$profile" -coverpkg="$(INTEGRATION_COVERAGE_PKGS)" ./... -v) || exit $$?; \
+		else \
+			(cd "$$module" && go test -count=1 -timeout 120s -covermode=set -coverprofile="$$profile" ./... -v) || exit $$?; \
+		fi; \
+		./scripts/filter-coverage.sh "$$profile"; \
+		if [ -s "$$profile" ]; then \
+			go tool cover -func=$$profile; \
+			go tool cover -html=$$profile -o $${profile%.out}.html; \
+		fi; \
+	done
 	$(MAKE) down-cluster-ci-service_second
 
+.PHONY: check-deps
+check-deps:
+	go run ./scripts/check-module-deps.go
+
 .PHONY: check-all
-check-all: format-check isort-check lint test
+check-all: format-check isort-check lint check-deps test
 
 .PHONY: up-ci-services
 up-ci-services:
 	docker compose -f ci/docker-compose.store.ci.yml up -d
 	docker compose -f ci/docker-compose.queue.ci.yml up -d
+
+.PHONY: wait-ci-services
+wait-ci-services:
+	./ci/wait-for-ci-services.sh
 
 .PHONY: down-ci-services
 down-ci-services:

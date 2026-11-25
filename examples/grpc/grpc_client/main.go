@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/agscheduler/agscheduler"
+	"github.com/agscheduler/agscheduler/services/grpc/convert"
 	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
@@ -28,9 +29,9 @@ func runExampleGRPC(c pb.SchedulerClient) {
 		FuncName: "github.com/agscheduler/agscheduler/examples.PrintMsg",
 		Args:     map[string]any{"arg1": "1", "arg2": "2", "arg3": "3"},
 	}
-	pbJob1, _ := agscheduler.JobToPbJobPtr(job1)
+	pbJob1, _ := convert.JobToPbJobPtr(job1)
 	pbJob1, _ = c.AddJob(ctx, pbJob1)
-	job1 = agscheduler.PbJobPtrToJob(pbJob1)
+	job1 = convert.PbJobPtrToJob(pbJob1)
 	slog.Info(fmt.Sprintf("%s.\n\n", job1))
 
 	_, _ = c.Start(ctx, &emptypb.Empty{})

@@ -1,0 +1,23 @@
+# Go module directories, relative to the repository root.
+.
+backends/gorm
+backends/memory
+backends/mongodb
+examples
+queues/kafka
+queues/memory
+queues/mqtt
+queues/nsq
+queues/rabbitmq
+queues/redis
+services/cluster
+services/grpc
+services/http
+services/proto
+stores/elasticsearch
+stores/etcd
+stores/gorm
+stores/memory
+stores/mongodb
+stores/redis
+tests/integration

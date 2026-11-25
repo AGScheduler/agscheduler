@@ -56,6 +56,15 @@ English | [简体中文](README.zh-CN.md)
 go get -u github.com/agscheduler/agscheduler
 ```
 
+Optional integrations are separate modules and only bring in their own dependencies:
+
+```bash
+go get github.com/agscheduler/agscheduler/stores/memory
+go get github.com/agscheduler/agscheduler/queues/kafka
+go get github.com/agscheduler/agscheduler/backends/mongodb
+go get github.com/agscheduler/agscheduler/services/grpc
+```
+
 ## Usage
 
 ```go
@@ -68,7 +77,7 @@ import (
 	"time"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/stores"
+	"github.com/agscheduler/agscheduler/stores/memory"
 )
 
 func printMsg(ctx context.Context, j agscheduler.Job) (result string) {
@@ -145,7 +154,7 @@ broker := &agscheduler.Broker{
 	},
 }
 
-scheduler.SetBroker(broker)
+scheduler.SetBroker(ctx, broker)
 ```
 
 ## Result Collection
@@ -157,7 +166,7 @@ recorder := &agscheduler.Recorder{Backend: backend}
 scheduler.SetRecorder(recorder)
 
 job, _ = scheduler.AddJob(job)
-records, _ := recorder.GetRecords(job.Id)
+records, total, _ := recorder.GetRecords(job.Id, 1, 10)
 ```
 
 ## Event listening
@@ -180,6 +189,25 @@ listener := &agscheduler.Listener{
 
 scheduler.SetListener(listener)
 ```
+
+## Graceful Shutdown
+
+`Scheduler.Stop()` stops scheduling new jobs and waits up to `DefaultShutdownTimeout` for in-flight jobs. For signal-driven shutdown, use `WaitForShutdown`:
+
+```go
+import (
+	"fmt"
+	"log/slog"
+	"time"
+)
+
+scheduler.Start()
+if err := scheduler.WaitForShutdown(30*time.Second, service.Stop); err != nil {
+	slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
+}
+```
+
+`WaitForShutdown` handles SIGINT and SIGTERM. The first signal calls `service.Stop` and gracefully shuts down the scheduler. A second signal exits immediately. If the deadline expires, running jobs receive a cancelled context and are recorded with `RECORD_STATUS_CANCELLED`. Job functions should monitor `ctx.Done()` so they can stop promptly. Pass `nil` as the callback when there are no services to stop.
 
 ## gRPC
 
@@ -330,6 +358,39 @@ make up-ci-services
 # Run check
 make check-all
 ```
+
+## Module Development
+
+Module directories and dependency boundaries are declared in `scripts/modules.txt` and `scripts/module-deps.txt`.
+
+```bash
+# Create and register a new optional module.
+make add-module MODULE=stores/cassandra DEPS='github.com/gocql/gocql@v1.6.0'
+
+# Update every module, workspace replacement, version constant, and migration doc.
+make bump-version VERSION=0.21.0
+
+# Refresh go.mod/go.sum files after adding source code or changing dependencies.
+make tidy
+make check-deps
+```
+
+After adding source code, run the affected tests. Use `tests/integration` when a test needs a third-party driver or dependency that should not appear in an adapter module's `go.mod`.
+
+## Migrating from v0.12 and earlier
+
+`v0.20.0` splits the aggregate packages into per-integration modules. Core package names remain the same; update the import path for the selected implementation:
+
+The package names remain `stores`, `queues`, `backends`, and `services`, so existing qualified type names such as `stores.MemoryStore` are unchanged.
+
+| v0.12 and earlier | v0.20.0 |
+| --- | --- |
+| `github.com/agscheduler/agscheduler/stores` | `github.com/agscheduler/agscheduler/stores/memory`, `.../stores/gorm`, `.../stores/redis`, `.../stores/mongodb`, `.../stores/etcd`, or `.../stores/elasticsearch` |
+| `github.com/agscheduler/agscheduler/queues` | `github.com/agscheduler/agscheduler/queues/memory`, `.../queues/nsq`, `.../queues/rabbitmq`, `.../queues/redis`, `.../queues/mqtt`, or `.../queues/kafka` |
+| `github.com/agscheduler/agscheduler/backends` | `github.com/agscheduler/agscheduler/backends/memory`, `.../backends/gorm`, or `.../backends/mongodb` |
+| `github.com/agscheduler/agscheduler/services` | `github.com/agscheduler/agscheduler/services/http`, `.../services/grpc`, or `.../services/cluster` |
+
+Protobuf conversion helpers such as `JobToPbJobPtr` moved from the core package to `github.com/agscheduler/agscheduler/services/grpc/convert`.
 
 ## [Cli](https://github.com/AGScheduler/agscheduler-cli)
 

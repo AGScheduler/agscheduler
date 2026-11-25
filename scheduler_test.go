@@ -2,27 +2,80 @@ package agscheduler_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/gorhill/cronexpr"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/backends"
-	"github.com/agscheduler/agscheduler/queues"
-	"github.com/agscheduler/agscheduler/stores"
+	"github.com/agscheduler/agscheduler/internal/adaptertest"
 )
 
 func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result string) { return }
 
 func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result string) { panic(nil) }
 
+func runSchedulerWithMetadataFailure(ctx context.Context, j agscheduler.Job) (result string) {
+	j.Args["ran"].(chan struct{}) <- struct{}{}
+	return "ran"
+}
+
 func dryCallbackScheduler(ep agscheduler.EventPkg) {}
+
+type failingMetadataBackend struct {
+	agscheduler.Backend
+}
+
+func (b *failingMetadataBackend) RecordMetadata(agscheduler.Record) error {
+	return errors.New("metadata backend unavailable")
+}
+
+type failingInitStore struct {
+	agscheduler.Store
+}
+
+func (s *failingInitStore) Init() error {
+	return errors.New("store init failed")
+}
+
+type failingInitBackend struct {
+	agscheduler.Backend
+}
+
+func (b *failingInitBackend) Init() error {
+	return errors.New("backend init failed")
+}
+
+var gracefulSchedulerStarted chan struct{}
+var gracefulSchedulerRelease chan struct{}
+var cancellationSchedulerStarted chan struct{}
+var cancellationSchedulerObserved chan struct{}
+var preparedSchedulerJob chan agscheduler.Job
+
+func waitForSchedulerRelease(ctx context.Context, j agscheduler.Job) (result string) {
+	gracefulSchedulerStarted <- struct{}{}
+	<-gracefulSchedulerRelease
+	return "released"
+}
+
+func waitForSchedulerCancellation(ctx context.Context, j agscheduler.Job) (result string) {
+	cancellationSchedulerStarted <- struct{}{}
+	<-ctx.Done()
+	close(cancellationSchedulerObserved)
+	return ""
+}
+
+func capturePreparedSchedulerJob(ctx context.Context, j agscheduler.Job) (result string) {
+	preparedSchedulerJob <- j
+	return ""
+}
 
 func getSchedulerWithStore(t *testing.T) *agscheduler.Scheduler {
 	scheduler := &agscheduler.Scheduler{}
-	store := &stores.MemoryStore{}
+	store := adaptertest.NewStore()
 	err := scheduler.SetStore(store)
 	assert.NoError(t, err)
 
@@ -38,8 +91,70 @@ func getJob() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.JOB_TYPE_INTERVAL,
-		Interval: "50ms",
+		Interval: "1s",
 		Func:     dryRunScheduler,
+	}
+}
+
+func makeJobDue(j agscheduler.Job) agscheduler.Job {
+	j.Type = agscheduler.JOB_TYPE_DATETIME
+	j.StartAt = "2023-09-22 07:30:08"
+	j.Interval = ""
+	return j
+}
+
+func TestSchedulerRunJobContinuesWhenRecordMetadataFails(t *testing.T) {
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: runSchedulerWithMetadataFailure},
+	)
+
+	scheduler := getSchedulerWithStore(t)
+	recorder := &agscheduler.Recorder{
+		Backend: &failingMetadataBackend{Backend: adaptertest.NewBackend()},
+	}
+	assert.NoError(t, scheduler.SetRecorder(recorder))
+
+	ran := make(chan struct{}, 1)
+	job := getJob()
+	job.Func = runSchedulerWithMetadataFailure
+	job.Args = map[string]any{"ran": ran}
+
+	assert.NoError(t, scheduler.RunJob(job))
+	select {
+	case <-ran:
+	case <-time.After(time.Second):
+		t.Fatal("job did not run after recorder metadata failure")
+	}
+}
+
+func TestSchedulerSetStoreFailureDoesNotBind(t *testing.T) {
+	scheduler := &agscheduler.Scheduler{}
+
+	err := scheduler.SetStore(&failingInitStore{Store: adaptertest.NewStore()})
+	assert.Error(t, err)
+	assert.Nil(t, agscheduler.GetStore(scheduler))
+}
+
+func TestSchedulerSetRecorderFailureDoesNotBind(t *testing.T) {
+	scheduler := getSchedulerWithStore(t)
+	recorder := &agscheduler.Recorder{
+		Backend: &failingInitBackend{Backend: adaptertest.NewBackend()},
+	}
+
+	err := scheduler.SetRecorder(recorder)
+	assert.Error(t, err)
+	assert.False(t, scheduler.HasRecorder())
+	assert.Nil(t, agscheduler.GetRecorder(scheduler))
+}
+
+func getFutureJob(fn func(context.Context, agscheduler.Job) string) agscheduler.Job {
+	return agscheduler.Job{
+		Name:     "FutureJob",
+		Type:     agscheduler.JOB_TYPE_DATETIME,
+		StartAt:  "2099-01-01 00:00:00",
+		Timezone: "UTC",
+		Func:     fn,
+		Timeout:  "5s",
 	}
 }
 
@@ -47,7 +162,7 @@ func getJobWithoutFunc() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.JOB_TYPE_INTERVAL,
-		Interval: "50ms",
+		Interval: "1s",
 	}
 }
 
@@ -61,7 +176,7 @@ func getClusterNode() *agscheduler.ClusterNode {
 }
 
 func getBroker() *agscheduler.Broker {
-	mq := &queues.MemoryQueue{}
+	mq := adaptertest.NewQueue()
 
 	return &agscheduler.Broker{
 		Queues: map[string]agscheduler.QueuePkg{
@@ -74,7 +189,7 @@ func getBroker() *agscheduler.Broker {
 }
 
 func getRecorder() *agscheduler.Recorder {
-	mb := &backends.MemoryBackend{}
+	mb := adaptertest.NewBackend()
 	return &agscheduler.Recorder{Backend: mb}
 }
 
@@ -93,7 +208,7 @@ func TestSchedulerSetStore(t *testing.T) {
 	s := &agscheduler.Scheduler{}
 	assert.Nil(t, agscheduler.GetStore(s))
 
-	store := &stores.MemoryStore{}
+	store := adaptertest.NewStore()
 	err := s.SetStore(store)
 	assert.NoError(t, err)
 
@@ -200,10 +315,36 @@ func TestSchedulerAddJobTimeoutError(t *testing.T) {
 	assert.Contains(t, err.Error(), "Timeout `"+j.Timeout+"` error")
 }
 
+func TestSchedulerAddJobRejectsInvalidIntervalPrecision(t *testing.T) {
+	for _, interval := range []string{"0s", "-1s", "500ms", "1500ms"} {
+		t.Run(interval, func(t *testing.T) {
+			s := getSchedulerWithStore(t)
+			j := getJob()
+			j.Interval = interval
+
+			_, err := s.AddJob(j)
+			assert.ErrorContains(t, err, "positive whole number of seconds")
+		})
+	}
+}
+
+func TestSchedulerAddJobRejectsNonPositiveTimeout(t *testing.T) {
+	for _, timeout := range []string{"0s", "-1s"} {
+		t.Run(timeout, func(t *testing.T) {
+			s := getSchedulerWithStore(t)
+			j := getJob()
+			j.Timeout = timeout
+
+			_, err := s.AddJob(j)
+			assert.ErrorContains(t, err, "must be greater than zero")
+		})
+	}
+}
+
 func TestSchedulerRunJobPanic(t *testing.T) {
 	s := getSchedulerWithStore(t)
 	defer s.Stop()
-	j := getJob()
+	j := makeJobDue(getJob())
 	j.Func = runSchedulerPanic
 
 	_, err := s.AddJob(j)
@@ -350,6 +491,112 @@ func TestSchedulerRunJob(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestSchedulerRunJobRejectsNonPositiveTimeout(t *testing.T) {
+	for _, timeout := range []string{"0s", "-1s"} {
+		t.Run(timeout, func(t *testing.T) {
+			s := getSchedulerWithStore(t)
+			j := getJob()
+			j.Timeout = timeout
+
+			err := s.RunJob(j)
+			assert.ErrorContains(t, err, "must be greater than zero")
+		})
+	}
+}
+
+func TestSchedulerRunJobAppliesExecutionDefaults(t *testing.T) {
+	preparedSchedulerJob = make(chan agscheduler.Job, 1)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: capturePreparedSchedulerJob},
+	)
+
+	s := getSchedulerWithStore(t)
+	err := s.RunJob(agscheduler.Job{
+		Id:   "manual-job-id",
+		Name: "Manual Job",
+		Func: capturePreparedSchedulerJob,
+	})
+	assert.NoError(t, err)
+
+	select {
+	case j := <-preparedSchedulerJob:
+		assert.Equal(t, "manual-job-id", j.Id)
+		assert.Equal(t, "UTC", j.Timezone)
+		assert.Equal(t, "1h", j.Timeout)
+		assert.Equal(t, 1, j.MaxInstances)
+		assert.NotNil(t, j.Args)
+		assert.NotNil(t, j.Queues)
+		assert.NotEmpty(t, j.FuncName)
+	case <-time.After(time.Second):
+		t.Fatal("job did not run")
+	}
+}
+
+func TestSchedulerRunJobUnregisteredError(t *testing.T) {
+	s := getSchedulerWithStore(t)
+	err := s.RunJob(agscheduler.Job{
+		Name:     "Invalid Job",
+		FuncName: "test.missing",
+		Timeout:  "1s",
+	})
+	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError("test.missing"))
+}
+
+func TestSchedulerScheduleJobUnregisteredError(t *testing.T) {
+	s := getSchedulerWithStore(t)
+	err := s.ScheduleJob(agscheduler.Job{
+		Name:     "Invalid Job",
+		FuncName: "test.missing",
+		Timeout:  "1s",
+	})
+	assert.ErrorIs(t, err, agscheduler.FuncUnregisteredError("test.missing"))
+}
+
+func TestSchedulerBrokerSkipsUnregisteredQueuedJob(t *testing.T) {
+	preparedSchedulerJob = make(chan agscheduler.Job, 1)
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: capturePreparedSchedulerJob},
+	)
+
+	s := getSchedulerWithStore(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	brk := getBroker()
+	err := s.SetBroker(ctx, brk)
+	assert.NoError(t, err)
+
+	validJob, err := s.AddJob(getFutureJob(capturePreparedSchedulerJob))
+	assert.NoError(t, err)
+	validBytes, err := agscheduler.JobMarshal(validJob)
+	assert.NoError(t, err)
+	invalidBytes, err := agscheduler.JobMarshal(agscheduler.Job{
+		Id:           "invalid-job-id",
+		Name:         "Invalid Job",
+		FuncName:     "test.missing",
+		Timeout:      "1s",
+		MaxInstances: 1,
+	})
+	assert.NoError(t, err)
+
+	s.Start()
+	defer func() {
+		assert.NoError(t, brk.Clear("default"))
+	}()
+	defer s.Stop()
+
+	queue := brk.Queues["default"].Queue
+	assert.NoError(t, queue.PushJob(invalidBytes))
+	assert.NoError(t, queue.PushJob(validBytes))
+
+	select {
+	case j := <-preparedSchedulerJob:
+		assert.Equal(t, validJob.Id, j.Id)
+	case <-time.After(time.Second):
+		t.Fatal("worker did not continue after rejecting an unregistered job")
+	}
+}
+
 func TestSchedulerScheduleJobLocal(t *testing.T) {
 	cn := getClusterNode()
 	s := getSchedulerWithStore(t)
@@ -446,7 +693,7 @@ func TestSchedulerBrokerGetQueues(t *testing.T) {
 func TestSchedulerRecorderRecordMetadata(t *testing.T) {
 	rec := getRecorder()
 	s := getSchedulerWithStore(t)
-	j := getJob()
+	j := makeJobDue(getJob())
 
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
@@ -460,7 +707,7 @@ func TestSchedulerRecorderRecordMetadata(t *testing.T) {
 func TestSchedulerRecorderRecordMetadataTimeout(t *testing.T) {
 	rec := getRecorder()
 	s := getSchedulerWithStore(t)
-	j := getJob()
+	j := makeJobDue(getJob())
 	j.Timeout = "0.05ms"
 
 	err := s.SetRecorder(rec)
@@ -479,6 +726,17 @@ func TestSchedulerStartAndStop(t *testing.T) {
 	s.Stop()
 }
 
+func TestSchedulerRestartAfterStop(t *testing.T) {
+	s := getSchedulerWithStore(t)
+	s.Start()
+	s.Stop()
+
+	s.Start()
+	assert.True(t, s.IsRunning())
+	s.Stop()
+	assert.False(t, s.IsRunning())
+}
+
 func TestSchedulerStartOnce(t *testing.T) {
 	s := getSchedulerWithStore(t)
 	s.Start()
@@ -494,6 +752,138 @@ func TestSchedulerStopOnce(t *testing.T) {
 	s.Stop()
 	time.Sleep(50 * time.Millisecond)
 	s.Stop()
+}
+
+func TestSchedulerShutdownWaitsForRunningJob(t *testing.T) {
+	gracefulSchedulerStarted = make(chan struct{}, 1)
+	gracefulSchedulerRelease = make(chan struct{})
+
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: waitForSchedulerRelease},
+	)
+
+	s := getSchedulerWithStore(t)
+	j, err := s.AddJob(getFutureJob(waitForSchedulerRelease))
+	assert.NoError(t, err)
+
+	s.Start()
+	err = s.RunJob(j)
+	assert.NoError(t, err)
+
+	select {
+	case <-gracefulSchedulerStarted:
+	case <-time.After(time.Second):
+		t.Fatal("job did not start")
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	shutdownDone := make(chan error, 1)
+	go func() {
+		shutdownDone <- s.Shutdown(shutdownCtx)
+	}()
+
+	select {
+	case err := <-shutdownDone:
+		t.Fatalf("shutdown returned before the job completed: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	err = s.RunJob(j)
+	assert.ErrorIs(t, err, agscheduler.ErrSchedulerShuttingDown)
+
+	close(gracefulSchedulerRelease)
+
+	select {
+	case err := <-shutdownDone:
+		assert.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("shutdown did not return after the job completed")
+	}
+
+	assert.False(t, s.IsRunning())
+}
+
+func TestSchedulerShutdownCancelsJobsAfterDeadline(t *testing.T) {
+	cancellationSchedulerStarted = make(chan struct{}, 1)
+	cancellationSchedulerObserved = make(chan struct{})
+
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: waitForSchedulerCancellation},
+	)
+
+	s := getSchedulerWithStore(t)
+	j, err := s.AddJob(getFutureJob(waitForSchedulerCancellation))
+	assert.NoError(t, err)
+
+	s.Start()
+	err = s.RunJob(j)
+	assert.NoError(t, err)
+
+	select {
+	case <-cancellationSchedulerStarted:
+	case <-time.After(time.Second):
+		t.Fatal("job did not start")
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	err = s.Shutdown(shutdownCtx)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+
+	select {
+	case <-cancellationSchedulerObserved:
+	case <-time.After(time.Second):
+		t.Fatal("job context was not cancelled")
+	}
+}
+
+func TestSchedulerShutdownWaitsForBrokerWorker(t *testing.T) {
+	gracefulSchedulerStarted = make(chan struct{}, 1)
+	gracefulSchedulerRelease = make(chan struct{})
+
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: waitForSchedulerRelease},
+	)
+
+	s := getSchedulerWithStore(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	err := s.SetBroker(ctx, getBroker())
+	assert.NoError(t, err)
+
+	j, err := s.AddJob(getFutureJob(waitForSchedulerRelease))
+	assert.NoError(t, err)
+
+	s.Start()
+	err = s.ScheduleJob(j)
+	assert.NoError(t, err)
+
+	select {
+	case <-gracefulSchedulerStarted:
+	case <-time.After(time.Second):
+		t.Fatal("broker job did not start")
+	}
+
+	shutdownDone := make(chan error, 1)
+	go func() {
+		shutdownDone <- s.Shutdown(context.Background())
+	}()
+
+	select {
+	case err := <-shutdownDone:
+		t.Fatalf("shutdown returned before the broker job completed: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	close(gracefulSchedulerRelease)
+
+	select {
+	case err := <-shutdownDone:
+		assert.NoError(t, err)
+	case <-time.After(time.Second):
+		t.Fatal("shutdown did not return after the broker job completed")
+	}
 }
 
 func TestCalcNextRunTimeTimezone(t *testing.T) {
@@ -587,6 +977,21 @@ func TestCalcNextRunTimeIntervalError(t *testing.T) {
 
 	_, err := agscheduler.CalcNextRunTime(j)
 	assert.Error(t, err)
+}
+
+func TestCalcNextRunTimeRejectsInvalidIntervalPrecision(t *testing.T) {
+	for _, interval := range []string{"0s", "-1s", "500ms", "1500ms"} {
+		t.Run(interval, func(t *testing.T) {
+			j := agscheduler.Job{
+				Type:     agscheduler.JOB_TYPE_INTERVAL,
+				Interval: interval,
+				Timezone: "UTC",
+			}
+
+			_, err := agscheduler.CalcNextRunTime(j)
+			assert.ErrorContains(t, err, "positive whole number of seconds")
+		})
+	}
 }
 
 func TestCalcNextRunTimeCronExprError(t *testing.T) {

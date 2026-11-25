@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	es "github.com/agscheduler/agscheduler/examples/stores"
-	"github.com/agscheduler/agscheduler/stores"
+	stores "github.com/agscheduler/agscheduler/stores/redis"
 )
 
 func main() {

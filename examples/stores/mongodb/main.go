@@ -11,7 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	es "github.com/agscheduler/agscheduler/examples/stores"
-	"github.com/agscheduler/agscheduler/stores"
+	stores "github.com/agscheduler/agscheduler/stores/mongodb"
 )
 
 func main() {

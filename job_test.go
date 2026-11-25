@@ -3,11 +3,10 @@ package agscheduler
 import (
 	"context"
 	"reflect"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func getJob() Job {
@@ -76,63 +75,58 @@ func TestJobUnmarshalError(t *testing.T) {
 	assert.Empty(t, j)
 }
 
-func TestJobToPbJobPtr(t *testing.T) {
-	j := getJob()
-	pbJ, err := JobToPbJobPtr(j)
-	assert.NoError(t, err)
-
-	assert.IsType(t, &pb.Job{}, pbJ)
-	assert.NotEmpty(t, pbJ)
-}
-
-func TestPbJobPtrToJob(t *testing.T) {
-	j := getJob()
-	pbJ, err := JobToPbJobPtr(j)
-	assert.NoError(t, err)
-	j = PbJobPtrToJob(pbJ)
-
-	assert.IsType(t, Job{}, j)
-	assert.NotEmpty(t, j)
-}
-
-func TestJobsToPbJobsPtr(t *testing.T) {
-	js := make([]Job, 0)
-	js = append(js, getJob())
-	js = append(js, getJob())
-	pbJs, err := JobsToPbJobsPtr(js)
-	assert.NoError(t, err)
-
-	assert.IsType(t, []*pb.Job{}, pbJs)
-	assert.Len(t, pbJs, 2)
-}
-
-func TestPbJobsPtrToJobs(t *testing.T) {
-	js := make([]Job, 0)
-	js = append(js, getJob())
-	js = append(js, getJob())
-	pbJs, err := JobsToPbJobsPtr(js)
-	assert.NoError(t, err)
-	js = PbJobsPtrToJobs(pbJs)
-
-	assert.IsType(t, []Job{}, js)
-	assert.Len(t, js, 2)
-}
-
 func TestRegisterFuncs(t *testing.T) {
-	assert.Empty(t, FuncMap)
+	fp := FuncPkg{
+		Func: func(ctx context.Context, j Job) (result string) { return },
+		Info: "test function",
+	}
+	RegisterFuncs(fp)
 
-	RegisterFuncs(
-		FuncPkg{Func: func(ctx context.Context, j Job) (result string) { return }},
-	)
-
-	assert.Len(t, FuncMap, 1)
+	registered, ok := getRegisteredFunc(getFuncName(fp.Func))
+	assert.True(t, ok)
+	assert.Equal(t, fp.Info, registered.Info)
 }
 
 func TestFuncMapReadable(t *testing.T) {
-	RegisterFuncs(
-		FuncPkg{Func: func(ctx context.Context, j Job) (result string) { return }},
-	)
-	funcLen := len(FuncMap)
+	fp := FuncPkg{
+		Func: func(ctx context.Context, j Job) (result string) { return },
+		Info: "readable function",
+	}
+	RegisterFuncs(fp)
 
-	assert.Len(t, FuncMapReadable(), funcLen)
+	assert.Contains(t, FuncMapReadable(), map[string]string{
+		"name": getFuncName(fp.Func),
+		"info": fp.Info,
+	})
+}
+
+func TestFuncMapConcurrentAccess(t *testing.T) {
+	fp := FuncPkg{
+		Func: func(ctx context.Context, j Job) (result string) { return },
+		Info: "concurrent function",
+	}
+	RegisterFuncs(fp)
+	name := getFuncName(fp.Func)
+
+	var wg sync.WaitGroup
+	wg.Add(4)
+	for range 3 {
+		go func() {
+			defer wg.Done()
+			for range 1000 {
+				if _, ok := getRegisteredFunc(name); !ok {
+					t.Error("registered function not found")
+					return
+				}
+				_ = FuncMapReadable()
+			}
+		}()
+	}
+	go func() {
+		defer wg.Done()
+		for range 1000 {
+			RegisterFuncs(fp)
+		}
+	}()
+	wg.Wait()
 }

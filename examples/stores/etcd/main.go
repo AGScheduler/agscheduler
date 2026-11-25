@@ -11,7 +11,7 @@ import (
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	es "github.com/agscheduler/agscheduler/examples/stores"
-	"github.com/agscheduler/agscheduler/stores"
+	stores "github.com/agscheduler/agscheduler/stores/etcd"
 )
 
 func main() {

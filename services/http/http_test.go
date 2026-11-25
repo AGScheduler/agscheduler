@@ -1,0 +1,130 @@
+package services
+
+import (
+	"context"
+	"encoding/json"
+	"io"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/agscheduler/agscheduler"
+	backends "github.com/agscheduler/agscheduler/backends/memory"
+	queues "github.com/agscheduler/agscheduler/queues/memory"
+	stores "github.com/agscheduler/agscheduler/stores/memory"
+)
+
+var testQueue = "agscheduler_test_queue"
+
+type result struct {
+	Data  any    `json:"data"`
+	Error string `json:"error"`
+}
+
+func dryRunHTTP(ctx context.Context, j agscheduler.Job) (result string) { return }
+
+func testHTTP(t *testing.T, baseUrl string) {
+	resp, err := http.Get(baseUrl + "/info")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	body, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	rJ := &result{}
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
+	assert.Len(t, rJ.Data.(map[string]any), 5)
+	assert.Equal(t, agscheduler.Version, rJ.Data.(map[string]any)["version"])
+
+	resp, err = http.Get(baseUrl + "/funcs")
+	assert.NoError(t, err)
+	assert.Equal(t, 200, resp.StatusCode)
+	body, err = io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	rJ = &result{}
+	err = json.Unmarshal(body, &rJ)
+	assert.NoError(t, err)
+	funcLen := len(agscheduler.FuncMap)
+	assert.Len(t, rJ.Data, funcLen)
+}
+
+func TestHTTPService(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: dryRunHTTP},
+	)
+
+	scheduler := &agscheduler.Scheduler{}
+
+	store := &stores.MemoryStore{}
+	err := scheduler.SetStore(store)
+	assert.NoError(t, err)
+
+	mq := &queues.MemoryQueue{}
+	broker := &agscheduler.Broker{
+		Queues: map[string]agscheduler.QueuePkg{
+			testQueue: {
+				Queue:   mq,
+				Workers: 2,
+			},
+		},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	err = scheduler.SetBroker(ctx, broker)
+	assert.NoError(t, err)
+
+	mb := &backends.MemoryBackend{}
+	recorder := &agscheduler.Recorder{Backend: mb}
+	err = scheduler.SetRecorder(recorder)
+	assert.NoError(t, err)
+
+	hservice := HTTPService{Scheduler: scheduler}
+	err = hservice.Start()
+	assert.NoError(t, err)
+
+	time.Sleep(time.Second)
+
+	baseUrl := "http://" + hservice.Address
+	testHTTP(t, baseUrl)
+	testSchedulerHTTP(t, baseUrl)
+	testBrokerHTTP(t, baseUrl)
+	testRecorderHTTP(t, baseUrl)
+
+	err = hservice.Stop()
+	assert.NoError(t, err)
+
+	cancel()
+	err = broker.Clear(testQueue)
+	assert.NoError(t, err)
+	err = store.Clear()
+	assert.NoError(t, err)
+}
+
+func TestHTTPServiceStartAddressInUse(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, lis.Close())
+	}()
+
+	scheduler := &agscheduler.Scheduler{}
+	store := &stores.MemoryStore{}
+	assert.NoError(t, scheduler.SetStore(store))
+
+	hservice := HTTPService{
+		Scheduler: scheduler,
+		Address:   lis.Addr().String(),
+	}
+	err = hservice.Start()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "HTTP Service listen failure")
+	assert.NoError(t, hservice.Stop())
+	assert.NoError(t, store.Clear())
+}

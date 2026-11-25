@@ -9,8 +9,8 @@ import (
 
 	"github.com/agscheduler/agscheduler"
 	"github.com/agscheduler/agscheduler/examples"
-	"github.com/agscheduler/agscheduler/services"
-	"github.com/agscheduler/agscheduler/stores"
+	services "github.com/agscheduler/agscheduler/services/grpc"
+	stores "github.com/agscheduler/agscheduler/stores/memory"
 )
 
 func main() {
@@ -38,5 +38,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	select {}
+	if err := scheduler.WaitForShutdown(agscheduler.DefaultShutdownTimeout, grservice.Stop); err != nil {
+		slog.Warn(fmt.Sprintf("Scheduler graceful shutdown failed: %s", err))
+	}
 }

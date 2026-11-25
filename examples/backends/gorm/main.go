@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/agscheduler/agscheduler"
-	"github.com/agscheduler/agscheduler/backends"
+	backends "github.com/agscheduler/agscheduler/backends/gorm"
 	eb "github.com/agscheduler/agscheduler/examples/backends"
 )
 

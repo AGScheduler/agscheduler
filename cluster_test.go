@@ -2,13 +2,12 @@ package agscheduler
 
 import (
 	"context"
-	"encoding/gob"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	pb "github.com/agscheduler/agscheduler/services/proto"
 )
 
 func getClusterNode() *ClusterNode {
@@ -87,13 +86,62 @@ func TestClusterRegisterNode(t *testing.T) {
 	assert.Len(t, cn.NodeMapCopy(), 1)
 }
 
-func TestNodeMapToPbNodesPtr(t *testing.T) {
+func TestClusterNodeMapCopyReusesGobCodec(t *testing.T) {
 	cn := getClusterNode()
 	cn.registerNode(cn)
-	pbNs := cn.NodeMapToPbNodesPtr()
 
-	assert.IsType(t, map[string]*pb.Node{}, pbNs)
-	assert.NotEmpty(t, pbNs)
+	for i := 0; i < 100; i++ {
+		queue := fmt.Sprintf("queue-%d", i)
+		cn.nodeMapM.Lock()
+		cn.nodeMap[cn.Endpoint]["queue"] = queue
+		cn.nodeMapM.Unlock()
+
+		copied := cn.NodeMapCopy()
+		assert.Equal(t, queue, copied[cn.Endpoint]["queue"])
+
+		copied[cn.Endpoint]["queue"] = "changed"
+		assert.Equal(t, queue, cn.NodeMapCopy()[cn.Endpoint]["queue"])
+	}
+}
+
+func TestClusterNodeMapCopyConcurrent(t *testing.T) {
+	const (
+		nodes      = 32
+		iterations = 50
+	)
+
+	cns := make([]*ClusterNode, nodes)
+	for i := range cns {
+		cn := getClusterNode()
+		cn.Endpoint = fmt.Sprintf("node-%d", i)
+		cn.Queue = fmt.Sprintf("queue-%d", i)
+		cn.registerNode(cn)
+		cns[i] = cn
+	}
+
+	errCh := make(chan error, nodes)
+	var wg sync.WaitGroup
+	for i, cn := range cns {
+		wg.Add(1)
+		go func(i int, cn *ClusterNode) {
+			defer wg.Done()
+
+			wantQueue := fmt.Sprintf("queue-%d", i)
+			for j := 0; j < iterations; j++ {
+				copied := cn.NodeMapCopy()
+				if got := copied[cn.Endpoint]["queue"]; got != wantQueue {
+					errCh <- fmt.Errorf("node %d copied queue %v, want %s", i, got, wantQueue)
+					return
+				}
+			}
+		}(i, cn)
+	}
+	wg.Wait()
+	close(errCh)
+
+	for err := range errCh {
+		assert.NoError(t, err)
+	}
 }
 
 func TestClusterMainNode(t *testing.T) {
@@ -154,8 +202,6 @@ func TestClusterChoiceNodeQueueNotExist(t *testing.T) {
 }
 
 func TestClusterHeartbeat(t *testing.T) {
-	gob.Register(time.Time{})
-
 	cn := getClusterNode()
 	cn.SetEndpointMain("127.0.0.1:36680")
 
@@ -173,7 +219,11 @@ func TestClusterCheckNode(t *testing.T) {
 	cn.Endpoint = endpoint
 	cn.registerNode(cn)
 	cn.Endpoint = endpointBak
+
+	cn.nodeMapM.Lock()
 	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-900 * time.Millisecond)
+	cn.nodeMapM.Unlock()
+
 	assert.Equal(t, true, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -183,7 +233,10 @@ func TestClusterCheckNode(t *testing.T) {
 
 	assert.Equal(t, false, cn.NodeMapCopy()[endpoint]["health"].(bool))
 
+	cn.nodeMapM.Lock()
 	cn.nodeMap[endpoint]["last_heartbeat_time"] = time.Now().UTC().Add(-6 * time.Minute)
+	cn.nodeMapM.Unlock()
+
 	time.Sleep(700 * time.Millisecond)
 
 	_, ok := cn.NodeMapCopy()[endpoint]
@@ -211,8 +264,6 @@ func TestClusterRPCHeartbeat(t *testing.T) {
 }
 
 func TestClusterRegisterNodeRemote(t *testing.T) {
-	gob.Register(time.Time{})
-
 	cn := getClusterNode()
 	cn.SetEndpointMain("127.0.0.1:36680")
 
@@ -225,8 +276,6 @@ func TestClusterRegisterNodeRemote(t *testing.T) {
 }
 
 func TestClusterHeartbeatRemote(t *testing.T) {
-	gob.Register(time.Time{})
-
 	cn := getClusterNode()
 	cn.SetEndpointMain("127.0.0.1:36680")
 
