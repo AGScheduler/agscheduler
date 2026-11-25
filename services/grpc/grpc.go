@@ -36,7 +36,7 @@ func (bgrs *bGRPCService) GetFuncs(ctx context.Context, in *emptypb.Empty) (*pb.
 
 	fs := agscheduler.FuncMapReadable()
 	for _, f := range fs {
-		pbF := &pb.Func{Name: f["name"], Info: f["Info"]}
+		pbF := &pb.Func{Name: f["name"], Info: f["info"]}
 		pbFs = append(pbFs, pbF)
 	}
 

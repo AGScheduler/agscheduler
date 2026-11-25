@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -22,6 +23,25 @@ import (
 var testQueue = "agscheduler_test_queue"
 
 func dryRunGRPC(ctx context.Context, j agscheduler.Job) (result string) { return }
+
+func TestGRPCGetFuncsIncludesInfo(t *testing.T) {
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: dryRunGRPC, Info: "dry run gRPC"},
+	)
+
+	service := &bGRPCService{}
+	resp, err := service.GetFuncs(context.Background(), &emptypb.Empty{})
+	assert.NoError(t, err)
+
+	var info string
+	for _, function := range resp.Funcs {
+		if strings.HasSuffix(function.Name, "dryRunGRPC") {
+			info = function.Info
+			break
+		}
+	}
+	assert.Equal(t, "dry run gRPC", info)
+}
 
 func testGRPC(t *testing.T, c pb.BaseClient) {
 	ctx := context.Background()
