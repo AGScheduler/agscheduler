@@ -252,9 +252,9 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 			return time.Time{}, fmt.Errorf("job `%s` StartAt `%s` error: %s", j.FullName(), j.Timezone, err)
 		}
 	case JOB_TYPE_INTERVAL:
-		i, err := time.ParseDuration(j.Interval)
+		i, err := j.intervalDuration()
 		if err != nil {
-			return time.Time{}, fmt.Errorf("job `%s` Interval `%s` error: %s", j.FullName(), j.Interval, err)
+			return time.Time{}, err
 		}
 		nextRunTime = time.Now().In(timezone).Add(i)
 	case JOB_TYPE_CRON:
@@ -267,6 +267,7 @@ func CalcNextRunTime(j Job) (time.Time, error) {
 		return time.Time{}, fmt.Errorf("job `%s` Type `%s` unknown", j.FullName(), j.Type)
 	}
 
+	// Scheduling precision is one second, so discard any sub-second component.
 	return time.Unix(nextRunTime.Unix(), 0).UTC(), nil
 }
 
@@ -479,10 +480,9 @@ func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
 	f := reflect.ValueOf(fPkg.Func)
 	slog.Info(fmt.Sprintf("Job `%s` is running, next run time: `%s`", j.FullName(), j.NextRunTimeWithTimezone().String()))
 
-	timeout, err := time.ParseDuration(j.Timeout)
+	timeout, err := j.timeoutDuration()
 	if err != nil {
-		e := &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
-		slog.Error(e.Error())
+		slog.Error(err.Error())
 		return
 	}
 

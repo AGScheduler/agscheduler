@@ -41,6 +41,7 @@ type Job struct {
 	// This field is useless.
 	EndAt string `json:"end_at"`
 	// It can be used when Type is `JOB_TYPE_INTERVAL`.
+	// Must be a positive whole number of seconds.
 	// e.g. `2s`
 	Interval string `json:"interval"`
 	// It can be used when Type is `JOB_TYPE_CRON`.
@@ -64,6 +65,7 @@ type Job struct {
 	// Arguments for `Func`.
 	Args map[string]any `json:"args"`
 	// The running timeout of `Func`.
+	// Must be greater than zero.
 	// Default: `1h`
 	Timeout string `json:"timeout"`
 	// Used in cluster mode, if empty, randomly pick a node to run `Func`,
@@ -159,9 +161,8 @@ func (j *Job) check() error {
 		return FuncUnregisteredError(j.FuncName)
 	}
 
-	_, err := time.ParseDuration(j.Timeout)
-	if err != nil {
-		return &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	if _, err := j.timeoutDuration(); err != nil {
+		return err
 	}
 
 	if j.MaxInstances <= 0 {
@@ -169,6 +170,37 @@ func (j *Job) check() error {
 	}
 
 	return nil
+}
+
+func (j Job) timeoutDuration() (time.Duration, error) {
+	timeout, err := time.ParseDuration(j.Timeout)
+	if err != nil {
+		return 0, &JobTimeoutError{FullName: j.FullName(), Timeout: j.Timeout, Err: err}
+	}
+	if timeout <= 0 {
+		return 0, &JobTimeoutError{
+			FullName: j.FullName(),
+			Timeout:  j.Timeout,
+			Err:      fmt.Errorf("must be greater than zero"),
+		}
+	}
+
+	return timeout, nil
+}
+
+func (j Job) intervalDuration() (time.Duration, error) {
+	interval, err := time.ParseDuration(j.Interval)
+	if err != nil {
+		return 0, fmt.Errorf("job `%s` Interval `%s` error: %s", j.FullName(), j.Interval, err)
+	}
+	if interval < time.Second || interval%time.Second != 0 {
+		return 0, fmt.Errorf(
+			"job `%s` Interval `%s` error: must be a positive whole number of seconds",
+			j.FullName(), j.Interval,
+		)
+	}
+
+	return interval, nil
 }
 
 func (j *Job) FullName() string {

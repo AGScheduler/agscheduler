@@ -91,9 +91,16 @@ func getJob() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.JOB_TYPE_INTERVAL,
-		Interval: "50ms",
+		Interval: "1s",
 		Func:     dryRunScheduler,
 	}
+}
+
+func makeJobDue(j agscheduler.Job) agscheduler.Job {
+	j.Type = agscheduler.JOB_TYPE_DATETIME
+	j.StartAt = "2023-09-22 07:30:08"
+	j.Interval = ""
+	return j
 }
 
 func TestSchedulerRunJobContinuesWhenRecordMetadataFails(t *testing.T) {
@@ -155,7 +162,7 @@ func getJobWithoutFunc() agscheduler.Job {
 	return agscheduler.Job{
 		Name:     "Job",
 		Type:     agscheduler.JOB_TYPE_INTERVAL,
-		Interval: "50ms",
+		Interval: "1s",
 	}
 }
 
@@ -308,10 +315,36 @@ func TestSchedulerAddJobTimeoutError(t *testing.T) {
 	assert.Contains(t, err.Error(), "Timeout `"+j.Timeout+"` error")
 }
 
+func TestSchedulerAddJobRejectsInvalidIntervalPrecision(t *testing.T) {
+	for _, interval := range []string{"0s", "-1s", "500ms", "1500ms"} {
+		t.Run(interval, func(t *testing.T) {
+			s := getSchedulerWithStore(t)
+			j := getJob()
+			j.Interval = interval
+
+			_, err := s.AddJob(j)
+			assert.ErrorContains(t, err, "positive whole number of seconds")
+		})
+	}
+}
+
+func TestSchedulerAddJobRejectsNonPositiveTimeout(t *testing.T) {
+	for _, timeout := range []string{"0s", "-1s"} {
+		t.Run(timeout, func(t *testing.T) {
+			s := getSchedulerWithStore(t)
+			j := getJob()
+			j.Timeout = timeout
+
+			_, err := s.AddJob(j)
+			assert.ErrorContains(t, err, "must be greater than zero")
+		})
+	}
+}
+
 func TestSchedulerRunJobPanic(t *testing.T) {
 	s := getSchedulerWithStore(t)
 	defer s.Stop()
-	j := getJob()
+	j := makeJobDue(getJob())
 	j.Func = runSchedulerPanic
 
 	_, err := s.AddJob(j)
@@ -456,6 +489,19 @@ func TestSchedulerRunJob(t *testing.T) {
 
 	err = s.RunJob(j)
 	assert.NoError(t, err)
+}
+
+func TestSchedulerRunJobRejectsNonPositiveTimeout(t *testing.T) {
+	for _, timeout := range []string{"0s", "-1s"} {
+		t.Run(timeout, func(t *testing.T) {
+			s := getSchedulerWithStore(t)
+			j := getJob()
+			j.Timeout = timeout
+
+			err := s.RunJob(j)
+			assert.ErrorContains(t, err, "must be greater than zero")
+		})
+	}
 }
 
 func TestSchedulerRunJobAppliesExecutionDefaults(t *testing.T) {
@@ -647,7 +693,7 @@ func TestSchedulerBrokerGetQueues(t *testing.T) {
 func TestSchedulerRecorderRecordMetadata(t *testing.T) {
 	rec := getRecorder()
 	s := getSchedulerWithStore(t)
-	j := getJob()
+	j := makeJobDue(getJob())
 
 	err := s.SetRecorder(rec)
 	assert.NoError(t, err)
@@ -661,7 +707,7 @@ func TestSchedulerRecorderRecordMetadata(t *testing.T) {
 func TestSchedulerRecorderRecordMetadataTimeout(t *testing.T) {
 	rec := getRecorder()
 	s := getSchedulerWithStore(t)
-	j := getJob()
+	j := makeJobDue(getJob())
 	j.Timeout = "0.05ms"
 
 	err := s.SetRecorder(rec)
@@ -931,6 +977,21 @@ func TestCalcNextRunTimeIntervalError(t *testing.T) {
 
 	_, err := agscheduler.CalcNextRunTime(j)
 	assert.Error(t, err)
+}
+
+func TestCalcNextRunTimeRejectsInvalidIntervalPrecision(t *testing.T) {
+	for _, interval := range []string{"0s", "-1s", "500ms", "1500ms"} {
+		t.Run(interval, func(t *testing.T) {
+			j := agscheduler.Job{
+				Type:     agscheduler.JOB_TYPE_INTERVAL,
+				Interval: interval,
+				Timezone: "UTC",
+			}
+
+			_, err := agscheduler.CalcNextRunTime(j)
+			assert.ErrorContains(t, err, "positive whole number of seconds")
+		})
+	}
 }
 
 func TestCalcNextRunTimeCronExprError(t *testing.T) {
