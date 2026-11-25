@@ -154,7 +154,7 @@ broker := &agscheduler.Broker{
 	},
 }
 
-scheduler.SetBroker(broker)
+scheduler.SetBroker(ctx, broker)
 ```
 
 ## Result Collection
@@ -166,7 +166,7 @@ recorder := &agscheduler.Recorder{Backend: backend}
 scheduler.SetRecorder(recorder)
 
 job, _ = scheduler.AddJob(job)
-records, _ := recorder.GetRecords(job.Id)
+records, total, _ := recorder.GetRecords(job.Id, 1, 10)
 ```
 
 ## Event listening
