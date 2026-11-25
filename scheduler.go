@@ -79,11 +79,11 @@ func (s *Scheduler) IsRunning() bool {
 func (s *Scheduler) SetStore(sto Store) error {
 	slog.Info("Scheduler set Store.")
 
-	s.store = sto
-	if err := s.store.Init(); err != nil {
+	if err := sto.Init(); err != nil {
 		return err
 	}
 
+	s.store = sto
 	s.init()
 	return nil
 }
@@ -145,12 +145,13 @@ func (s *Scheduler) getJobInstanceCount(key string) int {
 func (s *Scheduler) SetClusterNode(ctx context.Context, cn *ClusterNode) error {
 	slog.Info("Scheduler set ClusterNode.")
 
-	s.clusterNode = cn
 	cn.Scheduler = s
-	if err := s.clusterNode.init(ctx); err != nil {
+	if err := cn.init(ctx); err != nil {
+		cn.Scheduler = nil
 		return err
 	}
 
+	s.clusterNode = cn
 	return nil
 }
 
@@ -168,6 +169,7 @@ func (s *Scheduler) SetBroker(ctx context.Context, brk *Broker) error {
 
 	brk.scheduler = s
 	if err := brk.init(ctx); err != nil {
+		brk.scheduler = nil
 		return err
 	}
 
@@ -193,11 +195,11 @@ func (s *Scheduler) HasBroker() bool {
 func (s *Scheduler) SetRecorder(rec *Recorder) error {
 	slog.Info("Scheduler set Recorder.")
 
-	s.recorder = rec
-	if err := s.recorder.init(); err != nil {
+	if err := rec.init(); err != nil {
 		return err
 	}
 
+	s.recorder = rec
 	return nil
 }
 
@@ -213,11 +215,11 @@ func (s *Scheduler) HasRecorder() bool {
 func (s *Scheduler) SetListener(lis *Listener) error {
 	slog.Info("Scheduler set Listener.")
 
-	s.listener = lis
-	if err := s.listener.init(); err != nil {
+	if err := lis.init(); err != nil {
 		return err
 	}
 
+	s.listener = lis
 	return nil
 }
 

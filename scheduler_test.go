@@ -33,6 +33,22 @@ func (b *failingMetadataBackend) RecordMetadata(agscheduler.Record) error {
 	return errors.New("metadata backend unavailable")
 }
 
+type failingInitStore struct {
+	agscheduler.Store
+}
+
+func (s *failingInitStore) Init() error {
+	return errors.New("store init failed")
+}
+
+type failingInitBackend struct {
+	agscheduler.Backend
+}
+
+func (b *failingInitBackend) Init() error {
+	return errors.New("backend init failed")
+}
+
 var gracefulSchedulerStarted chan struct{}
 var gracefulSchedulerRelease chan struct{}
 var cancellationSchedulerStarted chan struct{}
@@ -102,6 +118,26 @@ func TestSchedulerRunJobContinuesWhenRecordMetadataFails(t *testing.T) {
 	case <-time.After(time.Second):
 		t.Fatal("job did not run after recorder metadata failure")
 	}
+}
+
+func TestSchedulerSetStoreFailureDoesNotBind(t *testing.T) {
+	scheduler := &agscheduler.Scheduler{}
+
+	err := scheduler.SetStore(&failingInitStore{Store: adaptertest.NewStore()})
+	assert.Error(t, err)
+	assert.Nil(t, agscheduler.GetStore(scheduler))
+}
+
+func TestSchedulerSetRecorderFailureDoesNotBind(t *testing.T) {
+	scheduler := getSchedulerWithStore(t)
+	recorder := &agscheduler.Recorder{
+		Backend: &failingInitBackend{Backend: adaptertest.NewBackend()},
+	}
+
+	err := scheduler.SetRecorder(recorder)
+	assert.Error(t, err)
+	assert.False(t, scheduler.HasRecorder())
+	assert.Nil(t, agscheduler.GetRecorder(scheduler))
 }
 
 func getFutureJob(fn func(context.Context, agscheduler.Job) string) agscheduler.Job {
