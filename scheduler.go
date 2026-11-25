@@ -490,11 +490,13 @@ func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
 	var rId uint64
 	var status string
 	var result string
+	recorded := false
 	if s.HasRecorder() {
 		rId, err = s.recorder.RecordMetadata(j)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Job `%s` record metadata error: `%s`", j.FullName(), err))
-			return
+		} else {
+			recorded = true
 		}
 	}
 
@@ -538,7 +540,7 @@ func (s *Scheduler) _runJobWithContext(parentCtx context.Context, j Job) {
 		}
 	}
 
-	if s.HasRecorder() {
+	if recorded {
 		err := s.recorder.RecordResult(rId, status, result)
 		if err != nil {
 			slog.Error(fmt.Sprintf("Job `%s` record result error: `%s`", j.FullName(), err))

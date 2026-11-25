@@ -2,6 +2,7 @@ package agscheduler_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -17,7 +18,20 @@ func dryRunScheduler(ctx context.Context, j agscheduler.Job) (result string) { r
 
 func runSchedulerPanic(ctx context.Context, j agscheduler.Job) (result string) { panic(nil) }
 
+func runSchedulerWithMetadataFailure(ctx context.Context, j agscheduler.Job) (result string) {
+	j.Args["ran"].(chan struct{}) <- struct{}{}
+	return "ran"
+}
+
 func dryCallbackScheduler(ep agscheduler.EventPkg) {}
+
+type failingMetadataBackend struct {
+	agscheduler.Backend
+}
+
+func (b *failingMetadataBackend) RecordMetadata(agscheduler.Record) error {
+	return errors.New("metadata backend unavailable")
+}
 
 var gracefulSchedulerStarted chan struct{}
 var gracefulSchedulerRelease chan struct{}
@@ -63,6 +77,30 @@ func getJob() agscheduler.Job {
 		Type:     agscheduler.JOB_TYPE_INTERVAL,
 		Interval: "50ms",
 		Func:     dryRunScheduler,
+	}
+}
+
+func TestSchedulerRunJobContinuesWhenRecordMetadataFails(t *testing.T) {
+	agscheduler.RegisterFuncs(
+		agscheduler.FuncPkg{Func: runSchedulerWithMetadataFailure},
+	)
+
+	scheduler := getSchedulerWithStore(t)
+	recorder := &agscheduler.Recorder{
+		Backend: &failingMetadataBackend{Backend: adaptertest.NewBackend()},
+	}
+	assert.NoError(t, scheduler.SetRecorder(recorder))
+
+	ran := make(chan struct{}, 1)
+	job := getJob()
+	job.Func = runSchedulerWithMetadataFailure
+	job.Args = map[string]any{"ran": ran}
+
+	assert.NoError(t, scheduler.RunJob(job))
+	select {
+	case <-ran:
+	case <-time.After(time.Second):
+		t.Fatal("job did not run after recorder metadata failure")
 	}
 }
 
